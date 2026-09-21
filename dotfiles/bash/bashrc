@@ -1,0 +1,19 @@
+#
+# ~/.bashrc — symlinked from dotfiles/bash/bashrc by install.sh
+#
+
+# If not running interactively, don't do anything
+[[ $- != *i* ]] && return
+
+alias ls='ls --color=auto'
+alias grep='grep --color=auto'
+alias vim='nvim'
+
+export PATH="$HOME/.local/bin:$PATH"
+
+# Fallback prompt if starship is missing.
+PS1='[\u@\h \W]\$ '
+
+# Prompt: dotfiles/starship/starship.toml, colored with ANSI names so it
+# follows whatever theme the shell has pushed to the terminal.
+command -v starship >/dev/null && eval "$(starship init bash)"

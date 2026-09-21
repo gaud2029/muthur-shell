@@ -1,0 +1,75 @@
+# MU/TH/UR prompt. Only ANSI color names are used (green, bright-black,
+# cyan...), never fixed hex values, so the prompt takes its colors from the
+# terminal palette that ThemeStore.qml generates for alacritty — switching
+# the shell's theme re-themes the prompt too. No icons, no nerd font:
+# everything is a [ LABEL ] like the bar.
+
+"$schema" = 'https://starship.rs/config-schema.json'
+add_newline = false
+
+format = """
+[\\[](bright-black)$username$hostname[\\]](bright-black) $directory$git_branch$git_status$python$nodejs$rust$cmd_duration
+$character"""
+
+[username]
+show_always = true
+style_user = "green"
+style_root = "red bold"
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = false
+style = "bright-black"
+format = "[@$hostname]($style)"
+
+[directory]
+style = "bright-green"
+truncation_length = 3
+truncate_to_repo = true
+read_only = " [RO]"
+read_only_style = "yellow"
+format = "[$path]($style)[$read_only]($read_only_style) "
+
+[git_branch]
+symbol = ""
+style = "cyan"
+format = "[\\[$branch\\]]($style) "
+
+[git_status]
+style = "yellow"
+format = "[$all_status$ahead_behind]($style)"
+conflicted = "!"
+ahead = "^${count} "
+behind = "v${count} "
+diverged = "^${ahead_count}v${behind_count} "
+untracked = "?${count} "
+stashed = "s${count} "
+modified = "*${count} "
+staged = "+${count} "
+renamed = "r${count} "
+deleted = "x${count} "
+
+[python]
+symbol = ""
+style = "blue"
+format = "[py $version]($style) "
+
+[nodejs]
+symbol = ""
+style = "blue"
+format = "[node $version]($style) "
+
+[rust]
+symbol = ""
+style = "blue"
+format = "[rs $version]($style) "
+
+[cmd_duration]
+min_time = 2000
+style = "bright-black"
+format = "[$duration]($style) "
+
+[character]
+success_symbol = "[>_](green)"
+error_symbol = "[>_](red)"
+vimcmd_symbol = "[<_](yellow)"

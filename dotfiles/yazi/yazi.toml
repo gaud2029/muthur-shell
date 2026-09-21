@@ -1,0 +1,18 @@
+# Kept minimal — the look lives in theme.toml. Openers stay at yazi's
+# defaults: "edit" runs $EDITOR in place (nvim, set in labwc's environment
+# file) and everything else goes through xdg-open.
+
+[mgr]
+ratio       = [ 1, 3, 4 ]
+sort_by     = "alphabetical"
+sort_dir_first = true
+linemode    = "size"
+show_hidden = false
+show_symlink = true
+scrolloff   = 5
+
+[preview]
+wrap       = "no"
+tab_size   = 4
+max_width  = 1000
+max_height = 1000

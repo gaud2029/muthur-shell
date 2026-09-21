@@ -1,0 +1,33 @@
+# herdr configuration — see `herdr --default-config` for the full set of
+# options. Only config.toml itself is symlinked into place (not the whole
+# ~/.config/herdr/ directory), since that directory also holds runtime
+# state (logs, sockets, session.json) that has no business in this repo.
+onboarding = false
+
+[theme]
+# "terminal" is the closest built-in base to override cleanly; every
+# token below replaces it anyway.
+name = "terminal"
+
+[theme.custom]
+# --- BEGIN generated (ThemeStore.qml writeHerdrTheme) ---
+accent = "#ffffff"
+panel_bg = "#0a0a0a"
+sidebar_bg = "#0a0a0a"
+active_row_bg = "#5a5a5a"
+selection_bg = "#5a5a5a"
+surface0 = "#141414"
+surface1 = "#5a5a5a"
+surface_dim = "#0a0a0a"
+overlay0 = "#5a5a5a"
+overlay1 = "#c8c8c8"
+text = "#c8c8c8"
+subtext0 = "#c8c8c8"
+mauve = "#b090b0"
+green = "#a0b0a0"
+yellow = "#b0b090"
+red = "#b09090"
+blue = "#9090b0"
+teal = "#90b0b0"
+peach = "#d0d0b0"
+# --- END generated ---
