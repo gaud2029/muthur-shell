@@ -1,3 +1,6 @@
+//@ pragma UseQApplication
+// Tray items' native menus (Drawer.qml) are platform menus, which need
+// a QApplication.
 import QtQuick
 import Quickshell
 

@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
+import Quickshell.Wayland
 import Quickshell.Services.SystemTray
 import Quickshell.Services.Mpris
 
@@ -46,6 +47,18 @@ PanelWindow {
     readonly property var activePlayer: {
         const players = Mpris.players.values;
         return players.find(p => p.isPlaying) || players[0] || null;
+    }
+
+    // A tray item carries no link to its window; match its id (e.g.
+    // "discord_status_icon_1") against the windows' app ids ("discord").
+    function windowFor(item) {
+        const id = (item.id || "").toLowerCase();
+        if (!id)
+            return null;
+        return ToplevelManager.toplevels.values.find(t => {
+            const app = (t.appId || "").toLowerCase().split(".").pop();
+            return app && (id.startsWith(app) || app.startsWith(id));
+        }) || null;
     }
 
     Rectangle {
@@ -124,23 +137,38 @@ PanelWindow {
                     id: trayIcon
                     required property var modelData
                     implicitSize: theme.tile
-                    // An icon name the theme doesn't have resolves to the
-                    // theme's own "missing image" glyph (Quickshell/Qt
-                    // fall back before QML ever sees a load error) — that
-                    // is expected, not a bug in this file.
-                    source: Quickshell.iconPath(modelData.icon)
+                    // `icon` is already an image URL (theme icon or the
+                    // item's pixmap, e.g. Discord only sends a pixmap);
+                    // passing it through Quickshell.iconPath() treats it
+                    // as an icon name and yields the missing-image glyph.
+                    source: modelData.icon
+
+                    function showMenu(mouse) {
+                        const pos = trayIcon.mapToItem(null, mouse.x, mouse.y);
+                        trayIcon.modelData.display(root, pos.x, pos.y);
+                    }
 
                     MouseArea {
                         anchors.fill: parent
                         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
                         onClicked: mouse => {
+                            const item = trayIcon.modelData;
                             if (mouse.button === Qt.LeftButton) {
-                                trayIcon.modelData.activate();
+                                if (item.onlyMenu && item.hasMenu) {
+                                    trayIcon.showMenu(mouse);
+                                } else {
+                                    item.activate();
+                                    // Wayland won't let the app raise its
+                                    // own window, so focus it from here.
+                                    const win = root.windowFor(item);
+                                    if (win)
+                                        win.activate();
+                                    root.visible = false;
+                                }
                             } else if (mouse.button === Qt.MiddleButton) {
-                                trayIcon.modelData.secondaryActivate();
-                            } else if (mouse.button === Qt.RightButton && trayIcon.modelData.hasMenu) {
-                                const pos = trayIcon.mapToItem(null, mouse.x, mouse.y);
-                                trayIcon.modelData.display(root, pos.x, pos.y);
+                                item.secondaryActivate();
+                            } else if (mouse.button === Qt.RightButton && item.hasMenu) {
+                                trayIcon.showMenu(mouse);
                             }
                         }
                     }
