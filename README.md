@@ -58,7 +58,8 @@ From the start of the bar:
   Quickshell's native Hyprland module on Hyprland (special workspaces
   hidden, named ones after the numbered; switching works with both the
   classic and the Lua `hyprctl dispatch` syntax), and through niri's IPC
-  as the fallback. Click to switch; urgent ones are highlighted. The labwc config defines four (`Super+1..4` to go,
+  as the fallback. Click to switch; urgent ones are highlighted. The
+  labwc and Hyprland configs define four (`Super+1..4` to go,
   `Super+Shift+1..4` to send the window along, `Super+F` fullscreen,
   `Super+Return` a terminal, `Super+E` the file manager — yazi, in a
   terminal).
@@ -221,6 +222,7 @@ dotfiles/
                       scripts/ holds the palette and usage-stats helpers
   fuzzel/             launcher config, themed to match the shell
   labwc/              window-manager config: themed, 4 workspaces, keybinds, autostart
+  hypr/               the same for Hyprland (Lua config), themed via the generated colors.lua
   alacritty/          terminal config, themed
   herdr/              config.toml for the terminal workspace manager, themed
   nvim/               LazyVim config, themed (and live-reloaded)
@@ -234,7 +236,7 @@ install.sh
 ```
 
 Generated, gitignored files (`theme.ini`, `colors.ini`, `themerc-override`,
-`colors.toml`, `colors/muthur.lua`, `themes/muthur.theme`) live alongside their tracked static
+`hypr/colors.lua`, `colors.toml`, `colors/muthur.lua`, `themes/muthur.theme`) live alongside their tracked static
 config — see `.gitignore`. `nvim/` is symlinked as a whole directory like
 the others; `herdr/config.toml` is symlinked individually since the rest of
 `~/.config/herdr/` is runtime state that doesn't belong in this repo.

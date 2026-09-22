@@ -69,7 +69,12 @@ PanelWindow {
         }
         ConfirmButton {
             action: "LOGOUT"
-            command: ["labwc", "--exit"]
+            // Hyprland with a Lua config takes only the Lua dispatch form,
+            // the classic config only the classic one; hyprctl exits
+            // non-zero on the mismatch.
+            command: Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE")
+                ? ["sh", "-c", "hyprctl dispatch 'hl.dsp.exit()' >/dev/null 2>&1 || hyprctl dispatch exit"]
+                : ["labwc", "--exit"]
         }
         ConfirmButton {
             action: "SUSPEND"

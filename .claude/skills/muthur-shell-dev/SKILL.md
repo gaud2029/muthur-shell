@@ -98,7 +98,14 @@ Before believing a stale-looking frame, re-capture: a hot reload or a
 - `~/.config/nvim/colors/muthur.lua` — validate with
   `nvim --headless -u NONE -c 'set rtp+=~/.config/nvim' -c 'colorscheme muthur' -c q`.
 - `~/.config/fuzzel/colors.ini` (colors + `font=...:pixelsize=N`),
-  `~/.config/labwc/themerc-override`, herdr's `config.toml` block.
+  `~/.config/labwc/themerc-override`, herdr's `config.toml` block,
+  `~/.config/hypr/colors.lua` (require()d by `dotfiles/hypr/hyprland.lua`;
+  the writer runs `hyprctl reload` — check with
+  `hyprctl getoption general:col.active_border` and `hyprctl configerrors`).
+- Validate a Hyprland config without running it:
+  `Hyprland --verify-config -c dotfiles/hypr/hyprland.lua`; the Lua API is
+  in `/usr/share/hypr/stubs/hl.meta.lua`. `~/.config/hypr` is a symlink to
+  `dotfiles/hypr`, so edits there reload the live compositor at once.
 - `scripts/wallpaper-palette.py <img>` and `scripts/ai-usage-stats.py claude|codex`
   are plain Python and can be run directly to inspect their JSON.
 - An MPRIS player for the drawer: generate a WAV with Python's `wave`

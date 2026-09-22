@@ -1,6 +1,7 @@
 dotfiles/quickshell/muthur/theme.ini
 dotfiles/fuzzel/colors.ini
 dotfiles/labwc/themerc-override
+dotfiles/hypr/colors.lua
 dotfiles/alacritty/colors.toml
 dotfiles/nvim/colors/muthur.lua
 dotfiles/btop/themes/muthur.theme

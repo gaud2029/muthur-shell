@@ -14,6 +14,7 @@ CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 # installed separately.
 PACKAGES=(
   labwc          # compositor (dotfiles/labwc)
+  hyprland       # the other supported compositor (dotfiles/hypr)
   quickshell     # the shell itself
   fuzzel         # launcher ([>_], Super+Space)
   alacritty      # terminal (themed; Super+Return and the labwc menu)
@@ -59,6 +60,7 @@ LINKS=(
   "fuzzel:fuzzel"
   "quickshell/muthur:quickshell/muthur"
   "labwc:labwc"
+  "hypr:hypr"
   "alacritty:alacritty"
   "herdr/config.toml:herdr/config.toml"
   "nvim:nvim"
