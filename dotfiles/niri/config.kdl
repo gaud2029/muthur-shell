@@ -1,0 +1,232 @@
+// niri config for the MU/TH/UR shell: the same keybinds, autostart and
+// look rules as dotfiles/labwc and dotfiles/hypr, in niri's KDL config
+// (https://niri-wm.github.io/niri/Configuration:-Introduction). Border
+// colors come from colors.kdl, generated next to this file by
+// ThemeStore.qml on every preset change, the way labwc's themerc-override
+// and Hyprland's colors.lua are. niri reloads the config on save.
+
+// ────────────── Outputs ──────────────
+// kanshi (autostarted below) applies per-output profiles; nothing is
+// pinned here. `niri msg outputs` lists the names if you want to.
+
+// ────────────── Input ──────────────
+
+input {
+    keyboard {
+        xkb {
+            layout "us"
+        }
+        numlock
+    }
+
+    touchpad {
+        tap
+    }
+
+    focus-follows-mouse
+    workspace-auto-back-and-forth
+}
+
+// ────────────── Environment ──────────────
+// Mirrors dotfiles/labwc/environment: alacritty for anything that honors
+// $TERMINAL, and yazi's "edit" opener stays in the terminal with nvim.
+
+environment {
+    TERMINAL "alacritty"
+    EDITOR "nvim"
+}
+
+cursor {
+    xcursor-size 24
+}
+
+// ────────────── Autostart ──────────────
+// Same set as dotfiles/labwc/autostart. The wallpaper is swaybg: a solid
+// color until the shell (ThemeStore.qml) takes it over with the preset's
+// background or the chosen image.
+
+spawn-at-startup "swaybg" "-c" "#113344"
+spawn-at-startup "kanshi"
+spawn-at-startup "mako"
+// Lock after 5 minutes; turn the display off after another 5. niri has
+// no wlr-output-power-management for wlopm, but its own action does the
+// same and any input turns the outputs back on.
+spawn-sh-at-startup "swayidle -w timeout 300 'swaylock -f -c 000000' timeout 600 'niri msg action power-off-monitors' before-sleep 'swaylock -f -c 000000'"
+spawn-at-startup "quickshell" "-c" "muthur"
+
+// ────────────── Look and feel ──────────────
+// The shell's rules: 1px sharp borders, no rounding, no blur, no shadow,
+// no animation. Tiled windows are asked to drop their client-side
+// decorations so the border is drawn around a plain rectangle.
+
+prefer-no-csd
+
+layout {
+    // One grid unit (6px) between windows and around the edge.
+    gaps 6
+    center-focused-column "never"
+
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+    default-column-width { proportion 0.5; }
+
+    // The border does the focus ring's job: one thin line, always
+    // visible, in the preset's fg for the focused window and dim for the
+    // rest (colors.kdl fills in active-color / inactive-color / urgent-color).
+    focus-ring {
+        off
+    }
+    border {
+        on
+        width 1
+    }
+    shadow {
+        off
+    }
+}
+
+animations {
+    off
+}
+
+hotkey-overlay {
+    skip-at-startup
+}
+
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+// A bell or activation request from an unfocused window marks it urgent
+// (the border turns urgent-color) instead of stealing focus — that's
+// niri's default, nothing to set.
+
+// ────────────── Keybindings ──────────────
+// The labwc set from dotfiles/labwc/rc.xml, plus what a scrolling tiler
+// needs. Mod is Super.
+
+binds {
+    Mod+Shift+Slash { show-hotkey-overlay; }
+
+    // ─── Applications ───
+    Mod+Return hotkey-overlay-title="Terminal: alacritty" { spawn "alacritty"; }
+    Mod+Space hotkey-overlay-title="Launcher: fuzzel" { spawn "fuzzel"; }
+    Mod+E hotkey-overlay-title="File manager: yazi" { spawn "alacritty" "-e" "yazi"; }
+    Mod+Alt+L hotkey-overlay-title="Lock: swaylock" { spawn "swaylock" "-f" "-c" "000000"; }
+
+    // ─── Volume (pipewire/wireplumber); brightness is in the shell's [SYS] > DISPLAY ───
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"; }
+    XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
+    XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
+
+    // ─── Windows ───
+    Alt+F4 { close-window; }
+    Mod+Q { close-window; }
+    Mod+F { fullscreen-window; }
+    Mod+Shift+F { maximize-column; }
+    Mod+M { maximize-window-to-edges; }
+    Mod+V { toggle-window-floating; }
+    Mod+Shift+V { switch-focus-between-floating-and-tiling; }
+    Mod+W { toggle-column-tabbed-display; }
+
+    Mod+Left  { focus-column-left; }
+    Mod+Right { focus-column-right; }
+    Mod+Up    { focus-window-up; }
+    Mod+Down  { focus-window-down; }
+    Mod+H { focus-column-left; }
+    Mod+L { focus-column-right; }
+    Mod+K { focus-window-up; }
+    Mod+J { focus-window-down; }
+
+    Mod+Ctrl+Left  { move-column-left; }
+    Mod+Ctrl+Right { move-column-right; }
+    Mod+Ctrl+Up    { move-window-up; }
+    Mod+Ctrl+Down  { move-window-down; }
+    Mod+Ctrl+H { move-column-left; }
+    Mod+Ctrl+L { move-column-right; }
+    Mod+Ctrl+K { move-window-up; }
+    Mod+Ctrl+J { move-window-down; }
+
+    Mod+Home { focus-column-first; }
+    Mod+End  { focus-column-last; }
+    Mod+Ctrl+Home { move-column-to-first; }
+    Mod+Ctrl+End  { move-column-to-last; }
+
+    Mod+Shift+Left  { focus-monitor-left; }
+    Mod+Shift+Right { focus-monitor-right; }
+    Mod+Shift+Up    { focus-monitor-up; }
+    Mod+Shift+Down  { focus-monitor-down; }
+    Mod+Shift+Ctrl+Left  { move-column-to-monitor-left; }
+    Mod+Shift+Ctrl+Right { move-column-to-monitor-right; }
+    Mod+Shift+Ctrl+Up    { move-column-to-monitor-up; }
+    Mod+Shift+Ctrl+Down  { move-column-to-monitor-down; }
+
+    // ─── Columns ───
+    Mod+BracketLeft  { consume-or-expel-window-left; }
+    Mod+BracketRight { consume-or-expel-window-right; }
+    Mod+Comma  { consume-window-into-column; }
+    Mod+Period { expel-window-from-column; }
+
+    Mod+R { switch-preset-column-width; }
+    Mod+Shift+R { switch-preset-column-width-back; }
+    Mod+Ctrl+R { reset-window-height; }
+    Mod+Ctrl+Shift+R { switch-preset-window-height; }
+    Mod+Ctrl+F { expand-column-to-available-width; }
+    Mod+C { center-column; }
+    Mod+Ctrl+C { center-visible-columns; }
+    Mod+Minus { set-column-width "-10%"; }
+    Mod+Equal { set-column-width "+10%"; }
+    Mod+Shift+Minus { set-window-height "-10%"; }
+    Mod+Shift+Equal { set-window-height "+10%"; }
+
+    // ─── Workspaces: Super+N to go, Super+Shift+N to send the window along ───
+    // niri's workspaces are dynamic (there is always one empty one at the
+    // end); Super+N past the last lands on that empty one.
+    Mod+1 { focus-workspace 1; }
+    Mod+2 { focus-workspace 2; }
+    Mod+3 { focus-workspace 3; }
+    Mod+4 { focus-workspace 4; }
+    Mod+Shift+1 { move-column-to-workspace 1; }
+    Mod+Shift+2 { move-column-to-workspace 2; }
+    Mod+Shift+3 { move-column-to-workspace 3; }
+    Mod+Shift+4 { move-column-to-workspace 4; }
+    Mod+Tab { focus-workspace-previous; }
+
+    Mod+Page_Down { focus-workspace-down; }
+    Mod+Page_Up   { focus-workspace-up; }
+    Mod+Ctrl+Page_Down { move-column-to-workspace-down; }
+    Mod+Ctrl+Page_Up   { move-column-to-workspace-up; }
+
+    Mod+WheelScrollDown      cooldown-ms=150 { focus-workspace-down; }
+    Mod+WheelScrollUp        cooldown-ms=150 { focus-workspace-up; }
+    Mod+Ctrl+WheelScrollDown cooldown-ms=150 { move-column-to-workspace-down; }
+    Mod+Ctrl+WheelScrollUp   cooldown-ms=150 { move-column-to-workspace-up; }
+    Mod+WheelScrollRight      { focus-column-right; }
+    Mod+WheelScrollLeft       { focus-column-left; }
+    Mod+Ctrl+WheelScrollRight { move-column-right; }
+    Mod+Ctrl+WheelScrollLeft  { move-column-left; }
+    Mod+Shift+WheelScrollDown      { focus-column-right; }
+    Mod+Shift+WheelScrollUp        { focus-column-left; }
+    Mod+Ctrl+Shift+WheelScrollDown { move-column-right; }
+    Mod+Ctrl+Shift+WheelScrollUp   { move-column-left; }
+
+    Mod+O repeat=false { toggle-overview; }
+
+    // ─── Screenshots ───
+    Print { screenshot; }
+    Ctrl+Print { screenshot-screen; }
+    Alt+Print { screenshot-window; }
+
+    // ─── Session ───
+    // Undoes a fullscreen app's keyboard-shortcut inhibit.
+    Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
+    Mod+Shift+P { power-off-monitors; }
+    // Both ask for confirmation; the drawer's LOGOUT button skips it.
+    Mod+Shift+E { quit; }
+    Ctrl+Alt+Delete { quit; }
+}
+
+// Generated: border colors for the active preset.
+include "colors.kdl"

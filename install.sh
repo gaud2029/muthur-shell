@@ -14,7 +14,8 @@ CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 # installed separately.
 PACKAGES=(
   labwc          # compositor (dotfiles/labwc)
-  hyprland       # the other supported compositor (dotfiles/hypr)
+  hyprland       # the other supported compositors (dotfiles/hypr, dotfiles/niri)
+  niri
   quickshell     # the shell itself
   fuzzel         # launcher ([>_], Super+Space)
   alacritty      # terminal (themed; Super+Return and the labwc menu)
@@ -61,6 +62,7 @@ LINKS=(
   "quickshell/muthur:quickshell/muthur"
   "labwc:labwc"
   "hypr:hypr"
+  "niri:niri"
   "alacritty:alacritty"
   "herdr/config.toml:herdr/config.toml"
   "nvim:nvim"
@@ -104,6 +106,24 @@ link_one() {
 for pair in "${LINKS[@]}"; do
   link_one "${pair%%:*}" "${pair#*:}"
 done
+
+# niri's config include()s the generated colors.kdl and refuses to load
+# when it's missing, so seed a grey one for the first start; the shell
+# overwrites it with the preset's colors as soon as it runs.
+NIRI_COLORS="$DOTFILES_DIR/niri/colors.kdl"
+if [ ! -e "$NIRI_COLORS" ]; then
+  cat >"$NIRI_COLORS" <<'KDL'
+// Placeholder until ThemeStore.qml generates this file; do not edit.
+layout {
+    border {
+        active-color "#aaaaaa"
+        inactive-color "#555555"
+        urgent-color "#ffffff"
+    }
+}
+KDL
+  echo "seeded:  $NIRI_COLORS (grey fallback until the shell runs)"
+fi
 
 # Make "open folder" from other apps land in yazi rather than a GUI one.
 if command -v xdg-mime >/dev/null && [ -f /usr/share/applications/yazi.desktop ]; then

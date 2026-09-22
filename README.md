@@ -29,15 +29,17 @@ quickshell -c muthur   # launch (labwc's autostart does this for you)
 ```
 
 `install.sh` first installs everything the configs rely on with
-`sudo pacman -S --needed` — labwc, quickshell, fuzzel, alacritty, starship,
+`sudo pacman -S --needed` — labwc, Hyprland, niri, quickshell, fuzzel, alacritty, starship,
 yazi, btop, swaybg/kanshi/mako/swayidle/swaylock/wlopm for the labwc autostart, Neovim,
 Noto fonts, and the NetworkManager/BlueZ/PipeWire/UPower services the
 panels talk to (`--no-packages` skips this; herdr isn't packaged and is
 installed separately). It then backs up anything already at the
 destination instead of overwriting it, and symlinks every config this repo
-manages: the shell itself, plus fuzzel, labwc, alacritty, herdr, Neovim,
-yazi, btop, `~/.bashrc` and the starship prompt, and makes yazi the default
-handler for opening folders. Quickshell hot-reloads on file save, so once it's running most
+manages: the shell itself, plus fuzzel, labwc, Hyprland, niri, alacritty,
+herdr, Neovim, yazi, btop, `~/.bashrc` and the starship prompt, seeds
+niri's generated `colors.kdl` with a grey placeholder (niri won't start
+without it, and the shell overwrites it on first run), and makes yazi the
+default handler for opening folders. Quickshell hot-reloads on file save, so once it's running most
 changes to the QML don't need a restart.
 
 ## The bar
@@ -59,7 +61,8 @@ From the start of the bar:
   hidden, named ones after the numbered; switching works with both the
   classic and the Lua `hyprctl dispatch` syntax), and through niri's IPC
   as the fallback. Click to switch; urgent ones are highlighted. The
-  labwc and Hyprland configs define four (`Super+1..4` to go,
+  labwc and Hyprland configs define four, and niri's config binds the
+  same four over its dynamic workspaces (`Super+1..4` to go,
   `Super+Shift+1..4` to send the window along, `Super+F` fullscreen,
   `Super+Return` a terminal, `Super+E` the file manager — yazi, in a
   terminal).
@@ -84,8 +87,8 @@ From the end of the bar:
 - **`[SYS]`** — the system panel (below).
 - **`[+]`** — the drawer: system tray, MPRIS "now playing" with
   previous / play-pause / next, and along its bottom edge the session
-  controls — `LOCK` (`swaylock`), `LOGOUT` (`labwc --exit`, or Hyprland's
-  exit dispatcher when running there), `SUSPEND` and
+  controls — `LOCK` (`swaylock`), `LOGOUT` (`labwc --exit`, Hyprland's
+  exit dispatcher or niri's `quit` when running there), `SUSPEND` and
   `POWER OFF` (`systemctl`). The last three arm on a first click and run
   on a second within four seconds, so a stray click can't put the session
   down.
@@ -167,6 +170,7 @@ else the shell manages, using whatever mechanism each tool supports:
 | **fuzzel** | `fuzzel.ini` `include=`s a generated file (colors and font) | `colors.ini` |
 | **labwc** | `themerc-override` (labwc's own override mechanism; no `<theme><name>` is set, so it's the *only* file that applies — structural settings like button size and title alignment live here too) | `themerc-override` |
 | **Hyprland** | `hyprland.lua` `require()`s a generated Lua table (active and inactive border colors) and is told to `hyprctl reload`; it falls back to grey when the file isn't there yet | `hypr/colors.lua` |
+| **niri** | `config.kdl` `include`s a generated KDL fragment (active, inactive and urgent border colors; niri merges it into `layout { border {} }`), and niri reloads on its own when the file changes. A missing include is fatal to niri, so `install.sh` seeds a grey one | `niri/colors.kdl` |
 | **alacritty** | `alacritty.toml`'s `general.import` (16 ANSI colors, cursor, selection, window opacity). Alacritty only makes its *default* background translucent, so below 100% the Neovim and btop themes are regenerated to leave their window background unpainted and show through | `colors.toml` |
 | **herdr** | no include mechanism exists, so the `[theme.custom]` block in `config.toml` is patched in place between marker comments, then `herdr server reload-config` applies it live | *(in place)* |
 | **Neovim (LazyVim)** | a real colorscheme (`colors/muthur.lua`, ~140 highlight groups incl. treesitter/LSP/diagnostics, plus the 16 terminal colors) that a plugin spec sets as `opts.colorscheme`; a file watcher in `lua/config/autocmds.lua` re-applies it in already-open instances the moment it's regenerated | `colors/muthur.lua` |
@@ -229,6 +233,7 @@ dotfiles/
   fuzzel/             launcher config, themed to match the shell
   labwc/              window-manager config: themed, 4 workspaces, keybinds, autostart
   hypr/               the same for Hyprland (Lua config), themed via the generated colors.lua
+  niri/               the same for niri (KDL config), themed via the generated colors.kdl
   alacritty/          terminal config, themed
   herdr/              config.toml for the terminal workspace manager, themed
   nvim/               LazyVim config, themed (and live-reloaded)
@@ -242,7 +247,7 @@ install.sh
 ```
 
 Generated, gitignored files (`theme.ini`, `colors.ini`, `themerc-override`,
-`hypr/colors.lua`, `colors.toml`, `colors/muthur.lua`, `themes/muthur.theme`) live alongside their tracked static
+`hypr/colors.lua`, `niri/colors.kdl`, `colors.toml`, `colors/muthur.lua`, `themes/muthur.theme`) live alongside their tracked static
 config — see `.gitignore`. `nvim/` is symlinked as a whole directory like
 the others; `herdr/config.toml` is symlinked individually since the rest of
 `~/.config/herdr/` is runtime state that doesn't belong in this repo.

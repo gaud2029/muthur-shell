@@ -23,6 +23,14 @@ AxisGrid {
         return screens.length === 0 || screens.some(s => root.screen && s.name === root.screen.name);
     }
 
+    function compareCoordinates(a, b) {
+        for (let i = 0; i < Math.min(a.length, b.length); i++) {
+            if (a[i] !== b[i])
+                return a[i] - b[i];
+        }
+        return a.length - b.length;
+    }
+
     // Names longer than a tile show their position instead.
     function labelFor(name, i) {
         return name.length <= 2 ? name : String(i + 1);
@@ -43,7 +51,13 @@ AxisGrid {
                     activate: () => root.hyprland.focusWorkspace(ws)
                 }));
         }
-        const sets = WindowManager.windowsets.filter(ws => ws.shouldDisplay && root.onThisOutput(ws));
+        // ext-workspace's coordinates give each workspace its position;
+        // niri announces them in no particular order (labwc in order, so
+        // protocol order breaks ties).
+        const sets = WindowManager.windowsets.filter(ws => ws.shouldDisplay && root.onThisOutput(ws))
+            .map((ws, i) => ({ ws, i }))
+            .sort((a, b) => root.compareCoordinates(a.ws.coordinates, b.ws.coordinates) || a.i - b.i)
+            .map(e => e.ws);
         if (sets.length > 0) {
             return sets.map((ws, i) => ({
                 label: root.labelFor(ws.name, i),
@@ -53,7 +67,7 @@ AxisGrid {
         }
         if (!root.niri)
             return [];
-        return root.niri.workspaces.filter(ws => ws.output === root.outputName).map(ws => ({
+        return root.niri.workspaces.filter(ws => ws.output === root.outputName).sort((a, b) => a.idx - b.idx).map(ws => ({
             label: String(ws.idx),
             state: { active: ws.is_focused, urgent: false },
             activate: () => root.niri.focusWorkspace(ws.idx)

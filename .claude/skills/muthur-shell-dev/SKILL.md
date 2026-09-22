@@ -12,11 +12,14 @@ The shell runs via `quickshell -c muthur`, which resolves to
 `dotfiles/quickshell/muthur/` created by `./install.sh`. The compositor is labwc
 (`XDG_CURRENT_DESKTOP=labwc:wlroots`) or Hyprland (`XDG_CURRENT_DESKTOP=Hyprland`,
 `HYPRLAND_INSTANCE_SIGNATURE` set — `Workspaces.qml` then reads
-`HyprlandWorkspaces.qml` instead of ext-workspace-v1); niri is only a
-fallback path.
+`HyprlandWorkspaces.qml` instead of ext-workspace-v1) or niri
+(`XDG_CURRENT_DESKTOP=niri`, `NIRI_SOCKET` set; niri ≥ 26.04 implements
+ext-workspace-v1 too, so the `Niri.qml` IPC bridge is only a fallback).
 
 **Quickshell hot-reloads QML files on save.** Most edits need no restart at
-all — just save and re-check. Restart for structural issues (a new file, a
+all — just save and re-check. Write files in place (Edit, python
+`open(p, "w")`, `cp` over them): `sed -i` replaces the inode and silently
+kills the watch on that file — no reload from then on until a restart. Restart for structural issues (a new file, a
 file that fails to load, a change that doesn't seem to take effect).
 
 To restart, kill the exact process by name — do **not** use
