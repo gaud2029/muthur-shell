@@ -62,6 +62,27 @@
     <keybind key="W-F4">
       <action name="None" />
     </keybind>
+        <!-- Screenshot: full screen -->
+    
+    <keybind key="W-S-3">
+      <action name="Execute">
+        <command>sh -c 'mkdir -p "$HOME/Pictures/Screenshots"; grim "$HOME/Pictures/Screenshots/Screenshot-$(date +%Y-%m-%d_%H-%M-%S).png"'</command>
+      </action>
+    </keybind>
+
+    <!-- Screenshot: select region -->
+    <keybind key="W-S-4">
+      <action name="Execute">
+        <command>sh -c 'mkdir -p "$HOME/Pictures/Screenshots"; grim -g "$(slurp)" "$HOME/Pictures/Screenshots/Screenshot-$(date +%Y-%m-%d_%H-%M-%S).png"'</command>
+      </action>
+    </keybind>
+
+    <!-- ctrl + super + shift +4 -->
+    <keybind key="C-W-S-4">
+      <action name="Execute">
+        <command>sh -c 'grim -g "$(slurp)" - | wl-copy'</command>
+      </action>
+    </keybind>
   </keyboard>
 
   <mouse>
