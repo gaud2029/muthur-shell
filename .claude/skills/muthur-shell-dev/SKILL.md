@@ -172,3 +172,22 @@ Before believing a stale-looking frame, re-capture: a hot reload or a
   children, a `QtObject` root needs them as `readonly property X: X {}`.
 - Python one-liners that rewrite a file must **read before opening for
   write** — `open(p,"w").write(f(open(p).read()))` truncates first.
+- **`SystemTrayItem.icon` is already an image URL** (`image://icon/…` or
+  `image://qspixmap/…` for pixmap-only items like Discord) — use it as
+  `source` directly; `Quickshell.iconPath()` treats it as a name and
+  yields the black/pink missing-image glyph.
+- **Tray menus (`item.display(window, x, y)`) are platform menus** and need
+  `//@ pragma UseQApplication` at the top of `shell.qml` (pragmas only
+  apply on restart, not hot reload). Without it the log says
+  `Cannot display PlatformMenuEntry`.
+- **Tray menus can't be tested from a hook**: Wayland only grants a popup
+  grab after real input (`Failed to create grabbing popup … has received
+  input`), so a hook-driven `display()` shows nothing — ask the user to
+  right-click.
+- **`item.activate()` doesn't raise the app's window on Wayland** (apps
+  can't self-focus). `Drawer.qml`'s `windowFor()` matches the tray id
+  (`discord_status_icon_1`) against `ToplevelManager` app ids by prefix
+  and calls `activate()` on the toplevel. Inspect an item's D-Bus side
+  with `busctl --user get-property <bus> /StatusNotifierItem
+  org.kde.StatusNotifierItem Id|IconName|IconPixmap|Menu` (bus names from
+  `RegisteredStatusNotifierItems` on `org.kde.StatusNotifierWatcher`).
