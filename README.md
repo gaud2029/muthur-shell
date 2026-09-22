@@ -1,10 +1,15 @@
 # muthur-shell
 
 A [Quickshell](https://quickshell.outfoxxed.me/) desktop shell for
-[labwc](https://labwc.github.io/) (and [niri](https://github.com/YaLTeR/niri)),
-styled after the MU/TH/UR 6000 terminal from *Alien*: phosphor-green
-monospace text on black, scanlines, sharp rectangular borders, no rounded
-corners, no icons — everything is a `[ LABEL ]`.
+[labwc](https://labwc.github.io/) (and [niri](https://github.com/YaLTeR/niri))
+that looks like a computer from a film: it started as the MU/TH/UR 6000
+terminal from *Alien* and grew into a sci-fi / cyberpunk desktop in
+general — one shell, twenty-five palettes, from the Nostromo's bone-white
+corridors to Night City neon — on top of an old-school, simple Unix
+desktop: a window manager, a bar, a launcher, and terminals. The rules
+stay the same whatever the palette: monospace text, scanlines, sharp
+rectangular borders, no rounded corners, no icons — everything is a
+`[ LABEL ]`.
 
 <img src="docs/screenshots/desktop-look.png" alt="Neo in the Matrix: the bar along the bottom, Neovim in alacritty, and the [SYS] > [LOOK] panel" width="960">
 
@@ -177,6 +182,20 @@ isn't documented for direct use, so `dark-ansi` sidesteps it by deferring
 to the terminal; `~/.claude/settings.json` (which also holds permissions
 and hooks) isn't tracked here — the one-line change was made directly.
 
+## Inspirations
+
+- The look is the MU/TH/UR 6000 from *Alien* first, then the rest of the
+  shelf: *Blade Runner*, *Tron*, *Akira*, *Ghost in the Shell*, *Serial
+  Experiments Lain*, *Neuromancer*, *Hackers*… each of which is a preset
+  in `[SYS] > [LOOK]`.
+- Several panels were heavily inspired by the
+  [Omarchy](https://omarchy.org/) project — the `[AI]` panel in
+  particular, with its Claude Code / Codex usage bars and token stats, is
+  a MU/TH/UR take on Omarchy's AI usage view.
+- The old-school side — one config per tool, symlinked from a dotfiles
+  directory, nothing generated that a plain text file can't hold — is
+  just how Unix desktops have always been put together.
+
 ## Repo layout
 
 ```
@@ -187,17 +206,18 @@ dotfiles/
   labwc/              window-manager config: themed, 4 workspaces, keybinds, autostart
   alacritty/          terminal config, themed
   herdr/              config.toml for the terminal workspace manager, themed
-  nvim/               LazyVim config, themed
+  nvim/               LazyVim config, themed (and live-reloaded)
+  yazi/               file manager config in the shell's style, themed via ANSI colors
+  btop/               system monitor config, themed
   bash/               ~/.bashrc
   starship/           prompt config in the shell's [ LABEL ] style, themed via ANSI colors
 docs/screenshots/    the captures above
-inspirations/        reference screenshots from other setups (not part of the shell)
 wallpapers/
 install.sh
 ```
 
 Generated, gitignored files (`theme.ini`, `colors.ini`, `themerc-override`,
-`colors.toml`, `colors/muthur.lua`) live alongside their tracked static
+`colors.toml`, `colors/muthur.lua`, `themes/muthur.theme`) live alongside their tracked static
 config — see `.gitignore`. `nvim/` is symlinked as a whole directory like
 the others; `herdr/config.toml` is symlinked individually since the rest of
 `~/.config/herdr/` is runtime state that doesn't belong in this repo.
