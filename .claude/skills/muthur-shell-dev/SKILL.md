@@ -101,7 +101,7 @@ Before believing a stale-looking frame, re-capture: a hot reload or a
 - `~/.config/nvim/colors/muthur.lua` — validate with
   `nvim --headless -u NONE -c 'set rtp+=~/.config/nvim' -c 'colorscheme muthur' -c q`.
 - `~/.config/fuzzel/colors.ini` (colors + `font=...:pixelsize=N`),
-  `~/.config/labwc/themerc-override`, herdr's `config.toml` block,
+  `~/.config/labwc/themerc-override`,
   `~/.config/hypr/colors.lua` (require()d by `dotfiles/hypr/hyprland.lua`;
   the writer runs `hyprctl reload` — check with
   `hyprctl getoption general:col.active_border` and `hyprctl configerrors`).

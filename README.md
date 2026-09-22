@@ -172,9 +172,9 @@ else the shell manages, using whatever mechanism each tool supports:
 | **Hyprland** | `hyprland.lua` `require()`s a generated Lua table (active and inactive border colors) and is told to `hyprctl reload`; it falls back to grey when the file isn't there yet | `hypr/colors.lua` |
 | **niri** | `config.kdl` `include`s a generated KDL fragment (active, inactive and urgent border colors; niri merges it into `layout { border {} }`), and niri reloads on its own when the file changes. A missing include is fatal to niri, so `install.sh` seeds a grey one | `niri/colors.kdl` |
 | **alacritty** | `alacritty.toml`'s `general.import` (16 ANSI colors, cursor, selection, window opacity). Alacritty only makes its *default* background translucent, so below 100% the Neovim and btop themes are regenerated to leave their window background unpainted and show through | `colors.toml` |
-| **herdr** | no include mechanism exists, so the `[theme.custom]` block in `config.toml` is patched in place between marker comments, then `herdr server reload-config` applies it live | *(in place)* |
 | **Neovim (LazyVim)** | a real colorscheme (`colors/muthur.lua`, ~140 highlight groups incl. treesitter/LSP/diagnostics, plus the 16 terminal colors) that a plugin spec sets as `opts.colorscheme`; a file watcher in `lua/config/autocmds.lua` re-applies it in already-open instances the moment it's regenerated | `colors/muthur.lua` |
 | **btop** | a theme file in its `themes/` directory (hex colors only, so it's generated: one border color for every box, inverted selection, green→yellow→red level gradients); `btop.conf` selects it, and a running btop reloads it on `SIGUSR2`, which is sent after every write | `themes/muthur.theme` |
+| **herdr** | nothing generated: its built-in `terminal` theme draws with the terminal's ANSI colors, so it follows alacritty's palette by itself (herdr has no include mechanism, and patching the tracked `config.toml` would dirty the repo on every preset switch) | *(static config)* |
 | **starship** | nothing generated: `starship.toml` only uses ANSI color names (`green`, `bright-black`…), so the prompt follows alacritty's palette by itself | *(static config)* |
 | **yazi** | nothing generated either: `theme.toml` uses only ANSI color names, so the file manager follows alacritty's palette live, open windows included. It's also styled to match — plain lines for borders, `[ LABELS ]`, inverted hover, and every icon rule emptied out so a row is just its name | *(static config)* |
 | **swaybg** | restarted with the wallpaper, or the theme's background color when none is set | *(process)* |
@@ -190,7 +190,7 @@ Every preset is a full palette in [pywal](https://github.com/dylanaraps/pywal)'s
 generator produces. The shell's own four colors derive from it (bg =
 background, fg = foreground, dim = color8, focus = cursor), and the twelve
 hue slots are deliberately muted and pulled toward each theme's base:
-alacritty's ANSI colors, herdr's tokens and the editor's syntax groups get
+alacritty's ANSI colors and the editor's syntax groups get
 their usual meanings (strings green, errors red, keywords blue…) yet still
 read as one phosphor screen rather than a rainbow. The shell itself uses
 those slots sparingly and by meaning — level bars go green/yellow/red,
@@ -235,7 +235,7 @@ dotfiles/
   hypr/               the same for Hyprland (Lua config), themed via the generated colors.lua
   niri/               the same for niri (KDL config), themed via the generated colors.kdl
   alacritty/          terminal config, themed
-  herdr/              config.toml for the terminal workspace manager, themed
+  herdr/              config.toml for the terminal workspace manager, themed via ANSI colors
   nvim/               LazyVim config, themed (and live-reloaded)
   yazi/               file manager config in the shell's style, themed via ANSI colors
   btop/               system monitor config, themed

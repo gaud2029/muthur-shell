@@ -5,29 +5,6 @@
 onboarding = false
 
 [theme]
-# "terminal" is the closest built-in base to override cleanly; every
-# token below replaces it anyway.
+# "terminal" draws with the terminal's 16 ANSI colors, so herdr follows
+# alacritty's generated palette (and every preset switch) by itself.
 name = "terminal"
-
-[theme.custom]
-# --- BEGIN generated (ThemeStore.qml writeHerdrTheme) ---
-accent = "#ff5fa8"
-panel_bg = "#0f1216"
-sidebar_bg = "#0f1216"
-active_row_bg = "#465058"
-selection_bg = "#465058"
-surface0 = "#181c22"
-surface1 = "#465058"
-surface_dim = "#0f1216"
-overlay0 = "#465058"
-overlay1 = "#a8b8b8"
-text = "#8ed4cc"
-subtext0 = "#a8b8b8"
-mauve = "#c070c8"
-green = "#60c8a0"
-yellow = "#c8b870"
-red = "#e05070"
-blue = "#5a8ad8"
-teal = "#8ed4cc"
-peach = "#e0d090"
-# --- END generated ---

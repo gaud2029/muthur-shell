@@ -577,74 +577,8 @@ QtObject {
         );
     }
 
-    // Keeps herdr's UI theme in sync. herdr's config.toml has no
-    // import/include mechanism (confirmed against its own docs), so
-    // unlike fuzzel/labwc/alacritty there's no separate file to
-    // generate — this patches the [theme.custom] block in place between
-    // marker comments, leaving the rest of the (git-tracked, symlinked)
-    // config.toml untouched. If the markers are missing — file not
-    // installed yet, or hand-edited away — this does nothing rather
-    // than guess where to write.
-    readonly property FileView herdrConfig: FileView {
-        path: Quickshell.env("HOME") + "/.config/herdr/config.toml"
-        printErrors: true
-        // Read-modify-write needs .text() to return the current file
-        // synchronously, unlike the write-only FileViews above.
-        blockLoading: true
-        // setText() otherwise saves asynchronously, so the
-        // `herdr server reload-config` right after it could run before
-        // the write actually lands on disk — reloading the *previous*
-        // preset's colors and only catching up on the next call.
-        blockWrites: true
-    }
-
-    function writeHerdrTheme() {
-        const bg = root.colorBg.toString();
-        const fg = root.colorFg.toString();
-        const dim = root.colorDim.toString();
-        const focus = root.colorFocus.toString();
-
-        const beginMarker = "# --- BEGIN generated (ThemeStore.qml writeHerdrTheme) ---";
-        const endMarker = "# --- END generated ---";
-        const text = root.herdrConfig.text();
-        const beginIdx = text.indexOf(beginMarker);
-        const endIdx = text.indexOf(endMarker);
-        if (beginIdx === -1 || endIdx === -1 || endIdx < beginIdx)
-            return;
-
-        const body =
-            "accent = \"" + focus + "\"\n" +
-            "panel_bg = \"" + bg + "\"\n" +
-            "sidebar_bg = \"" + bg + "\"\n" +
-            "active_row_bg = \"" + dim + "\"\n" +
-            "selection_bg = \"" + dim + "\"\n" +
-            "surface0 = \"" + root.color(0) + "\"\n" +
-            "surface1 = \"" + dim + "\"\n" +
-            "surface_dim = \"" + bg + "\"\n" +
-            "overlay0 = \"" + dim + "\"\n" +
-            "overlay1 = \"" + root.color(7) + "\"\n" +
-            "text = \"" + fg + "\"\n" +
-            "subtext0 = \"" + root.color(7) + "\"\n" +
-            "mauve = \"" + root.color(5) + "\"\n" +
-            "green = \"" + root.color(2) + "\"\n" +
-            "yellow = \"" + root.color(3) + "\"\n" +
-            "red = \"" + root.color(1) + "\"\n" +
-            "blue = \"" + root.color(4) + "\"\n" +
-            "teal = \"" + root.color(6) + "\"\n" +
-            "peach = \"" + root.color(11) + "\"\n";
-
-        root.herdrConfig.setText(
-            text.substring(0, beginIdx + beginMarker.length) + "\n" +
-            body +
-            text.substring(endIdx)
-        );
-        // Harmless no-op if herdr's server isn't running.
-        Quickshell.execDetached(["herdr", "server", "reload-config"]);
-    }
-
     // Keeps the "muthur" Neovim colorscheme in sync. colors/muthur.lua
-    // is nothing but color, so — unlike herdr's config.toml — it's
-    // fully regenerated each time rather than patched in place.
+    // is nothing but color, so it's fully regenerated each time.
     // LazyVim is told to use it by the separately-tracked (static)
     // dotfiles/nvim/plugins/muthur-theme.lua. Syntax groups map onto the
     // palette's 16 slots with their usual meanings (strings green,
@@ -824,7 +758,6 @@ QtObject {
         root.writeHyprlandTheme();
         root.writeNiriTheme();
         root.writeAlacrittyColors();
-        root.writeHerdrTheme();
         root.writeNvimTheme();
         root.writeBtopTheme();
         // The solid background follows the preset when no image is set.
@@ -838,7 +771,6 @@ QtObject {
         root.writeHyprlandTheme();
         root.writeNiriTheme();
         root.writeAlacrittyColors();
-        root.writeHerdrTheme();
         root.writeNvimTheme();
         root.writeBtopTheme();
         if (root.wallpaper)
