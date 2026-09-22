@@ -84,7 +84,8 @@ From the end of the bar:
 - **`[SYS]`** — the system panel (below).
 - **`[+]`** — the drawer: system tray, MPRIS "now playing" with
   previous / play-pause / next, and along its bottom edge the session
-  controls — `LOCK` (`swaylock`), `LOGOUT` (`labwc --exit`), `SUSPEND` and
+  controls — `LOCK` (`swaylock`), `LOGOUT` (`labwc --exit`, or Hyprland's
+  exit dispatcher when running there), `SUSPEND` and
   `POWER OFF` (`systemctl`). The last three arm on a first click and run
   on a second within four seconds, so a stray click can't put the session
   down.
@@ -165,6 +166,7 @@ else the shell manages, using whatever mechanism each tool supports:
 |---|---|---|
 | **fuzzel** | `fuzzel.ini` `include=`s a generated file (colors and font) | `colors.ini` |
 | **labwc** | `themerc-override` (labwc's own override mechanism; no `<theme><name>` is set, so it's the *only* file that applies — structural settings like button size and title alignment live here too) | `themerc-override` |
+| **Hyprland** | `hyprland.lua` `require()`s a generated Lua table (active and inactive border colors) and is told to `hyprctl reload`; it falls back to grey when the file isn't there yet | `hypr/colors.lua` |
 | **alacritty** | `alacritty.toml`'s `general.import` (16 ANSI colors, cursor, selection, window opacity). Alacritty only makes its *default* background translucent, so below 100% the Neovim and btop themes are regenerated to leave their window background unpainted and show through | `colors.toml` |
 | **herdr** | no include mechanism exists, so the `[theme.custom]` block in `config.toml` is patched in place between marker comments, then `herdr server reload-config` applies it live | *(in place)* |
 | **Neovim (LazyVim)** | a real colorscheme (`colors/muthur.lua`, ~140 highlight groups incl. treesitter/LSP/diagnostics, plus the 16 terminal colors) that a plugin spec sets as `opts.colorscheme`; a file watcher in `lua/config/autocmds.lua` re-applies it in already-open instances the moment it's regenerated | `colors/muthur.lua` |
@@ -173,6 +175,10 @@ else the shell manages, using whatever mechanism each tool supports:
 | **yazi** | nothing generated either: `theme.toml` uses only ANSI color names, so the file manager follows alacritty's palette live, open windows included. It's also styled to match — plain lines for borders, `[ LABELS ]`, inverted hover, and every icon rule emptied out so a row is just its name | *(static config)* |
 | **swaybg** | restarted with the wallpaper, or the theme's background color when none is set | *(process)* |
 | **Claude Code** | not generated at all — `~/.claude/settings.json` has `"theme": "dark-ansi"`, so it renders with the terminal's 16 ANSI colors and inherits alacritty's automatically | *(static setting)* |
+
+<img src="docs/screenshots/desktop-hyprland.png" alt="Cyberpunk 2077 preset on Hyprland: three tiled terminals with 1px borders in the preset's colors, and three workspace tiles on the bar" width="960">
+
+*Preset: **Cyberpunk 2077** over a wallpaper at 94% terminal opacity — on **Hyprland**: Neovim on `hyprland.lua`, fastfetch and yazi tiled with 1px borders in the preset's colors, and workspaces `1 2 3` on the bar.*
 
 Every preset is a full palette in [pywal](https://github.com/dylanaraps/pywal)'s
 `colors.json` shape — `special.background/foreground/cursor` plus
