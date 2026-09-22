@@ -5,3 +5,4 @@ dotfiles/hypr/colors.lua
 dotfiles/alacritty/colors.toml
 dotfiles/nvim/colors/muthur.lua
 dotfiles/btop/themes/muthur.theme
+__pycache__/
