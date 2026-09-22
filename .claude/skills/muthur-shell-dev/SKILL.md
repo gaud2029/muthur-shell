@@ -9,8 +9,11 @@ description: Use when testing changes to the muthur-shell quickshell config (the
 
 The shell runs via `quickshell -c muthur`, which resolves to
 `~/.config/quickshell/muthur/shell.qml` — a symlink into
-`dotfiles/quickshell/muthur/` created by `./install.sh`. The compositor is
-labwc (`XDG_CURRENT_DESKTOP=labwc:wlroots`); niri is only a fallback path.
+`dotfiles/quickshell/muthur/` created by `./install.sh`. The compositor is labwc
+(`XDG_CURRENT_DESKTOP=labwc:wlroots`) or Hyprland (`XDG_CURRENT_DESKTOP=Hyprland`,
+`HYPRLAND_INSTANCE_SIGNATURE` set — `Workspaces.qml` then reads
+`HyprlandWorkspaces.qml` instead of ext-workspace-v1); niri is only a
+fallback path.
 
 **Quickshell hot-reloads QML files on save.** Most edits need no restart at
 all — just save and re-check. Restart for structural issues (a new file, a
@@ -100,6 +103,15 @@ Before believing a stale-looking frame, re-capture: a hot reload or a
   are plain Python and can be run directly to inspect their JSON.
 - An MPRIS player for the drawer: generate a WAV with Python's `wave`
   module and `audacious -H tone.wav` (headless); `pkill -x audacious` after.
+- Hyprland with a Lua config (`~/.config/hypr/hyprland.lua`) rejects the
+  classic `hyprctl dispatch workspace 3` (exit 7, "`)` expected"); use
+  `hyprctl dispatch 'hl.dsp.focus({ workspace = 3 })'`,
+  `'hl.dsp.window.move({ workspace = 3 })'` (moves the *focused* window —
+  don't run it from the terminal you're working in). To populate a
+  workspace, focus it, launch `alacritty --class preview -e sh -c 'sleep 600' &`
+  and wait ~2 s before switching away, or the window maps on the
+  workspace you moved to. A bell (`printf '\a'`) from an unfocused
+  alacritty marks its workspace urgent. Workspaces vanish when emptied.
 - Brightness: `busctl call org.freedesktop.login1 /org/freedesktop/login1/session/auto org.freedesktop.login1.Session SetBrightness ssu backlight amdgpu_bl1 <raw>`
   works without root; restore to `max_brightness` (65535) afterwards.
 

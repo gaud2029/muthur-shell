@@ -1,13 +1,15 @@
 import QtQuick
 import Quickshell.WindowManager
 
-// Workspace tiles for this bar's output. Sourced from ext-workspace-v1
-// (labwc, or any compositor implementing it) through Quickshell's
-// WindowManager; falls back to the niri IPC bridge when the compositor
-// exposes no workspaces that way.
+// Workspace tiles for this bar's output. Sourced from Hyprland's own IPC
+// when running there, otherwise from ext-workspace-v1 (labwc, or any
+// compositor implementing it) through Quickshell's WindowManager, and
+// falls back to the niri IPC bridge when the compositor exposes no
+// workspaces that way.
 AxisGrid {
     id: root
 
+    property var hyprland
     property var niri
     property string outputName
     property var screen: null
@@ -21,24 +23,40 @@ AxisGrid {
         return screens.length === 0 || screens.some(s => root.screen && s.name === root.screen.name);
     }
 
-    // Each entry keeps a reference to its live source object so the
-    // delegate can bind to `active`/`urgent` directly instead of this
-    // list being rebuilt on every focus change.
+    // Names longer than a tile show their position instead.
+    function labelFor(name, i) {
+        return name.length <= 2 ? name : String(i + 1);
+    }
+
+    // Each entry is { label, state, activate }. `state` is the live source
+    // object (with `active`/`urgent`) so the delegate can bind to it
+    // directly instead of this list being rebuilt on every focus change;
+    // niri's workspaces are plain JSON replaced wholesale, so the list
+    // itself is rebuilt there.
     readonly property var entries: {
+        if (root.hyprland) {
+            return root.hyprland.workspaces
+                .filter(ws => ws.monitor && ws.monitor.name === root.outputName)
+                .map((ws, i) => ({
+                    label: root.labelFor(ws.name, i),
+                    state: ws,
+                    activate: () => root.hyprland.focusWorkspace(ws)
+                }));
+        }
         const sets = WindowManager.windowsets.filter(ws => ws.shouldDisplay && root.onThisOutput(ws));
         if (sets.length > 0) {
             return sets.map((ws, i) => ({
-                label: ws.name.length <= 2 ? ws.name : String(i + 1),
-                windowset: ws,
-                niriWorkspace: null
+                label: root.labelFor(ws.name, i),
+                state: ws,
+                activate: () => ws.activate()
             }));
         }
         if (!root.niri)
             return [];
         return root.niri.workspaces.filter(ws => ws.output === root.outputName).map(ws => ({
             label: String(ws.idx),
-            windowset: null,
-            niriWorkspace: ws
+            state: { active: ws.is_focused, urgent: false },
+            activate: () => root.niri.focusWorkspace(ws.idx)
         }));
     }
 
@@ -49,8 +67,8 @@ AxisGrid {
             id: tile
             required property var modelData
 
-            readonly property bool active: modelData.windowset ? modelData.windowset.active : modelData.niriWorkspace.is_focused
-            readonly property bool urgent: modelData.windowset ? modelData.windowset.urgent : false
+            readonly property bool active: modelData.state.active
+            readonly property bool urgent: modelData.state.urgent
 
             width: theme.tile
             height: theme.tile
@@ -69,12 +87,7 @@ AxisGrid {
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                    if (tile.modelData.windowset)
-                        tile.modelData.windowset.activate();
-                    else
-                        root.niri.focusWorkspace(tile.modelData.niriWorkspace.idx);
-                }
+                onClicked: tile.modelData.activate()
             }
         }
     }

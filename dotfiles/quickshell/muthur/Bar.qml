@@ -5,6 +5,7 @@ PanelWindow {
     id: root
 
     property var niri
+    property var hyprland
     property var popupPanels: [controlPanel, aiPanel, calendarPanel, batteryPanel]
 
     readonly property string position: theme.barPosition
@@ -141,6 +142,7 @@ PanelWindow {
             Workspaces {
                 id: workspaces
                 niri: root.niri
+                hyprland: root.hyprland
                 screen: root.screen
                 outputName: root.screen ? root.screen.name : ""
             }

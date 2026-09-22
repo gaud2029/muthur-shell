@@ -1,8 +1,9 @@
 # muthur-shell
 
 A [Quickshell](https://quickshell.outfoxxed.me/) desktop shell for
-[labwc](https://labwc.github.io/) (and [niri](https://github.com/YaLTeR/niri))
-that looks like a computer from a film: it started as the MU/TH/UR 6000
+[labwc](https://labwc.github.io/) (and [Hyprland](https://hypr.land/) or
+[niri](https://github.com/YaLTeR/niri)) that looks like a computer from a
+film: it started as the MU/TH/UR 6000
 terminal from *Alien* and grew into a sci-fi / cyberpunk desktop in
 general — one shell, twenty-five palettes, from the Nostromo's bone-white
 corridors to Night City neon — on top of an old-school, simple Unix
@@ -53,9 +54,11 @@ From the start of the bar:
   `fuzzel` right beside it, wherever the bar is (`Super+Space` does the
   same from labwc).
 - **Workspaces** — one tile per workspace, read through
-  `ext-workspace-v1` (labwc, or any compositor implementing it) with
-  niri's IPC as the fallback. Click to switch; urgent ones are
-  highlighted. The labwc config defines four (`Super+1..4` to go,
+  `ext-workspace-v1` (labwc, or any compositor implementing it), through
+  Quickshell's native Hyprland module on Hyprland (special workspaces
+  hidden, named ones after the numbered; switching works with both the
+  classic and the Lua `hyprctl dispatch` syntax), and through niri's IPC
+  as the fallback. Click to switch; urgent ones are highlighted. The labwc config defines four (`Super+1..4` to go,
   `Super+Shift+1..4` to send the window along, `Super+F` fullscreen,
   `Super+Return` a terminal, `Super+E` the file manager — yazi, in a
   terminal).
