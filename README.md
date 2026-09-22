@@ -11,7 +11,9 @@ stay the same whatever the palette: monospace text, scanlines, sharp
 rectangular borders, no rounded corners, no icons — everything is a
 `[ LABEL ]`.
 
-<img src="docs/screenshots/desktop-look.png" alt="Neo in the Matrix: the bar along the bottom, Neovim in alacritty, and the [SYS] > [LOOK] panel" width="960">
+<img src="docs/screenshots/desktop-look.png" alt="Neo in the Matrix preset: the bar along the bottom, Neovim in alacritty, and the [SYS] > [LOOK] panel" width="960">
+
+*Preset: **Neo in the Matrix** — Neovim in alacritty, and `[SYS] > [LOOK]` open on the preset list.*
 
 The theme doesn't stop at the shell: `ThemeStore.qml` is the single source
 of truth for the active palette and pushes it out live to every other
@@ -83,6 +85,10 @@ From the end of the bar:
   on a second within four seconds, so a stray click can't put the session
   down.
 
+<img src="docs/screenshots/desktop-blade-runner.png" alt="Blade Runner preset with btop in alacritty and the [POW] battery panel open" width="960">
+
+*Preset: **Blade Runner** — btop in alacritty, and the `[POW]` panel open.*
+
 Only one of the `[SYS]` / `[AI]` / clock / `[POW]` panels is open at a
 time; the drawer is independent and can sit alongside one. Every popup
 closes on <kbd>Escape</kbd>, and they overlay windows rather than
@@ -123,7 +129,13 @@ reserving space, so the tiling layout never shifts.
 
   All of it persists in `theme.ini` (gitignored) and applies immediately.
 
-<img src="docs/screenshots/desktop-wallpaper.png" alt="A theme generated from the Weyland-Yutani wallpaper, with fuzzel and the [+] drawer open" width="960">
+<img src="docs/screenshots/desktop-wallpaper.png" alt="Monochrome preset over a wallpaper at 90% terminal opacity, with Neovim, yazi and the [+] drawer open" width="960">
+
+*Preset: **Monochrome**, with a wallpaper set and **terminal opacity at 90%** — Neovim and yazi let the image show through, and the `[+]` drawer is open.*
+
+<img src="docs/screenshots/desktop-akira-wallpaper.png" alt="A palette generated from an Akira wallpaper, with fastfetch in a translucent terminal over it" width="960">
+
+*Preset: **Wallpaper** — the palette generated from an *Akira* wallpaper (Kaneda red pulled from the poster), with fastfetch in a terminal at **94% opacity** so the poster reads through it.*
 
 ## `[AI]` — Claude Code / Codex usage
 
@@ -136,7 +148,9 @@ cached input counted like the CLIs do). Each tab has a `DEFAULT` toggle:
 that agent's session bar then lives under the `[AI]` button, refreshed
 every 10 minutes in the background (every minute while its tab is open).
 
-<img src="docs/screenshots/desktop-tron.png" alt="Tron preset with the [AI] panel open" width="960">
+<img src="docs/screenshots/desktop-tron.png" alt="Tron preset with Neovim on a QML file and the [AI] panel open" width="960">
+
+*Preset: **Tron** — Neovim on a QML file, and the `[AI]` panel on the Claude Code tab.*
 
 ## Beyond the shell — theming the rest of the desktop
 
