@@ -12,6 +12,9 @@ stay the same whatever the palette: monospace text, scanlines, sharp
 rectangular borders, no rounded corners, no icons — everything is a
 `[ LABEL ]`.
 
+## video demonstration
+https://www.youtube.com/watch?v=jaJeYJUHUKg
+
 <img src="docs/screenshots/desktop-look.png" alt="Neo in the Matrix preset: the bar along the bottom, Neovim in alacritty, and the [SYS] > [LOOK] panel" width="960">
 
 *Preset: **Neo in the Matrix** — Neovim in alacritty, and `[SYS] > [LOOK]` open on the preset list.*
