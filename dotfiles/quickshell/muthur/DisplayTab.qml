@@ -5,7 +5,8 @@ import Quickshell.Io
 // Screen brightness. Reads the kernel backlight devices under
 // /sys/class/backlight and sets them through logind's SetBrightness,
 // which the active session may call without root or a helper like
-// brightnessctl. External monitors (DDC/CI) aren't covered.
+// brightnessctl. External monitors (DDC/CI) aren't covered. Output layout
+// (position, mode, scale) is left to wdisplays, launched from the header.
 Item {
     id: root
 
@@ -49,12 +50,25 @@ Item {
             width: parent.width
             spacing: theme.gridUnit * 3
 
-            Text {
-                text: "DISPLAY"
-                color: theme.colorFg
-                font.family: theme.fontFamily
-                font.pixelSize: theme.fontSize
-                font.letterSpacing: theme.letterSpacing
+            Item {
+                width: parent.width
+                height: theme.gridUnit * 3
+
+                Text {
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "DISPLAY"
+                    color: theme.colorFg
+                    font.family: theme.fontFamily
+                    font.pixelSize: theme.fontSize
+                    font.letterSpacing: theme.letterSpacing
+                }
+
+                TerminalButton {
+                    anchors.right: parent.right
+                    label: "ARRANGE"
+                    onClicked: Quickshell.execDetached(["wdisplays"])
+                }
             }
 
             Text {

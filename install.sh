@@ -24,6 +24,7 @@ PACKAGES=(
   btop           # system monitor (dotfiles/btop + the generated theme)
   swaybg         # wallpaper (labwc autostart)
   kanshi         # output profiles (labwc autostart)
+  wdisplays      # output layout GUI ([SYS] > DISPLAY > ARRANGE)
   mako           # notifications (labwc autostart)
   swayidle       # idle timer (labwc autostart)
   swaylock       # locker: idle lock and the drawer's LOCK button

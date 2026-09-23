@@ -134,7 +134,8 @@ reserving space, so the tiling layout never shifts.
 - **DISPLAY** — screen brightness, one slider per kernel backlight device
   (labeled with its output), set through logind's `SetBrightness` so no
   root helper is needed; polls sysfs while open so the brightness keys are
-  reflected. External monitors (DDC/CI) aren't covered.
+  reflected. External monitors (DDC/CI) aren't covered. An **ARRANGE**
+  button opens `wdisplays` for output position, mode and scale.
 - **LOOK** — everything about the appearance:
   - twenty-five color presets, each a full 16-color palette previewed
     in its row — Neo in the Matrix, Blade Runner, Tron, Tron Ares,
