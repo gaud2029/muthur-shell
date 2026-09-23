@@ -95,4 +95,13 @@
     </context>
   </mouse>
 
+  <!--
+    Snap-to-grid: interactive moves/resizes align the window frame to a
+    20px grid. Needs the labwc fork at github.com/gaud2029/labwc (branch
+    snap-to-grid); stock labwc silently ignores <grid>. 0 disables it.
+  -->
+  <snapping>
+    <grid><size>20</size></grid>
+  </snapping>
+
 </labwc_config>

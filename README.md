@@ -42,6 +42,24 @@ without it, and the shell overwrites it on first run), and makes yazi the
 default handler for opening folders. Quickshell hot-reloads on file save, so once it's running most
 changes to the QML don't need a restart.
 
+### Optional: snap-to-grid windows on labwc
+
+The labwc config sets `<snapping><grid><size>20</size></grid></snapping>`,
+which aligns windows to a 20px grid while you move or resize them (on
+resize, only the edges you drag). Stock labwc doesn't have this and
+silently ignores the setting; it comes from a small patch in
+[gaud2029/labwc](https://github.com/gaud2029/labwc/tree/snap-to-grid),
+branched from the 0.20.2 release. To use it:
+
+```sh
+git clone -b snap-to-grid https://github.com/gaud2029/labwc.git
+cd labwc/dev/pkg && makepkg -si   # builds labwc-snapgrid, replaces labwc
+```
+
+Log out and back in to run the new binary. `sudo pacman -S labwc` goes
+back to the stock package. Edge resistance and snapping still take
+precedence over the grid.
+
 ## The bar
 
 A thin strip on one screen edge — left by default, but `[SYS] > [LOOK]`
@@ -231,7 +249,7 @@ dotfiles/
   quickshell/muthur/  the shell (QML) — ThemeStore.qml is the theme hub;
                       scripts/ holds the palette and usage-stats helpers
   fuzzel/             launcher config, themed to match the shell
-  labwc/              window-manager config: themed, 4 workspaces, keybinds, autostart
+  labwc/              window-manager config: themed, 4 workspaces, keybinds, autostart, 20px grid
   hypr/               the same for Hyprland (Lua config), themed via the generated colors.lua
   niri/               the same for niri (KDL config), themed via the generated colors.kdl
   alacritty/          terminal config, themed
