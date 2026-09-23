@@ -143,8 +143,9 @@ reserving space, so the tiling layout never shifts.
     Nostromo, Neuromancer, Akira, Deus Ex, Serial Experiments Lain,
     Cyberpunk 2077, SHODAN, The Fifth Element, RoboCop, Minority Report,
     Johnny Mnemonic, Altered Carbon, Psycho-Pass, Cowboy Bebop,
-    MU-TH-UR 6000, E-Ink and Monochrome. Nostromo, Lain and E-Ink are
-    light;
+    MU-TH-UR 6000, E-Ink and Monochrome, listed in `DARK` and `LIGHT`
+    groups (Nostromo, Lain and E-Ink are light; the WALLPAPER palette is
+    sorted by its background);
   - a **WALLPAPERS PATH** (default `~/Pictures/Wallpapers`) whose images
     show as a thumbnail grid (up to 24). Click one: `scripts/wallpaper-palette.py`
     (ImageMagick, no pywal needed) derives one more preset from the

@@ -232,6 +232,15 @@ QtObject {
     }
     readonly property var presets: wallpaperPalette ? builtinPresets.concat([wallpaperPalette]) : builtinPresets
 
+    // Light or dark by the background's lightness, so the wallpaper
+    // palette sorts itself too. The LOOK tab groups presets by it, and
+    // generated configs pick their light/dark variants from it.
+    function isLightPalette(p) {
+        return Qt.color(p.special.background).hslLightness > 0.5;
+    }
+    readonly property var darkPresets: presets.filter(p => !isLightPalette(p))
+    readonly property var lightPresets: presets.filter(p => isLightPalette(p))
+
     readonly property Settings store: Settings {
         fileName: Quickshell.shellDir + "/theme.ini"
         category: "theme"
@@ -264,6 +273,7 @@ QtObject {
     readonly property color colorFg: palette.special.foreground
     readonly property color colorDim: palette.colors.color8
     readonly property color colorFocus: palette.special.cursor
+    readonly property bool isLight: isLightPalette(palette)
 
     function color(i) {
         return palette.colors["color" + i];
@@ -681,7 +691,7 @@ QtObject {
             "-- hand, changes are overwritten on every preset switch.\n" +
             "vim.cmd(\"hi clear\")\n" +
             "if vim.fn.exists(\"syntax_on\") then vim.cmd(\"syntax reset\") end\n" +
-            "vim.o.background = \"" + (root.colorBg.hslLightness > 0.5 ? "light" : "dark") + "\"\n" +
+            "vim.o.background = \"" + (root.isLight ? "light" : "dark") + "\"\n" +
             "vim.g.colors_name = \"muthur\"\n" +
             "\n" +
             "local bg = \"" + root.colorBg.toString() + "\"\n" +

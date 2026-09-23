@@ -14,6 +14,65 @@ Item {
         font.letterSpacing: theme.letterSpacing
     }
 
+    // One preset: its 16 ANSI slots on its own background, then its name.
+    component PresetRow: Rectangle {
+        id: swatchRow
+        required property var modelData
+        readonly property bool active: ThemeStore.preset === modelData.key
+
+        width: parent ? parent.width : 0
+        height: theme.gridUnit * 8
+        color: "transparent"
+        border.color: active ? theme.colorFocus : theme.colorDim
+        border.width: 1
+
+        Row {
+            anchors.fill: parent
+            anchors.margins: theme.gridUnit * 2
+            spacing: theme.gridUnit * 2
+
+            // The preset's 16 ANSI slots, on its own background.
+            Rectangle {
+                width: swatches.width + theme.gridUnit * 2
+                height: theme.tile
+                color: swatchRow.modelData.special.background
+                border.color: theme.colorDim
+                border.width: 1
+
+                Row {
+                    id: swatches
+                    anchors.centerIn: parent
+                    spacing: 1
+
+                    Repeater {
+                        model: 16
+
+                        Rectangle {
+                            required property int index
+                            width: theme.gridUnit * 2
+                            height: theme.gridUnit * 2
+                            color: swatchRow.modelData.colors["color" + index]
+                        }
+                    }
+                }
+            }
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: (swatchRow.active ? "> " : "  ") + swatchRow.modelData.name
+                color: swatchRow.active ? theme.colorFocus : theme.colorFg
+                font.family: theme.fontFamily
+                font.pixelSize: theme.px(12)
+                font.letterSpacing: theme.letterSpacing
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: ThemeStore.applyPreset(swatchRow.modelData.key)
+        }
+    }
+
     Flickable {
         id: scroller
         anchors.fill: parent
@@ -29,64 +88,32 @@ Item {
 
             SectionHeader { text: "THEME" }
 
+            // Dark presets first, then the light ones, each under a label.
             Repeater {
-                model: ThemeStore.presets
+                model: [
+                    { label: "DARK", presets: ThemeStore.darkPresets },
+                    { label: "LIGHT", presets: ThemeStore.lightPresets }
+                ]
 
-                Rectangle {
-                    id: swatchRow
+                Column {
+                    id: group
                     required property var modelData
-                    readonly property bool active: ThemeStore.preset === modelData.key
-
+                    visible: modelData.presets.length > 0
                     width: parent ? parent.width : 0
-                    height: theme.gridUnit * 8
-                    color: "transparent"
-                    border.color: active ? theme.colorFocus : theme.colorDim
-                    border.width: 1
+                    spacing: theme.gridUnit * 2
 
-                    Row {
-                        anchors.fill: parent
-                        anchors.margins: theme.gridUnit * 2
-                        spacing: theme.gridUnit * 2
-
-                        // The preset's 16 ANSI slots, on its own background.
-                        Rectangle {
-                            width: swatches.width + theme.gridUnit * 2
-                            height: theme.tile
-                            color: swatchRow.modelData.special.background
-                            border.color: theme.colorDim
-                            border.width: 1
-
-                            Row {
-                                id: swatches
-                                anchors.centerIn: parent
-                                spacing: 1
-
-                                Repeater {
-                                    model: 16
-
-                                    Rectangle {
-                                        required property int index
-                                        width: theme.gridUnit * 2
-                                        height: theme.gridUnit * 2
-                                        color: swatchRow.modelData.colors["color" + index]
-                                    }
-                                }
-                            }
-                        }
-
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: (swatchRow.active ? "> " : "  ") + swatchRow.modelData.name
-                            color: swatchRow.active ? theme.colorFocus : theme.colorFg
-                            font.family: theme.fontFamily
-                            font.pixelSize: theme.px(12)
-                            font.letterSpacing: theme.letterSpacing
-                        }
+                    Text {
+                        text: group.modelData.label
+                        color: theme.colorDim
+                        font.family: theme.fontFamily
+                        font.pixelSize: theme.px(11)
+                        font.letterSpacing: theme.letterSpacing
                     }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: ThemeStore.applyPreset(swatchRow.modelData.key)
+                    Repeater {
+                        model: group.modelData.presets
+
+                        PresetRow {}
                     }
                 }
             }
