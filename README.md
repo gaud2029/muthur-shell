@@ -31,7 +31,13 @@ launcher, the window decorations. See "Beyond the shell" below.
 quickshell -c muthur   # launch (labwc's autostart does this for you)
 ```
 
-`install.sh` first installs everything the configs rely on with
+> **Back up your dotfiles first.** The shell takes over your desktop
+> configuration: existing configs are moved aside and replaced, and
+> generated files are rewritten on every theme switch.
+
+`install.sh` only runs on **CachyOS** (it exits on anything else) and
+asks for confirmation before changing anything (`--yes` skips the
+prompt). It first installs everything the configs rely on with
 `sudo pacman -S --needed` — labwc, Hyprland, niri, quickshell, fuzzel, alacritty, starship,
 yazi, btop, swaybg/kanshi/mako/swayidle/swaylock/wlopm for the labwc autostart, Neovim,
 Noto fonts, and the NetworkManager/BlueZ/PipeWire/UPower services the
@@ -42,7 +48,8 @@ manages: the shell itself, plus fuzzel, labwc, Hyprland, niri, alacritty,
 herdr, Neovim, yazi, btop, `~/.bashrc` and the starship prompt, seeds
 niri's generated `colors.kdl` with a grey placeholder (niri won't start
 without it, and the shell overwrites it on first run), and makes yazi the
-default handler for opening folders. Quickshell hot-reloads on file save, so once it's running most
+default handler for opening folders. A `gtk-3.0`/`gtk-4.0` `gtk.css`
+the shell didn't write is backed up too, since the shell regenerates it. Quickshell hot-reloads on file save, so once it's running most
 changes to the QML don't need a restart.
 
 ### Optional: snap-to-grid windows on labwc
