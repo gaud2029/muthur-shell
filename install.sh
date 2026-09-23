@@ -34,7 +34,7 @@ PACKAGES=(
   networkmanager # [SYS] > NETWORK
   bluez          # [SYS] > BT
   bluez-utils    # bluetoothctl, used by the BT tab
-  pipewire       # [SYS] > SOUND
+  pipewire       # [SYS] > AUDIO
   wireplumber
   upower # [POW]
   polkit # lets systemctl suspend/poweroff run without root

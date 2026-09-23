@@ -6,10 +6,6 @@ Item {
 
     Theme { id: theme }
 
-    function deviceLabel(n) {
-        return n.description || n.nickname || n.name;
-    }
-
     function isAudioSink(n) {
         return !n.isStream && (n.type & PwNodeType.AudioSink) === PwNodeType.AudioSink;
     }
@@ -17,6 +13,16 @@ Item {
     function isAudioSource(n) {
         return !n.isStream && (n.type & PwNodeType.AudioSource) === PwNodeType.AudioSource;
     }
+
+    // Wide enough for "MUTED", so the slider doesn't shift on toggle.
+    TextMetrics {
+        id: mutedText
+        text: "MUTED"
+        font.family: theme.fontFamily
+        font.pixelSize: theme.px(11)
+        font.letterSpacing: theme.letterSpacing
+    }
+    readonly property real muteWidth: Math.max(theme.buttonSize, mutedText.advanceWidth + theme.gridUnit * 2)
 
     readonly property var sink: Pipewire.defaultAudioSink
     readonly property var source: Pipewire.defaultAudioSource
@@ -50,69 +56,50 @@ Item {
                 font.letterSpacing: theme.letterSpacing
             }
 
+            Text {
+                text: "OUTPUT"
+                color: theme.colorDim
+                font.family: theme.fontFamily
+                font.pixelSize: theme.px(11)
+                font.letterSpacing: theme.letterSpacing
+            }
+
+            DeviceDropdown {
+                width: parent.width
+                current: root.sink
+                accepts: n => root.isAudioSink(n)
+                onPicked: node => Pipewire.preferredDefaultAudioSink = node
+            }
+
+            // Volume with its mute toggle at the far right, level with the track.
             Item {
                 width: parent.width
-                height: theme.gridUnit * 3
+                height: sinkSlider.implicitHeight
 
-                Text {
+                VolumeSlider {
+                    id: sinkSlider
                     anchors.left: parent.left
-                    text: "OUTPUT"
-                    color: theme.colorDim
-                    font.family: theme.fontFamily
-                    font.pixelSize: theme.px(11)
-                    font.letterSpacing: theme.letterSpacing
+                    anchors.right: sinkMute.left
+                    anchors.rightMargin: theme.gridUnit * 2
+                    label: "VOLUME"
+                    value: root.sink && root.sink.audio ? root.sink.audio.volume : 0
+                    onMoved: v => {
+                        if (root.sink && root.sink.audio) root.sink.audio.volume = v;
+                    }
                 }
 
                 TerminalButton {
+                    id: sinkMute
                     anchors.right: parent.right
+                    // Centered on the slider's track, below its label row.
+                    anchors.verticalCenter: parent.top
+                    anchors.verticalCenterOffset: theme.gridUnit * 5
+                    width: root.muteWidth
                     label: root.sink && root.sink.audio && root.sink.audio.muted ? "MUTED" : "MUTE"
                     selected: !!(root.sink && root.sink.audio && root.sink.audio.muted)
                     onClicked: {
                         if (root.sink && root.sink.audio)
                             root.sink.audio.muted = !root.sink.audio.muted;
-                    }
-                }
-            }
-
-            VolumeSlider {
-                width: parent.width
-                label: root.sink ? root.deviceLabel(root.sink) : "-"
-                value: root.sink && root.sink.audio ? root.sink.audio.volume : 0
-                onMoved: v => {
-                    if (root.sink && root.sink.audio) root.sink.audio.volume = v;
-                }
-            }
-
-            Repeater {
-                model: Pipewire.nodes
-
-                Rectangle {
-                    id: sinkRow
-                    required property var modelData
-                    visible: root.isAudioSink(modelData)
-                    width: parent ? parent.width : 0
-                    height: visible ? theme.gridUnit * 6 : 0
-                    color: "transparent"
-                    border.width: modelData === root.sink ? 1 : 0
-                    border.color: theme.colorFocus
-
-                    Text {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.leftMargin: theme.gridUnit * 2
-                        anchors.rightMargin: theme.gridUnit * 2
-                        anchors.verticalCenter: parent.verticalCenter
-                        elide: Text.ElideRight
-                        text: root.deviceLabel(sinkRow.modelData)
-                        color: sinkRow.modelData === root.sink ? theme.colorFocus : theme.colorFg
-                        font.family: theme.fontFamily
-                        font.pixelSize: theme.px(11)
-                        font.letterSpacing: theme.letterSpacing
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: Pipewire.preferredDefaultAudioSink = sinkRow.modelData
                     }
                 }
             }
@@ -123,69 +110,50 @@ Item {
                 color: theme.colorDim
             }
 
+            Text {
+                text: "INPUT"
+                color: theme.colorDim
+                font.family: theme.fontFamily
+                font.pixelSize: theme.px(11)
+                font.letterSpacing: theme.letterSpacing
+            }
+
+            DeviceDropdown {
+                width: parent.width
+                current: root.source
+                accepts: n => root.isAudioSource(n)
+                onPicked: node => Pipewire.preferredDefaultAudioSource = node
+            }
+
+            // Volume with its mute toggle at the far right, level with the track.
             Item {
                 width: parent.width
-                height: theme.gridUnit * 3
+                height: sourceSlider.implicitHeight
 
-                Text {
+                VolumeSlider {
+                    id: sourceSlider
                     anchors.left: parent.left
-                    text: "INPUT"
-                    color: theme.colorDim
-                    font.family: theme.fontFamily
-                    font.pixelSize: theme.px(11)
-                    font.letterSpacing: theme.letterSpacing
+                    anchors.right: sourceMute.left
+                    anchors.rightMargin: theme.gridUnit * 2
+                    label: "VOLUME"
+                    value: root.source && root.source.audio ? root.source.audio.volume : 0
+                    onMoved: v => {
+                        if (root.source && root.source.audio) root.source.audio.volume = v;
+                    }
                 }
 
                 TerminalButton {
+                    id: sourceMute
                     anchors.right: parent.right
+                    // Centered on the slider's track, below its label row.
+                    anchors.verticalCenter: parent.top
+                    anchors.verticalCenterOffset: theme.gridUnit * 5
+                    width: root.muteWidth
                     label: root.source && root.source.audio && root.source.audio.muted ? "MUTED" : "MUTE"
                     selected: !!(root.source && root.source.audio && root.source.audio.muted)
                     onClicked: {
                         if (root.source && root.source.audio)
                             root.source.audio.muted = !root.source.audio.muted;
-                    }
-                }
-            }
-
-            VolumeSlider {
-                width: parent.width
-                label: root.source ? root.deviceLabel(root.source) : "-"
-                value: root.source && root.source.audio ? root.source.audio.volume : 0
-                onMoved: v => {
-                    if (root.source && root.source.audio) root.source.audio.volume = v;
-                }
-            }
-
-            Repeater {
-                model: Pipewire.nodes
-
-                Rectangle {
-                    id: sourceRow
-                    required property var modelData
-                    visible: root.isAudioSource(modelData)
-                    width: parent ? parent.width : 0
-                    height: visible ? theme.gridUnit * 6 : 0
-                    color: "transparent"
-                    border.width: modelData === root.source ? 1 : 0
-                    border.color: theme.colorFocus
-
-                    Text {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.leftMargin: theme.gridUnit * 2
-                        anchors.rightMargin: theme.gridUnit * 2
-                        anchors.verticalCenter: parent.verticalCenter
-                        elide: Text.ElideRight
-                        text: root.deviceLabel(sourceRow.modelData)
-                        color: sourceRow.modelData === root.source ? theme.colorFocus : theme.colorFg
-                        font.family: theme.fontFamily
-                        font.pixelSize: theme.px(11)
-                        font.letterSpacing: theme.letterSpacing
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: Pipewire.preferredDefaultAudioSource = sourceRow.modelData
                     }
                 }
             }

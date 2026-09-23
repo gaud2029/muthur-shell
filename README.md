@@ -123,14 +123,14 @@ time; the drawer is independent and can sit alongside one. Every popup
 closes on <kbd>Escape</kbd>, and they overlay windows rather than
 reserving space, so the tiling layout never shifts.
 
-## `[SYS]` — network, bluetooth, sound, display, look
+## `[SYS]` — network, bluetooth, audio, display, look
 
 - **NETWORK** — Wi-Fi on/off and the visible networks with signal
   strength.
 - **BT** — devices split into `CONNECTED` / `PAIRED` / `AVAILABLE`; a
   pairing agent auto-registers, so no `bluetoothctl` setup.
-- **SOUND** — output/input volume sliders with mute toggles and a device
-  picker for each.
+- **AUDIO** — output/input volume sliders with mute toggles and a device
+  dropdown for each.
 - **DISPLAY** — screen brightness, one slider per kernel backlight device
   (labeled with its output), set through logind's `SetBrightness` so no
   root helper is needed; polls sysfs while open so the brightness keys are
