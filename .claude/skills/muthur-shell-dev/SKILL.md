@@ -105,6 +105,12 @@ Before believing a stale-looking frame, re-capture: a hot reload or a
   `~/.config/hypr/colors.lua` (require()d by `dotfiles/hypr/hyprland.lua`;
   the writer runs `hyprctl reload` — check with
   `hyprctl getoption general:col.active_border` and `hyprctl configerrors`).
+- Firefox chrome (`chrome/muthur.css`): the user's Firefox is usually open
+  and only reads userChrome at startup, so test in a throwaway profile —
+  `scripts/firefox-theme.py "$(cat <profile>/chrome/muthur.css)" "$S/ffprof"`,
+  then `firefox --no-remote --profile "$S/ffprof" &` and kill that PID only.
+  Variable names change between releases; grep the real ones out of
+  `/usr/lib/firefox/omni.ja` and `browser/omni.ja` (`unzip` the `chrome/` CSS).
 - Validate a Hyprland config without running it:
   `Hyprland --verify-config -c dotfiles/hypr/hyprland.lua`; the Lua API is
   in `/usr/share/hypr/stubs/hl.meta.lua`. `~/.config/hypr` is a symlink to
