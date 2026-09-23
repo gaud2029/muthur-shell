@@ -759,6 +759,21 @@ QtObject {
         Quickshell.execDetached(["pkill", "-USR2", "-x", "btop"]);
     }
 
+    // Tells apps that follow the system style (libadwaita, Qt, Firefox,
+    // Electron...) whether to go light or dark: xdg-desktop-portal serves
+    // this key as org.freedesktop.appearance color-scheme and signals the
+    // change live. GTK3 apps ignore it, so the adw-gtk3 theme (if that's
+    // the one in use) is swapped for its matching light/dark variant.
+    function writeColorScheme() {
+        const light = root.isLight;
+        Quickshell.execDetached(["gsettings", "set", "org.gnome.desktop.interface",
+            "color-scheme", light ? "prefer-light" : "prefer-dark"]);
+        Quickshell.execDetached(["sh", "-c",
+            "case \"$(gsettings get org.gnome.desktop.interface gtk-theme)\" in " +
+            "*adw-gtk3*) gsettings set org.gnome.desktop.interface gtk-theme \"$1\" ;; esac",
+            "sh", light ? "adw-gtk3" : "adw-gtk3-dark"]);
+    }
+
     function applyPreset(key) {
         if (!presets.some(p => p.key === key))
             return;
@@ -770,6 +785,7 @@ QtObject {
         root.writeAlacrittyColors();
         root.writeNvimTheme();
         root.writeBtopTheme();
+        root.writeColorScheme();
         // The solid background follows the preset when no image is set.
         if (!root.wallpaper)
             root.showWallpaper();
@@ -783,6 +799,7 @@ QtObject {
         root.writeAlacrittyColors();
         root.writeNvimTheme();
         root.writeBtopTheme();
+        root.writeColorScheme();
         if (root.wallpaper)
             root.showWallpaper();
     }

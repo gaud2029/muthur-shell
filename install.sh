@@ -38,6 +38,7 @@ PACKAGES=(
   wireplumber
   upower # [POW]
   polkit # lets systemctl suspend/poweroff run without root
+  xdg-desktop-portal-gtk # serves the light/dark color-scheme to apps
 )
 
 install_packages() {

@@ -200,6 +200,7 @@ else the shell manages, using whatever mechanism each tool supports:
 | **herdr** | nothing generated: its built-in `terminal` theme draws with the terminal's ANSI colors, so it follows alacritty's palette by itself (herdr has no include mechanism, and patching the tracked `config.toml` would dirty the repo on every preset switch) | *(static config)* |
 | **starship** | nothing generated: `starship.toml` only uses ANSI color names (`green`, `bright-black`…), so the prompt follows alacritty's palette by itself | *(static config)* |
 | **yazi** | nothing generated either: `theme.toml` uses only ANSI color names, so the file manager follows alacritty's palette live, open windows included. It's also styled to match — plain lines for borders, `[ LABELS ]`, inverted hover, and every icon rule emptied out so a row is just its name | *(static config)* |
+| **Apps on "automatic"** (libadwaita/GTK4, Qt, Firefox, Electron…) | `gsettings set org.gnome.desktop.interface color-scheme prefer-light\|prefer-dark` from the preset's light/dark group; xdg-desktop-portal serves it as `org.freedesktop.appearance color-scheme` and apps switch live. GTK3 apps ignore it, so an `adw-gtk3` theme is swapped for `adw-gtk3`/`adw-gtk3-dark` to match | *(gsettings)* |
 | **swaybg** | restarted with the wallpaper, or the theme's background color when none is set | *(process)* |
 | **Claude Code** | not generated at all — `~/.claude/settings.json` has `"theme": "dark-ansi"`, so it renders with the terminal's 16 ANSI colors and inherits alacritty's automatically | *(static setting)* |
 
