@@ -20,6 +20,22 @@
     <action name="ToggleAlwaysOnTop" />
   </item>
   <!--
+    Titlebar on the top, left or right of this window. Needs the labwc
+    fork's vertical-titlebar branch; stock labwc logs an error for
+    SetTitlebarPosition and the items do nothing.
+  -->
+  <menu id="client-titlebar-menu" label="Titlebar">
+    <item label="Top">
+      <action name="SetTitlebarPosition" position="top" />
+    </item>
+    <item label="Left">
+      <action name="SetTitlebarPosition" position="left" />
+    </item>
+    <item label="Right">
+      <action name="SetTitlebarPosition" position="right" />
+    </item>
+  </menu>
+  <!--
     Any menu with the id "workspaces" will be hidden
     if there is only a single workspace available.
   -->
