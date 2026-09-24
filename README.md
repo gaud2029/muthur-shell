@@ -52,23 +52,29 @@ default handler for opening folders. A `gtk-3.0`/`gtk-4.0` `gtk.css`
 the shell didn't write is backed up too, since the shell regenerates it. Quickshell hot-reloads on file save, so once it's running most
 changes to the QML don't need a restart.
 
-### Optional: snap-to-grid windows on labwc
+### Optional: snap-to-grid and angled corners on labwc
 
-The labwc config sets `<snapping><grid><size>20</size></grid></snapping>`,
-which aligns windows to a 20px grid while you move or resize them (on
-resize, only the edges you drag). Stock labwc doesn't have this and
-silently ignores the setting; it comes from a small patch in
-[gaud2029/labwc](https://github.com/gaud2029/labwc/tree/snap-to-grid),
-branched from the 0.20.2 release. To use it:
+Two settings in the labwc config need a patched labwc:
+
+- `<snapping><grid><size>10</size></grid></snapping>` aligns windows to a
+  10px grid while you move or resize them (on resize, only the edges you
+  drag). Edge resistance and snapping still take precedence over the grid.
+- `<corners>` cuts the titlebar's top corners at 45 degrees (16px on the
+  left, 8px on the right) instead of rounding them.
+
+Stock labwc has neither: it silently ignores both and keeps square
+corners. They come from small patches in
+[gaud2029/labwc](https://github.com/gaud2029/labwc/tree/angled-corner),
+branched from the 0.20.2 release (the `angled-corner` branch has both,
+`snap-to-grid` only the grid). To use them:
 
 ```sh
-git clone -b snap-to-grid https://github.com/gaud2029/labwc.git
+git clone -b angled-corner https://github.com/gaud2029/labwc.git
 cd labwc/dev/pkg && makepkg -si   # builds labwc-snapgrid, replaces labwc
 ```
 
 Log out and back in to run the new binary. `sudo pacman -S labwc` goes
-back to the stock package. Edge resistance and snapping still take
-precedence over the grid.
+back to the stock package.
 
 ## The bar
 
@@ -264,7 +270,7 @@ dotfiles/
   quickshell/muthur/  the shell (QML) — ThemeStore.qml is the theme hub;
                       scripts/ holds the palette and usage-stats helpers
   fuzzel/             launcher config, themed to match the shell
-  labwc/              window-manager config: themed, 4 workspaces, keybinds, autostart, 20px grid
+  labwc/              window-manager config: themed, 4 workspaces, keybinds, autostart, 10px grid, angled corners
   hypr/               the same for Hyprland (Lua config), themed via the generated colors.lua
   niri/               the same for niri (KDL config), themed via the generated colors.kdl
   alacritty/          terminal config, themed
