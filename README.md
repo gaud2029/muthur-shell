@@ -38,7 +38,8 @@ quickshell -c muthur   # launch (labwc's autostart does this for you)
 asks for confirmation before changing anything (`--yes` skips the
 prompt). It first installs everything the configs rely on with
 `sudo pacman -S --needed` — labwc, quickshell, fuzzel, alacritty, starship,
-yazi, btop, swaybg/kanshi/mako/swayidle/swaylock/wlopm for the labwc autostart,
+yazi, btop, swaybg/kanshi/mako/swayidle/wlopm for the labwc autostart (and
+swaylock, the fallback locker),
 grim/slurp/wl-clipboard for the screenshot keys, Neovim,
 Noto fonts, and the NetworkManager/BlueZ/PipeWire/UPower services the
 panels talk to (`--no-packages` skips this; herdr isn't packaged and is
@@ -121,7 +122,7 @@ From the end of the bar:
 - **`[SYS]`** — the system panel (below).
 - **`[+]`** — the drawer: system tray, MPRIS "now playing" with
   previous / play-pause / next, and along its bottom edge the session
-  controls — `LOCK` (`swaylock`), `LOGOUT` (`labwc --exit`), `SUSPEND` and
+  controls — `LOCK` (the lock screen below), `LOGOUT` (`labwc --exit`), `SUSPEND` and
   `POWER OFF` (`systemctl`). The last three arm on a first click and run
   on a second within four seconds, so a stray click can't put the session
   down.
@@ -197,6 +198,41 @@ every 10 minutes in the background (every minute while its tab is open).
 <img src="docs/screenshots/desktop-tron.png" alt="Tron preset with Neovim on a QML file and the [AI] panel open" width="960">
 
 *Preset: **Tron** — Neovim on a QML file, and the `[AI]` panel on the Claude Code tab.*
+
+## The lock screen — MU/TH/UR 6000
+
+Locking (the drawer's `LOCK`, or swayidle after 5 minutes idle and before
+suspend) turns every screen into the MU/TH/UR 6000 terminal on an old CRT:
+the tube powers on — a beam opening into the picture — and MU/TH/UR types
+its greeting and asks for an ident under a big clock, over the wireframe
+ground plane of the Nostromo's descent displays, with scanlines, a rolling
+band, the odd flicker and a phosphor glow, all in the active preset's
+colors.
+
+- **Type the password and press Enter.** It shows as `*`; Backspace,
+  Ctrl+Backspace / Ctrl+U / Escape to clear. `VERIFYING IDENT` sweeps
+  while PAM decides; a refusal tears and shakes the picture and MU/TH/UR
+  answers in red; `ACCESS GRANTED` in green, then the tube collapses to a
+  line and a dot and the session unlocks.
+- **Authentication** goes through PAM's `login` stack, like swaylock, so
+  the system's policy applies — including faillock (by default three
+  failures lock the account for 10 minutes; MU/TH/UR relays PAM's
+  messages).
+- **Idle**: after 30 s at an empty prompt everything but the clock dims and
+  the picture drifts a few pixels a minute, to spare the panel.
+- **From outside**: `quickshell ipc -c muthur call lock lock`.
+  `scripts/lock.sh` does that and waits for the compositor to confirm the
+  lock (so swayidle's `before-sleep` can't suspend first), falling back to
+  swaylock when the shell isn't running.
+- **If the shell restarts while locked** (a hot reload, or a crash), the
+  compositor keeps the session locked and a new instance locks again on its
+  own (a flag in `$XDG_RUNTIME_DIR` remembers). Should the shell be dead
+  for good, switch to a TTY and start it again with
+  `WAYLAND_DISPLAY=wayland-0 quickshell -c muthur -d`: it comes back up
+  locked, and unlocks with your password.
+
+`CrtScreen.qml` (the tube) and `VectorTerrain.qml` (the ground plane) are
+separate pieces so the coming screensaver can share them.
 
 ## Beyond the shell — theming the rest of the desktop
 

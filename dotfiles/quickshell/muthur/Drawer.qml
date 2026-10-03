@@ -78,7 +78,7 @@ PanelWindow {
 
         TerminalButton {
             label: "LOCK"
-            onClicked: Quickshell.execDetached(["swaylock", "-f", "-c", "000000"])
+            onClicked: LockScreen.lock()
         }
         ConfirmButton {
             action: "LOGOUT"

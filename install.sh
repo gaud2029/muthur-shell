@@ -68,7 +68,7 @@ PACKAGES=(
   wdisplays      # output layout GUI ([SYS] > DISPLAY > ARRANGE)
   mako           # notifications (labwc autostart)
   swayidle       # idle timer (labwc autostart)
-  swaylock       # locker: idle lock and the drawer's LOCK button
+  swaylock       # fallback locker when the shell isn't running (scripts/lock.sh)
   wlopm          # screen power on idle (labwc autostart)
   grim           # screenshots (Super+Shift+3/4)
   slurp          # region picker for the Super+Shift+4 screenshots
