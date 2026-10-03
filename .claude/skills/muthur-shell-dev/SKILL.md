@@ -10,11 +10,7 @@ description: Use when testing changes to the muthur-shell quickshell config (the
 The shell runs via `quickshell -c muthur`, which resolves to
 `~/.config/quickshell/muthur/shell.qml` — a symlink into
 `dotfiles/quickshell/muthur/` created by `./install.sh`. The compositor is labwc
-(`XDG_CURRENT_DESKTOP=labwc:wlroots`) or Hyprland (`XDG_CURRENT_DESKTOP=Hyprland`,
-`HYPRLAND_INSTANCE_SIGNATURE` set — `Workspaces.qml` then reads
-`HyprlandWorkspaces.qml` instead of ext-workspace-v1) or niri
-(`XDG_CURRENT_DESKTOP=niri`, `NIRI_SOCKET` set; niri ≥ 26.04 implements
-ext-workspace-v1 too, so the `Niri.qml` IPC bridge is only a fallback).
+(`XDG_CURRENT_DESKTOP=labwc:wlroots`); workspaces come from ext-workspace-v1.
 
 **Quickshell hot-reloads QML files on save.** Most edits need no restart at
 all — just save and re-check. Write files in place (Edit, python
@@ -101,40 +97,24 @@ Before believing a stale-looking frame, re-capture: a hot reload or a
 - `~/.config/nvim/colors/muthur.lua` — validate with
   `nvim --headless -u NONE -c 'set rtp+=~/.config/nvim' -c 'colorscheme muthur' -c q`.
 - `~/.config/fuzzel/colors.ini` (colors + `font=...:pixelsize=N`),
-  `~/.config/labwc/themerc-override`,
-  `~/.config/hypr/colors.lua` (require()d by `dotfiles/hypr/hyprland.lua`;
-  the writer runs `hyprctl reload` — check with
-  `hyprctl getoption general:col.active_border` and `hyprctl configerrors`).
+  `~/.config/labwc/themerc-override` (the writer runs `labwc -r`).
 - Firefox chrome (`chrome/muthur.css`): the user's Firefox is usually open
   and only reads userChrome at startup, so test in a throwaway profile —
   `scripts/firefox-theme.py "$(cat <profile>/chrome/muthur.css)" "$S/ffprof"`,
   then `firefox --no-remote --profile "$S/ffprof" &` and kill that PID only.
   Variable names change between releases; grep the real ones out of
   `/usr/lib/firefox/omni.ja` and `browser/omni.ja` (`unzip` the `chrome/` CSS).
-- Validate a Hyprland config without running it:
-  `Hyprland --verify-config -c dotfiles/hypr/hyprland.lua`; the Lua API is
-  in `/usr/share/hypr/stubs/hl.meta.lua`. `~/.config/hypr` is a symlink to
-  `dotfiles/hypr`, so edits there reload the live compositor at once.
 - `scripts/wallpaper-palette.py <img>` and `scripts/ai-usage-stats.py claude|codex`
   are plain Python and can be run directly to inspect their JSON.
 - An MPRIS player for the drawer: generate a WAV with Python's `wave`
   module and `audacious -H tone.wav` (headless); `pkill -x audacious` after.
-- Hyprland with a Lua config (`~/.config/hypr/hyprland.lua`) rejects the
-  classic `hyprctl dispatch workspace 3` (exit 7, "`)` expected"); use
-  `hyprctl dispatch 'hl.dsp.focus({ workspace = 3 })'`,
-  `'hl.dsp.window.move({ workspace = 3 })'` (moves the *focused* window —
-  don't run it from the terminal you're working in). To populate a
-  workspace, focus it, launch `alacritty --class preview -e sh -c 'sleep 600' &`
-  and wait ~2 s before switching away, or the window maps on the
-  workspace you moved to. A bell (`printf '\a'`) from an unfocused
-  alacritty marks its workspace urgent. Workspaces vanish when emptied.
 - Brightness: `busctl call org.freedesktop.login1 /org/freedesktop/login1/session/auto org.freedesktop.login1.Session SetBrightness ssu backlight amdgpu_bl1 <raw>`
   works without root; restore to `max_brightness` (65535) afterwards.
 
 ## QML / Quickshell gotchas learned here
 
-- **Self-shadowing id/property assignment**: `Bar { niri: niri }` where
-  `Bar` itself declares `property var niri` binds the property to *itself*
+- **Self-shadowing id/property assignment**: `Bar { foo: foo }` where
+  `Bar` itself declares `property var foo` binds the property to *itself*
   — silently `undefined` forever. Give the outer instance a distinct id.
 - **No `anchors` on a direct child of `Row`/`Column`/`Grid`/`Flow`** — use
   `width`/`height`; anchors are fine again inside a plain child `Item`.

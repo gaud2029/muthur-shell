@@ -29,8 +29,8 @@ cat <<'EOF'
 muthur-shell replaces your desktop configuration.
 
   Back up your dotfiles before going on. Existing configs for bash,
-  starship, fuzzel, quickshell, labwc, Hyprland, niri, alacritty, herdr,
-  Neovim, yazi and btop are moved aside to *.bak.<date> and replaced by
+  starship, fuzzel, quickshell, labwc, alacritty, herdr, Neovim, yazi
+  and btop are moved aside to *.bak.<date> and replaced by
   symlinks into this repo, and once running the shell rewrites generated
   files on every theme switch (GTK's gtk.css, Firefox's userChrome.css
   import and user.js pref, the color-scheme and GTK theme settings).
@@ -57,8 +57,6 @@ CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 # installed separately.
 PACKAGES=(
   labwc          # compositor (dotfiles/labwc)
-  hyprland       # the other supported compositors (dotfiles/hypr, dotfiles/niri)
-  niri
   quickshell     # the shell itself
   fuzzel         # launcher ([>_], Super+Space)
   alacritty      # terminal (themed; Super+Return and the labwc menu)
@@ -102,8 +100,6 @@ LINKS=(
   "fuzzel:fuzzel"
   "quickshell/muthur:quickshell/muthur"
   "labwc:labwc"
-  "hypr:hypr"
-  "niri:niri"
   "alacritty:alacritty"
   "herdr/config.toml:herdr/config.toml"
   "nvim:nvim"
@@ -158,23 +154,18 @@ for gtk_css in "$CONFIG_HOME/gtk-3.0/gtk.css" "$CONFIG_HOME/gtk-4.0/gtk.css"; do
   fi
 done
 
-# niri's config include()s the generated colors.kdl and refuses to load
-# when it's missing, so seed a grey one for the first start; the shell
-# overwrites it with the preset's colors as soon as it runs.
-NIRI_COLORS="$DOTFILES_DIR/niri/colors.kdl"
-if [ ! -e "$NIRI_COLORS" ]; then
-  cat >"$NIRI_COLORS" <<'KDL'
-// Placeholder until ThemeStore.qml generates this file; do not edit.
-layout {
-    border {
-        active-color "#aaaaaa"
-        inactive-color "#555555"
-        urgent-color "#ffffff"
-    }
-}
-KDL
-  echo "seeded:  $NIRI_COLORS (grey fallback until the shell runs)"
-fi
+# Hyprland and niri used to be supported too. Their configs are gone from
+# the repo, but an older checkout keeps the gitignored colors file the shell
+# generated there, and ~/.config still links to the directory: clear both.
+for name in hypr niri; do
+  rm -f "$DOTFILES_DIR/$name/colors.lua" "$DOTFILES_DIR/$name/colors.kdl"
+  rmdir "$DOTFILES_DIR/$name" 2>/dev/null || true
+  link="$CONFIG_HOME/$name"
+  if [ -L "$link" ] && [ ! -e "$link" ] && [ "$(readlink "$link")" = "$DOTFILES_DIR/$name" ]; then
+    rm "$link"
+    echo "removed: $link (Hyprland/niri support was dropped)"
+  fi
+done
 
 # Make "open folder" from other apps land in yazi rather than a GUI one.
 if command -v xdg-mime >/dev/null && [ -f /usr/share/applications/yazi.desktop ]; then
