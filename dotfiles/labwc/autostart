@@ -30,7 +30,8 @@ kanshi >/dev/null 2>&1 &
 # as mako to function correctly. Thunderbird is an example of this.
 mako >/dev/null 2>&1 &
 
-# Lock screen after 5 minutes; turn off display after another 5 minutes.
+# Turn off displays after 10 minutes idle, lock after 2 hours (and
+# before suspend).
 # lock.sh locks with the shell's MU/TH/UR lock screen (swaylock if the
 # shell isn't running) and waits for the lock to take before returning.
 #
@@ -41,7 +42,7 @@ mako >/dev/null 2>&1 &
 # https://git.sr.ht/~leon_plickat/wlopm
 LOCK=~/.config/quickshell/muthur/scripts/lock.sh
 swayidle -w \
-	timeout 300 "$LOCK" \
+	timeout 7200 "$LOCK" \
 	timeout 600 'wlopm --off \*' \
 	resume 'wlopm --on \*' \
 	before-sleep "$LOCK" >/dev/null 2>&1 &
