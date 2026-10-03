@@ -67,10 +67,10 @@ branched from the 0.20.2 release (the `angled-corner` branch has both,
 top of both, a **Titlebar ▸ Top / Left / Right** entry to the window
 menu (right-click a titlebar) that moves that window's titlebar to a
 side, its title written along it. Stock labwc logs an error for that
-entry and it does nothing. To use them:
+entry and it does nothing. To get all three:
 
 ```sh
-git clone -b angled-corner https://github.com/gaud2029/labwc.git
+git clone -b vertical-titlebar https://github.com/gaud2029/labwc.git
 cd labwc/dev/pkg && makepkg -si   # builds labwc-snapgrid, replaces labwc
 ```
 
