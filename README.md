@@ -110,6 +110,10 @@ From the start of the bar:
 
 From the end of the bar:
 
+- **Now playing** — the current MPRIS track (title — artist, dimmed
+  while paused) with `|<` / `||` / `>|` buttons; hidden while nothing is
+  playing or paused. A vertical bar has no room for the title and keeps
+  only the buttons. The drawer below shows the same player.
 - **Keyboard layout** — the active layout's code (`US`, `CA`, ...). Click
   to switch to the next configured layout, right-click to open
   `[SYS] > [KEYBOARD]`. Also from a script or keybind:
@@ -213,7 +217,7 @@ every 10 minutes in the background (every minute while its tab is open).
 
 ## The lock screen — MU/TH/UR 6000
 
-Locking (the drawer's `LOCK`, or swayidle after 5 minutes idle and before
+Locking (the drawer's `LOCK`, or swayidle after 2 hours idle and before
 suspend) turns every screen into the MU/TH/UR 6000 terminal on an old CRT:
 the tube powers on — a beam opening into the picture — and MU/TH/UR types
 its greeting and asks for an ident under a big clock, over the wireframe

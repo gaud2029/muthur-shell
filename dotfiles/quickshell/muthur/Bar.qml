@@ -151,6 +151,8 @@ PanelWindow {
             id: endGroup
             atEnd: true
 
+            NowPlaying {}
+
             // The active keyboard layout; a click switches to the next
             // one, a right click opens [SYS] KEYBOARD to add or remove some.
             TerminalButton {
