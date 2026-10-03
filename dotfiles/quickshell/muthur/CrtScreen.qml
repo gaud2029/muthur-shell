@@ -4,7 +4,7 @@ import QtQuick
 // theme's background behind scanlines, a vignette, a slow rolling band and
 // the odd flicker, and can be switched on and off like an old monitor —
 // a beam opening out into the picture, and collapsing back to a line and
-// a dot. Shared by the lock screen and the screensaver.
+// a dot. Used by the lock screen.
 Item {
     id: root
 

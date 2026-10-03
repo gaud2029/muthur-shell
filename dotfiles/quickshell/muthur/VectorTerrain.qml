@@ -4,7 +4,7 @@ import QtQuick
 // descent displays: rails converging on a vanishing point at the top edge
 // and cross lines sliding down in perspective. Built from plain rectangles
 // (the rails never move, only the cross lines do), so it's all scene graph
-// and no per-frame painting. Shared by the lock screen and the screensaver.
+// and no per-frame painting. Used by the lock screen.
 Item {
     id: root
 

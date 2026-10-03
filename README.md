@@ -231,9 +231,6 @@ colors.
   `WAYLAND_DISPLAY=wayland-0 quickshell -c muthur -d`: it comes back up
   locked, and unlocks with your password.
 
-`CrtScreen.qml` (the tube) and `VectorTerrain.qml` (the ground plane) are
-separate pieces so the coming screensaver can share them.
-
 ## Beyond the shell — theming the rest of the desktop
 
 Switching presets in `[SYS] > [LOOK]` regenerates config for everything
