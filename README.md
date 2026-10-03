@@ -63,10 +63,14 @@ Stock labwc has neither: it silently ignores both and keeps square
 corners. They come from small patches in
 [gaud2029/labwc](https://github.com/gaud2029/labwc/tree/angled-corner),
 branched from the 0.20.2 release (the `angled-corner` branch has both,
-`snap-to-grid` only the grid). To use them:
+`snap-to-grid` only the grid). The `vertical-titlebar` branch adds, on
+top of both, a **Titlebar ▸ Top / Left / Right** entry to the window
+menu (right-click a titlebar) that moves that window's titlebar to a
+side, its title written along it. Stock labwc logs an error for that
+entry and it does nothing. To get all three:
 
 ```sh
-git clone -b angled-corner https://github.com/gaud2029/labwc.git
+git clone -b vertical-titlebar https://github.com/gaud2029/labwc.git
 cd labwc/dev/pkg && makepkg -si   # builds labwc-snapgrid, replaces labwc
 ```
 
