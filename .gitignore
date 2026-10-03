@@ -5,3 +5,5 @@ dotfiles/alacritty/theme/
 dotfiles/nvim/colors/muthur.lua
 dotfiles/btop/themes/muthur.theme
 __pycache__/
+dotfiles/quickshell/muthur/keyboard.ini
+dotfiles/labwc/environment.d/

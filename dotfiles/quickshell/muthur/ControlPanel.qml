@@ -8,6 +8,7 @@ PopupPanel {
         { key: "bluetooth", label: "BT" },
         { key: "audio", label: "AUDIO" },
         { key: "display", label: "DISPLAY" },
+        { key: "keyboard", label: "KEYBOARD" },
         { key: "look", label: "LOOK" }
     ]
 
@@ -35,6 +36,11 @@ PopupPanel {
         active: root.visible && root.currentTab === "display"
     }
 
+    KeyboardTab {
+        anchors.fill: parent
+        visible: root.currentTab === "keyboard"
+    }
+
     BluetoothTab {
         anchors.fill: parent
         visible: root.currentTab === "bluetooth"
@@ -43,7 +49,7 @@ PopupPanel {
 
     Text {
         anchors.centerIn: parent
-        visible: !["wifi", "look", "audio", "display", "bluetooth"].includes(root.currentTab)
+        visible: !["wifi", "look", "audio", "display", "bluetooth", "keyboard"].includes(root.currentTab)
         text: "[ NOT YET IMPLEMENTED ]"
         color: theme.colorDim
         font.family: theme.fontFamily

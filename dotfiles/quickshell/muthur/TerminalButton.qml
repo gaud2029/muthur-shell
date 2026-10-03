@@ -8,7 +8,9 @@ Rectangle {
     // Bar buttons are all the same theme.buttonSize square; panel buttons
     // grow with their label.
     property bool square: false
+    property alias acceptedButtons: mouseArea.acceptedButtons
     signal clicked()
+    signal rightClicked()
 
     Theme { id: theme }
 
@@ -35,6 +37,6 @@ Rectangle {
         id: mouseArea
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.clicked()
+        onClicked: mouse => mouse.button === Qt.RightButton ? root.rightClicked() : root.clicked()
     }
 }

@@ -7,6 +7,9 @@ Item {
 
     property string label: ""
     property real value: 0
+    // The figure at the right; a percentage unless the slider maps 0-1
+    // onto something else.
+    property string readout: Math.round(value * 100) + "%"
     signal moved(real value)
 
     Theme { id: theme }
@@ -28,7 +31,7 @@ Item {
             Text {
                 id: percentText
                 anchors.right: parent.right
-                text: Math.round(root.value * 100) + "%"
+                text: root.readout
                 color: theme.colorFg
                 font.family: theme.fontFamily
                 font.pixelSize: theme.px(12)

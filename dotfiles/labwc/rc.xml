@@ -42,6 +42,13 @@
   <keyboard>
     <default />
     <!--
+      Key repeat, set from the shell's [SYS] KEYBOARD tab (which rewrites
+      these two values in place): repeats per second, and ms before the
+      first repeat.
+    -->
+    <repeatRate>62</repeatRate>
+    <repeatDelay>600</repeatDelay>
+    <!--
       Workspaces: Super+N to go, Super+Alt+N to send the window along
       (Super+Shift+3/4 are the screenshots, macOS-style, below)
     -->

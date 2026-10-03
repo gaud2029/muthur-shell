@@ -50,7 +50,7 @@ that closes any popups, so take the screenshot *before* restoring):
 - Open a popup / pick a tab (in `Bar.qml`, after `Theme { id: theme }`):
   `Timer { running: root.screen.name === "eDP-1"; interval: 1500; onTriggered: { controlPanel.currentTab = "look"; controlPanel.visible = true; } }`
   — gate on the screen name, or every output's Bar runs the hook.
-  Panels: `controlPanel` (tabs `wifi`/`bluetooth`/`audio`/`display`/`look`),
+  Panels: `controlPanel` (tabs `wifi`/`bluetooth`/`audio`/`display`/`keyboard`/`look`),
   `aiPanel` (`claude`/`codex`), `calendarPanel`, `batteryPanel`. The drawer
   needs its placement: `drawer.placement = root.popupPlacement(plusButton); drawer.visible = true`.
 - Change persisted settings (in `shell.qml`, `ShellRoot { Component.onCompleted: ... }`):
@@ -67,6 +67,12 @@ that closes any popups, so take the screenshot *before* restoring):
 
 Reusable scratch scripts from past sessions live only in the session
 scratchpad; recreate them, don't assume they exist.
+
+- `Keyboard.select()` / `next()` / `setRepeat()` change the user's real
+  keyboard (they write `~/.config/labwc/environment.d/muthur-keyboard.env`
+  or `rc.xml` and run `labwc -r` — a nested test shell inherits the real
+  `LABWC_PID` and `HOME`, so it does too). Leave layout switching for the
+  user to try; `keyboard.ini` holds their layouts.
 
 ## Visual verification
 

@@ -110,6 +110,10 @@ From the start of the bar:
 
 From the end of the bar:
 
+- **Keyboard layout** — the active layout's code (`US`, `CA`, ...). Click
+  to switch to the next configured layout, right-click to open
+  `[SYS] > [KEYBOARD]`. Also from a script or keybind:
+  `quickshell ipc -c muthur call keyboard next`.
 - **`[POW]`** — battery, with the charge level as a bar under the label
   (green, then yellow under 50%, red under 20%). The label alternates with
   the percentage once charge drops under 80% and the bar blinks under 50%.
@@ -136,7 +140,7 @@ time; the drawer is independent and can sit alongside one. Every popup
 closes on <kbd>Escape</kbd>, and they overlay windows rather than
 reserving space, so the window layout never shifts.
 
-## `[SYS]` — network, bluetooth, audio, display, look
+## `[SYS]` — network, bluetooth, audio, display, keyboard, look
 
 - **NETWORK** — Wi-Fi on/off and the visible networks with signal
   strength.
@@ -149,6 +153,14 @@ reserving space, so the window layout never shifts.
   root helper is needed; polls sysfs while open so the brightness keys are
   reflected. External monitors (DDC/CI) aren't covered. An **ARRANGE**
   button opens `wdisplays` for output position, mode and scale.
+- **KEYBOARD** — the configured layouts (click one to make it active,
+  `REMOVE` to drop it), a search over every layout and variant xkb knows
+  to add more (`fr`, `canada`, `dvorak`...), and key repeat: rate and
+  delay sliders with a field to try them in. labwc has no action to
+  switch layouts, so the shell writes the active one alone to
+  `labwc/environment.d/muthur-keyboard.env` (`XKB_DEFAULT_LAYOUT`) and
+  reconfigures labwc; key repeat is rewritten in place in `rc.xml`
+  (`<repeatRate>` / `<repeatDelay>`).
 - **LOOK** — everything about the appearance:
   - twenty-five color presets, each a full 16-color palette previewed
     in its row — Neo in the Matrix, Blade Runner, Tron, Tron Ares,
@@ -312,7 +324,8 @@ wallpapers/
 install.sh
 ```
 
-Generated, gitignored files (`theme.ini`, `colors.ini`, `themerc-override`,
+Generated, gitignored files (`theme.ini`, `keyboard.ini`, `colors.ini`,
+`themerc-override`, `environment.d/muthur-keyboard.env`,
 `theme/muthur.toml`, `colors/muthur.lua`, `themes/muthur.theme`) live alongside their tracked static
 config — see `.gitignore`. `nvim/` is symlinked as a whole directory like
 the others; `herdr/config.toml` is symlinked individually since the rest of

@@ -151,6 +151,20 @@ PanelWindow {
             id: endGroup
             atEnd: true
 
+            // The active keyboard layout; a click switches to the next
+            // one, a right click opens [SYS] KEYBOARD to add or remove some.
+            TerminalButton {
+                label: Keyboard.shortLabel(Keyboard.current)
+                square: true
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: Keyboard.next()
+                onRightClicked: {
+                    controlPanel.currentTab = "keyboard";
+                    if (!controlPanel.visible)
+                        root.togglePanel(controlPanel);
+                }
+            }
+
             BatteryButton {
                 selected: batteryPanel.visible
                 onClicked: root.togglePanel(batteryPanel)
