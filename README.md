@@ -1,8 +1,7 @@
 # muthur-shell
 
 A [Quickshell](https://quickshell.outfoxxed.me/) desktop shell for
-[labwc](https://labwc.github.io/) (and [Hyprland](https://hypr.land/) or
-[niri](https://github.com/YaLTeR/niri)) that looks like a computer from a
+[labwc](https://labwc.github.io/) that looks like a computer from a
 film: it started as the MU/TH/UR 6000
 terminal from *Alien* and grew into a sci-fi / cyberpunk desktop in
 general — one shell, twenty-five palettes, from the Nostromo's bone-white
@@ -38,16 +37,14 @@ quickshell -c muthur   # launch (labwc's autostart does this for you)
 `install.sh` only runs on **CachyOS** (it exits on anything else) and
 asks for confirmation before changing anything (`--yes` skips the
 prompt). It first installs everything the configs rely on with
-`sudo pacman -S --needed` — labwc, Hyprland, niri, quickshell, fuzzel, alacritty, starship,
+`sudo pacman -S --needed` — labwc, quickshell, fuzzel, alacritty, starship,
 yazi, btop, swaybg/kanshi/mako/swayidle/swaylock/wlopm for the labwc autostart, Neovim,
 Noto fonts, and the NetworkManager/BlueZ/PipeWire/UPower services the
 panels talk to (`--no-packages` skips this; herdr isn't packaged and is
 installed separately). It then backs up anything already at the
 destination instead of overwriting it, and symlinks every config this repo
-manages: the shell itself, plus fuzzel, labwc, Hyprland, niri, alacritty,
-herdr, Neovim, yazi, btop, `~/.bashrc` and the starship prompt, seeds
-niri's generated `colors.kdl` with a grey placeholder (niri won't start
-without it, and the shell overwrites it on first run), and makes yazi the
+manages: the shell itself, plus fuzzel, labwc, alacritty, herdr, Neovim,
+yazi, btop, `~/.bashrc` and the starship prompt, and makes yazi the
 default handler for opening folders. A `gtk-3.0`/`gtk-4.0` `gtk.css`
 the shell didn't write is backed up too, since the shell regenerates it. Quickshell hot-reloads on file save, so once it's running most
 changes to the QML don't need a restart.
@@ -89,17 +86,11 @@ From the start of the bar:
 - **Launcher** — a square button with a breathing cursor block. Opens
   `fuzzel` right beside it, wherever the bar is (`Super+Space` does the
   same from labwc).
-- **Workspaces** — one tile per workspace, read through
-  `ext-workspace-v1` (labwc, or any compositor implementing it), through
-  Quickshell's native Hyprland module on Hyprland (special workspaces
-  hidden, named ones after the numbered; switching works with both the
-  classic and the Lua `hyprctl dispatch` syntax), and through niri's IPC
-  as the fallback. Click to switch; urgent ones are highlighted. The
-  labwc and Hyprland configs define four, and niri's config binds the
-  same four over its dynamic workspaces (`Super+1..4` to go,
-  `Super+Shift+1..4` to send the window along, `Super+F` fullscreen,
-  `Super+Return` a terminal, `Super+E` the file manager — yazi, in a
-  terminal).
+- **Workspaces** — one tile per workspace, read from labwc through
+  `ext-workspace-v1`. Click to switch; urgent ones are highlighted. The
+  labwc config defines four (`Super+1..4` to go, `Super+Shift+1..4` to
+  send the window along, `Super+F` fullscreen, `Super+Return` a terminal,
+  `Super+E` the file manager — yazi, in a terminal).
 - **Window list** — one entry per open window via
   `wlr-foreign-toplevel-management`. On a horizontal bar entries show
   their titles, sharing 75% of the free length and eliding when squeezed;
@@ -121,8 +112,7 @@ From the end of the bar:
 - **`[SYS]`** — the system panel (below).
 - **`[+]`** — the drawer: system tray, MPRIS "now playing" with
   previous / play-pause / next, and along its bottom edge the session
-  controls — `LOCK` (`swaylock`), `LOGOUT` (`labwc --exit`, Hyprland's
-  exit dispatcher or niri's `quit` when running there), `SUSPEND` and
+  controls — `LOCK` (`swaylock`), `LOGOUT` (`labwc --exit`), `SUSPEND` and
   `POWER OFF` (`systemctl`). The last three arm on a first click and run
   on a second within four seconds, so a stray click can't put the session
   down.
@@ -134,7 +124,7 @@ From the end of the bar:
 Only one of the `[SYS]` / `[AI]` / clock / `[POW]` panels is open at a
 time; the drawer is independent and can sit alongside one. Every popup
 closes on <kbd>Escape</kbd>, and they overlay windows rather than
-reserving space, so the tiling layout never shifts.
+reserving space, so the window layout never shifts.
 
 ## `[SYS]` — network, bluetooth, audio, display, look
 
@@ -205,8 +195,6 @@ else the shell manages, using whatever mechanism each tool supports:
 |---|---|---|
 | **fuzzel** | `fuzzel.ini` `include=`s a generated file (colors and font) | `colors.ini` |
 | **labwc** | `themerc-override` (labwc's own override mechanism; no `<theme><name>` is set, so it's the *only* file that applies — structural settings like button size and title alignment live here too) | `themerc-override` |
-| **Hyprland** | `hyprland.lua` `require()`s a generated Lua table (active and inactive border colors) and is told to `hyprctl reload`; it falls back to grey when the file isn't there yet | `hypr/colors.lua` |
-| **niri** | `config.kdl` `include`s a generated KDL fragment (active, inactive and urgent border colors; niri merges it into `layout { border {} }`), and niri reloads on its own when the file changes. A missing include is fatal to niri, so `install.sh` seeds a grey one | `niri/colors.kdl` |
 | **alacritty** | `alacritty.toml`'s `general.import` (16 ANSI colors, cursor, selection, window opacity). Alacritty only makes its *default* background translucent, so below 100% the Neovim and btop themes are regenerated to leave their window background unpainted and show through | `colors.toml` |
 | **Neovim (LazyVim)** | a real colorscheme (`colors/muthur.lua`, ~140 highlight groups incl. treesitter/LSP/diagnostics, plus the 16 terminal colors) that a plugin spec sets as `opts.colorscheme`; a file watcher in `lua/config/autocmds.lua` re-applies it in already-open instances the moment it's regenerated | `colors/muthur.lua` |
 | **btop** | a theme file in its `themes/` directory (hex colors only, so it's generated: one border color for every box, inverted selection, green→yellow→red level gradients); `btop.conf` selects it, and a running btop reloads it on `SIGUSR2`, which is sent after every write | `themes/muthur.theme` |
@@ -218,10 +206,6 @@ else the shell manages, using whatever mechanism each tool supports:
 | **Firefox** | `scripts/firefox-theme.py` writes the chrome colors (tab strip, toolbars, URL bar and its dropdown, menus, sidebar, accent) into each profile Firefox starts, `@import`s them from `userChrome.css` (anything hand-written there is kept) and enables `toolkit.legacyUserProfileCustomizations.stylesheets` in `user.js`. Firefox reads it at startup only, so restart it after a switch; pages follow light/dark live through `color-scheme` | `chrome/muthur.css` |
 | **swaybg** | restarted with the wallpaper, or the theme's background color when none is set | *(process)* |
 | **Claude Code** | not generated at all — `~/.claude/settings.json` has `"theme": "dark-ansi"`, so it renders with the terminal's 16 ANSI colors and inherits alacritty's automatically | *(static setting)* |
-
-<img src="docs/screenshots/desktop-hyprland.png" alt="Cyberpunk 2077 preset on Hyprland: three tiled terminals with 1px borders in the preset's colors, and three workspace tiles on the bar" width="960">
-
-*Preset: **Cyberpunk 2077** over a wallpaper at 94% terminal opacity — on **Hyprland**: Neovim on `hyprland.lua`, fastfetch and yazi tiled with 1px borders in the preset's colors, and workspaces `1 2 3` on the bar.*
 
 Every preset is a full palette in [pywal](https://github.com/dylanaraps/pywal)'s
 `colors.json` shape — `special.background/foreground/cursor` plus
@@ -271,8 +255,6 @@ dotfiles/
                       scripts/ holds the palette and usage-stats helpers
   fuzzel/             launcher config, themed to match the shell
   labwc/              window-manager config: themed, 4 workspaces, keybinds, autostart, 10px grid, angled corners
-  hypr/               the same for Hyprland (Lua config), themed via the generated colors.lua
-  niri/               the same for niri (KDL config), themed via the generated colors.kdl
   alacritty/          terminal config, themed
   herdr/              config.toml for the terminal workspace manager, themed via ANSI colors
   nvim/               LazyVim config, themed (and live-reloaded)
@@ -286,7 +268,7 @@ install.sh
 ```
 
 Generated, gitignored files (`theme.ini`, `colors.ini`, `themerc-override`,
-`hypr/colors.lua`, `niri/colors.kdl`, `colors.toml`, `colors/muthur.lua`, `themes/muthur.theme`) live alongside their tracked static
+`colors.toml`, `colors/muthur.lua`, `themes/muthur.theme`) live alongside their tracked static
 config — see `.gitignore`. `nvim/` is symlinked as a whole directory like
 the others; `herdr/config.toml` is symlinked individually since the rest of
 `~/.config/herdr/` is runtime state that doesn't belong in this repo.

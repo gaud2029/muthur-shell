@@ -82,15 +82,7 @@ PanelWindow {
         }
         ConfirmButton {
             action: "LOGOUT"
-            // Hyprland with a Lua config takes only the Lua dispatch form,
-            // the classic config only the classic one; hyprctl exits
-            // non-zero on the mismatch. niri's quit asks for confirmation
-            // by default; this button already did.
-            command: Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE")
-                ? ["sh", "-c", "hyprctl dispatch 'hl.dsp.exit()' >/dev/null 2>&1 || hyprctl dispatch exit"]
-                : Quickshell.env("NIRI_SOCKET")
-                    ? ["niri", "msg", "action", "quit", "--skip-confirmation"]
-                    : ["labwc", "--exit"]
+            command: ["labwc", "--exit"]
         }
         ConfirmButton {
             action: "SUSPEND"
