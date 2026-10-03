@@ -90,7 +90,8 @@ Before believing a stale-looking frame, re-capture: a hot reload or a
 ## Testing generated configs
 
 `ThemeStore` regenerates on every preset change:
-- `~/.config/alacritty/colors.toml` — `[window] opacity`, `[colors.*]`;
+- `~/.config/alacritty/theme/muthur.toml` — `[window] opacity`, `[font]`
+  families, `[colors.*]`;
   open terminals reload live. A fresh preview:
   `alacritty --class preview -e sh -c '<cmd>; sleep 3'` (kill with
   `pkill -f "alacritty --class preview"` **from a script file**, see above).

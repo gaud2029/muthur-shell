@@ -2,7 +2,7 @@
 #
 # Nothing here is generated: only ANSI color names are used (the same
 # trick as starship.toml), so yazi follows whatever palette ThemeStore.qml
-# has written into alacritty's colors.toml — live, even in open windows.
+# has written into alacritty's theme/muthur.toml — live, even in open windows.
 # "darkgray" is color8, which the shell uses as its dim color.
 #
 # Borders are plain lines, labels sit in [ BRACKETS ], the hovered row is

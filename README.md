@@ -203,7 +203,7 @@ else the shell manages, using whatever mechanism each tool supports:
 |---|---|---|
 | **fuzzel** | `fuzzel.ini` `include=`s a generated file (colors and font) | `colors.ini` |
 | **labwc** | `themerc-override` (labwc's own override mechanism; no `<theme><name>` is set, so it's the *only* file that applies — structural settings like button size and title alignment live here too) | `themerc-override` |
-| **alacritty** | `alacritty.toml`'s `general.import` (16 ANSI colors, cursor, selection, window opacity). Alacritty only makes its *default* background translucent, so below 100% the Neovim and btop themes are regenerated to leave their window background unpainted and show through | `colors.toml` |
+| **alacritty** | `alacritty.toml`'s `general.import` (16 ANSI colors, cursor, selection, window opacity, font family; the rest, font size included, stays in `alacritty.toml`). Alacritty only makes its *default* background translucent, so below 100% the Neovim and btop themes are regenerated to leave their window background unpainted and show through | `theme/muthur.toml` |
 | **Neovim (LazyVim)** | a real colorscheme (`colors/muthur.lua`, ~140 highlight groups incl. treesitter/LSP/diagnostics, plus the 16 terminal colors) that a plugin spec sets as `opts.colorscheme`; a file watcher in `lua/config/autocmds.lua` re-applies it in already-open instances the moment it's regenerated | `colors/muthur.lua` |
 | **btop** | a theme file in its `themes/` directory (hex colors only, so it's generated: one border color for every box, inverted selection, green→yellow→red level gradients); `btop.conf` selects it, and a running btop reloads it on `SIGUSR2`, which is sent after every write | `themes/muthur.theme` |
 | **herdr** | nothing generated: its built-in `terminal` theme draws with the terminal's ANSI colors, so it follows alacritty's palette by itself (herdr has no include mechanism, and patching the tracked `config.toml` would dirty the repo on every preset switch) | *(static config)* |
@@ -276,7 +276,7 @@ install.sh
 ```
 
 Generated, gitignored files (`theme.ini`, `colors.ini`, `themerc-override`,
-`colors.toml`, `colors/muthur.lua`, `themes/muthur.theme`) live alongside their tracked static
+`theme/muthur.toml`, `colors/muthur.lua`, `themes/muthur.theme`) live alongside their tracked static
 config — see `.gitignore`. `nvim/` is symlinked as a whole directory like
 the others; `herdr/config.toml` is symlinked individually since the rest of
 `~/.config/herdr/` is runtime state that doesn't belong in this repo.

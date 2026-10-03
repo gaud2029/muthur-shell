@@ -170,6 +170,10 @@ for name in hypr niri; do
   fi
 done
 
+# The shell used to generate alacritty's colors in alacritty/colors.toml;
+# it now writes alacritty/theme/muthur.toml, so drop the stale copy.
+rm -f "$DOTFILES_DIR/alacritty/colors.toml"
+
 # Make "open folder" from other apps land in yazi rather than a GUI one.
 if command -v xdg-mime >/dev/null && [ -f /usr/share/applications/yazi.desktop ]; then
   xdg-mime default yazi.desktop inode/directory
