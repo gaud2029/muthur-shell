@@ -31,16 +31,19 @@ kanshi >/dev/null 2>&1 &
 mako >/dev/null 2>&1 &
 
 # Lock screen after 5 minutes; turn off display after another 5 minutes.
+# lock.sh locks with the shell's MU/TH/UR lock screen (swaylock if the
+# shell isn't running) and waits for the lock to take before returning.
 #
 # Note that in the context of idle system power management, it is *NOT* a good
 # idea to turn off displays by 'disabling outputs' for example by
 # `wlr-randr --output <whatever> --off` because this re-arranges windows
 # (since a837fef). Instead use a wlr-output-power-management client such as
 # https://git.sr.ht/~leon_plickat/wlopm
+LOCK=~/.config/quickshell/muthur/scripts/lock.sh
 swayidle -w \
-	timeout 300 'swaylock -f -c 000000' \
+	timeout 300 "$LOCK" \
 	timeout 600 'wlopm --off \*' \
 	resume 'wlopm --on \*' \
-	before-sleep 'swaylock -f -c 000000' >/dev/null 2>&1 &
+	before-sleep "$LOCK" >/dev/null 2>&1 &
 
 quickshell -c ~/.config/quickshell/muthur

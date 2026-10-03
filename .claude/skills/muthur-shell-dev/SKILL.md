@@ -87,6 +87,42 @@ catch animation states (the launcher's breathing cursor, blinking labels).
 Before believing a stale-looking frame, re-capture: a hot reload or a
 1.5 s hook may still be in flight.
 
+## Testing the lock screen
+
+**Never engage the real lock while testing** (`LockScreen.lock()`,
+`scripts/lock.sh`, `quickshell ipc -c muthur call lock lock`): only the
+user's password unlocks it. And swayidle locks the real session with
+swaylock after 5 idle minutes — every capture then comes back black
+(`pgrep -a swaylock`); never kill it, wait for the user.
+
+Test in a nested headless labwc instead, where the real ext-session-lock
+can be engaged freely:
+
+```sh
+mkdir -p "$S/nest/cfg" "$S/nest/qs" "$S/nest/run" && chmod 700 "$S/nest/run"
+printf '<?xml version="1.0"?>\n<labwc_config/>\n' > "$S/nest/cfg/rc.xml"; : > "$S/nest/cfg/autostart"
+WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 WLR_RENDERER=pixman WLR_HEADLESS_OUTPUTS=1 \
+  setsid labwc -C "$S/nest/cfg" > "$S/nest/labwc.log" 2>&1 &     # -> wayland-1, 1280x720
+# a test shell: symlink every *.qml and scripts/ from dotfiles/quickshell/muthur,
+# copy theme.ini, and write a shell.qml that drives LockScreen with Timers
+MUTHUR_PAM_DIR="$S/pam-permit" XDG_RUNTIME_DIR="$S/nest/run" \
+  WAYLAND_DISPLAY=/run/user/1000/wayland-1 setsid quickshell -p "$S/nest/qs" &
+WAYLAND_DISPLAY=wayland-1 grim shot.png
+```
+
+- **Own `XDG_RUNTIME_DIR`**: LockScreen keeps a "locked" flag there that
+  a starting (or hot-reloading) instance obeys — the user's live shell
+  reloads the same files, so a test flag in the real runtime dir would lock
+  their session. (IPC can't start under the long scratchpad path — socket
+  path limit — so drive the test shell from its own `shell.qml`.)
+- **`MUTHUR_PAM_DIR`** points PamContext at a throwaway config dir holding
+  a `login` file: `auth required pam_deny.so` or `pam_permit.so`. Wrong
+  passwords against the real stack count toward the user's faillock
+  (3 failures = 10 minutes locked out).
+- No input devices: set `LockScreen.password` and call `submit()` from the
+  test shell. To preview LockView without locking, put it in a full-screen
+  overlay `PanelWindow` and step `LockScreen.phase` / `answer` / `idle`.
+
 ## Testing generated configs
 
 `ThemeStore` regenerates on every preset change:
@@ -113,6 +149,21 @@ Before believing a stale-looking frame, re-capture: a hot reload or a
   works without root; restore to `max_brightness` (65535) afterwards.
 
 ## QML / Quickshell gotchas learned here
+
+- **`WlSessionLock.locked` doesn't notify when set from QML** (and
+  `lockStateChanged` only fires on unlock), so `property bool x:
+  lock.locked` stays false forever. Mirror it by hand; read `secure`
+  directly, not through a binding.
+- **A hot reload drops the session lock** (even in-tree; reloadableId
+  doesn't help) while the compositor stays locked — black screen. Re-lock
+  after the reload, but not from `onReloaded`/`onCompleted` directly: the
+  old lock object still exists then and a second lock is a fatal protocol
+  error. A short Timer (500 ms) is enough.
+- **A `visible: false` ancestor freezes positioners**: children's
+  visibility changes emit nothing while the tree is hidden, so a
+  `Column` never makes room for a child that turns visible. To draw a tree
+  only through an effect, use `ShaderEffectSource { hideSource: true }`
+  as the effect's source instead of hiding it.
 
 - **Self-shadowing id/property assignment**: `Bar { foo: foo }` where
   `Bar` itself declares `property var foo` binds the property to *itself*
