@@ -41,15 +41,18 @@
 
   <keyboard>
     <default />
-    <!-- Workspaces: Super+N to go, Super+Shift+N to send the window along -->
+    <!--
+      Workspaces: Super+N to go, Super+Alt+N to send the window along
+      (Super+Shift+3/4 are the screenshots, macOS-style, below)
+    -->
     <keybind key="W-1"><action name="GoToDesktop" to="1" /></keybind>
     <keybind key="W-2"><action name="GoToDesktop" to="2" /></keybind>
     <keybind key="W-3"><action name="GoToDesktop" to="3" /></keybind>
     <keybind key="W-4"><action name="GoToDesktop" to="4" /></keybind>
-    <keybind key="W-S-1"><action name="SendToDesktop" to="1" /></keybind>
-    <keybind key="W-S-2"><action name="SendToDesktop" to="2" /></keybind>
-    <keybind key="W-S-3"><action name="SendToDesktop" to="3" /></keybind>
-    <keybind key="W-S-4"><action name="SendToDesktop" to="4" /></keybind>
+    <keybind key="W-A-1"><action name="SendToDesktop" to="1" /></keybind>
+    <keybind key="W-A-2"><action name="SendToDesktop" to="2" /></keybind>
+    <keybind key="W-A-3"><action name="SendToDesktop" to="3" /></keybind>
+    <keybind key="W-A-4"><action name="SendToDesktop" to="4" /></keybind>
     <!-- Fullscreen the focused window -->
     <keybind key="W-f"><action name="ToggleFullscreen" /></keybind>
     <!-- Terminal -->
@@ -71,8 +74,7 @@
     <keybind key="W-F4">
       <action name="None" />
     </keybind>
-        <!-- Screenshot: full screen -->
-    
+    <!-- Screenshot: full screen -->
     <keybind key="W-S-3">
       <action name="Execute">
         <command>sh -c 'mkdir -p "$HOME/Pictures/Screenshots"; grim "$HOME/Pictures/Screenshots/Screenshot-$(date +%Y-%m-%d_%H-%M-%S).png"'</command>
@@ -86,7 +88,7 @@
       </action>
     </keybind>
 
-    <!-- ctrl + super + shift +4 -->
+    <!-- Screenshot: select region, to the clipboard -->
     <keybind key="C-W-S-4">
       <action name="Execute">
         <command>sh -c 'grim -g "$(slurp)" - | wl-copy'</command>

@@ -70,6 +70,9 @@ PACKAGES=(
   swayidle       # idle timer (labwc autostart)
   swaylock       # locker: idle lock and the drawer's LOCK button
   wlopm          # screen power on idle (labwc autostart)
+  grim           # screenshots (Super+Shift+3/4)
+  slurp          # region picker for the Super+Shift+4 screenshots
+  wl-clipboard   # wl-copy, for Ctrl+Super+Shift+4 to the clipboard
   neovim         # dotfiles/nvim (LazyVim) + the generated colorscheme
   noto-fonts     # Noto Sans Mono, the shell's face
   networkmanager # [SYS] > NETWORK

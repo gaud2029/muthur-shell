@@ -38,7 +38,8 @@ quickshell -c muthur   # launch (labwc's autostart does this for you)
 asks for confirmation before changing anything (`--yes` skips the
 prompt). It first installs everything the configs rely on with
 `sudo pacman -S --needed` — labwc, quickshell, fuzzel, alacritty, starship,
-yazi, btop, swaybg/kanshi/mako/swayidle/swaylock/wlopm for the labwc autostart, Neovim,
+yazi, btop, swaybg/kanshi/mako/swayidle/swaylock/wlopm for the labwc autostart,
+grim/slurp/wl-clipboard for the screenshot keys, Neovim,
 Noto fonts, and the NetworkManager/BlueZ/PipeWire/UPower services the
 panels talk to (`--no-packages` skips this; herdr isn't packaged and is
 installed separately). It then backs up anything already at the
@@ -92,9 +93,12 @@ From the start of the bar:
   same from labwc).
 - **Workspaces** — one tile per workspace, read from labwc through
   `ext-workspace-v1`. Click to switch; urgent ones are highlighted. The
-  labwc config defines four (`Super+1..4` to go, `Super+Shift+1..4` to
+  labwc config defines four (`Super+1..4` to go, `Super+Alt+1..4` to
   send the window along, `Super+F` fullscreen, `Super+Return` a terminal,
-  `Super+E` the file manager — yazi, in a terminal).
+  `Super+E` the file manager — yazi, in a terminal). Screenshots are
+  macOS-style: `Super+Shift+3` the whole screen, `Super+Shift+4` a
+  region (both saved to `~/Pictures/Screenshots`), `Ctrl+Super+Shift+4`
+  a region to the clipboard.
 - **Window list** — one entry per open window via
   `wlr-foreign-toplevel-management`. On a horizontal bar entries show
   their titles, sharing 75% of the free length and eliding when squeezed;
