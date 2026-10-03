@@ -166,6 +166,9 @@ reserving space, so the window layout never shifts.
   - the bar position, the 1x–4x size multiplier and the base grid unit
     (3–10px), with a readout of the resulting bar and font size; fuzzel's
     font follows the size too;
+  - a **FONT** dropdown listing the installed monospace families, each
+    drawn in its own face, for the shell, fuzzel and alacritty (Noto Sans
+    Mono by default, and the fallback when the chosen one is uninstalled);
   - a **TERMINAL OPACITY** slider for alacritty, reloaded live by open
     terminals.
 
