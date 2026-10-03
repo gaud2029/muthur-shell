@@ -5,23 +5,44 @@ import Quickshell.Wayland
 // Open-window list fed by wlr-foreign-toplevel-management, so it works on
 // any wlroots compositor without an IPC bridge. Lays out along the bar's
 // axis. On a horizontal bar entries stretch to show their title, sharing
-// `lengthBudget` equally and shrinking to a 2-letter app-id tile when
-// there isn't room; a vertical bar always shows the tiles.
+// `lengthBudget` and shrinking to a 2-letter app-id tile when there isn't
+// room; a vertical bar always shows the tiles.
 AxisGrid {
     id: root
 
     property var hovered: null
     // Total length along the bar the entries may occupy, set by Bar.
     property real lengthBudget: 0
-    readonly property int maxTitleChars: 75
 
     spacing: theme.gridUnit
 
     Theme { id: theme }
 
-    readonly property real share: entries.count > 0
-        ? (lengthBudget - spacing * (entries.count - 1)) / entries.count
-        : 0
+    FontMetrics {
+        id: titleMetrics
+        font.family: theme.fontFamily
+        font.pixelSize: theme.px(11)
+    }
+
+    // Each entry's length, by toplevel index. The budget is shared out
+    // shortest title first: an entry whose title fits in an equal share
+    // takes only what it needs, and what it leaves goes to the longer
+    // ones instead of being split evenly.
+    readonly property var lengths: {
+        // At least the length that shows a title, so a short one ("vim")
+        // stays a title rather than turning into an app-id tile.
+        const wanted = ToplevelManager.toplevels.values.map(t => Math.max(theme.tile * 2,
+            Math.ceil(titleMetrics.advanceWidth(t.title || "")) + theme.gridUnit * 2));
+        let budget = root.lengthBudget - root.spacing * Math.max(0, wanted.length - 1);
+        let left = wanted.length;
+        const result = [];
+        wanted.map((w, i) => i).sort((a, b) => wanted[a] - wanted[b]).forEach(i => {
+            result[i] = Math.max(theme.tile, Math.min(wanted[i], budget / left));
+            budget -= result[i];
+            left--;
+        });
+        return result;
+    }
 
     function abbreviate(appId) {
         const leaf = (appId || "?").split(".").pop();
@@ -35,15 +56,14 @@ AxisGrid {
         Rectangle {
             id: entry
             required property Toplevel modelData
+            required property int index
 
             readonly property bool focused: modelData.activated
             readonly property bool filled: focused || mouseArea.pressed
             readonly property color fg: filled ? theme.colorBg
                                       : modelData.minimized ? theme.colorDim : theme.colorFg
 
-            readonly property string title: (modelData.title || "").substring(0, root.maxTitleChars)
-            readonly property real wanted: titleText.implicitWidth + theme.gridUnit * 2
-            readonly property real length: root.vertical ? theme.tile : Math.max(theme.tile, Math.min(wanted, root.share))
+            readonly property real length: root.vertical ? theme.tile : (root.lengths[index] || theme.tile)
             readonly property bool showTitle: !root.vertical && length >= theme.tile * 2
 
             width: length
@@ -57,7 +77,7 @@ AxisGrid {
                 anchors.centerIn: parent
                 width: entry.length - theme.gridUnit * 2
                 visible: entry.showTitle
-                text: entry.title
+                text: entry.modelData.title || ""
                 elide: Text.ElideRight
                 color: entry.fg
                 font.family: theme.fontFamily
