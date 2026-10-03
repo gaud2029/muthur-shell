@@ -368,6 +368,22 @@ Item {
 
             Item { width: 1; height: theme.gridUnit }
 
+            SectionHeader { text: "FONT" }
+
+            // Each option is drawn in its own face. The list is measured
+            // on every open (ThemeStore.scanFonts), so fonts installed
+            // since show up without a restart.
+            Dropdown {
+                width: parent.width
+                current: ThemeStore.fontFamily
+                options: ThemeStore.monoFontFamilies
+                fontFor: family => family
+                onOpenChanged: if (open) ThemeStore.scanFonts()
+                onPicked: family => ThemeStore.setFontFamily(family)
+            }
+
+            Item { width: 1; height: theme.gridUnit }
+
             SectionHeader { text: "TERMINAL" }
 
             VolumeSlider {

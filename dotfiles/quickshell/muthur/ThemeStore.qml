@@ -256,6 +256,10 @@ QtObject {
         // Percent, so it stays an int (see above).
         property int terminalOpacity: 80
 
+        // Monospace family for the shell, fuzzel and alacritty ("" = the
+        // default, see fontFamily).
+        property string fontFamily: ""
+
         // "claude", "codex" or "" — whose 5h session bar the [AI] button shows.
         property string defaultAgent: ""
 
@@ -385,8 +389,52 @@ QtObject {
     readonly property string defaultAgent: agents.includes(root.store.defaultAgent) ? root.store.defaultAgent : ""
 
     // Shared with Theme.qml, and with generated configs for apps that
-    // should type in the same face and size as the shell.
-    readonly property string fontFamily: "Noto Sans Mono"
+    // should type in the same face and size as the shell. A saved family
+    // that's no longer installed falls back to the default.
+    readonly property string defaultFontFamily: "Noto Sans Mono"
+    readonly property string fontFamily: root.store.fontFamily && Qt.fontFamilies().includes(root.store.fontFamily)
+        ? root.store.fontFamily : defaultFontFamily
+
+    // The installed monospace families, for the LOOK tab's picker. Filled
+    // by scanFonts(): fontconfig's spacing flag is missing on plenty of
+    // monospace fonts (Noto Sans Mono among them), so each family is
+    // measured instead — narrow and wide glyphs advance the same in a
+    // monospace face. Fonts without Latin letters (emoji, symbols) would
+    // measure their fallback's letters and pass, so only the families
+    // fontconfig says cover A-Z and a-z are measured.
+    property var monoFontFamilies: []
+    readonly property FontMetrics fontProbe: FontMetrics {}
+
+    readonly property Process fontScan: Process {
+        command: ["fc-list", "-f", "%{family}\\n", ":charset=41-5a 61-7a"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const latin = new Set(this.text.split(/[\n,]/).map(f => f.trim()).filter(f => f));
+                const mono = Qt.fontFamilies().filter(family => {
+                    if (!latin.has(family))
+                        return false;
+                    root.fontProbe.font = Qt.font({ family: family, pixelSize: 20 });
+                    const narrow = root.fontProbe.advanceWidth("iiii");
+                    return narrow > 0 && Math.abs(narrow - root.fontProbe.advanceWidth("MMMM")) < 0.5;
+                });
+                if (!mono.includes(root.fontFamily))
+                    mono.push(root.fontFamily);
+                root.monoFontFamilies = mono.sort((a, b) => a.localeCompare(b));
+            }
+        }
+    }
+
+    function scanFonts() {
+        root.fontScan.running = true;
+    }
+
+    function setFontFamily(family) {
+        if (!Qt.fontFamilies().includes(family))
+            return;
+        root.store.fontFamily = family === defaultFontFamily ? "" : family;
+        root.writeFuzzelColors();
+        root.writeAlacrittyTheme();
+    }
     readonly property real scale: root.gridUnit * root.sizeMultiplier / 5
     readonly property int fontSize: Math.max(1, Math.round(13 * scale))
 
