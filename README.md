@@ -101,7 +101,8 @@ From the start of the bar:
   a region to the clipboard.
 - **Window list** — one entry per open window via
   `wlr-foreign-toplevel-management`. On a horizontal bar entries show
-  their titles, sharing 75% of the free length and eliding when squeezed;
+  their titles, sharing 75% of the free length (short titles take only
+  what they need, the longer ones split the rest) and eliding when squeezed;
   on a vertical bar they're two-letter app tiles. The focused window is
   filled, minimized ones dimmed; click to focus, middle-click to close,
   hover for the full title.
