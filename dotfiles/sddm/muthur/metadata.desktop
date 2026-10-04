@@ -1,0 +1,12 @@
+[SddmGreeterTheme]
+Name=muthur
+Description=MU/TH/UR 6000 login: the muthur shell's lock screen as the greeter
+Author=muthur-shell
+License=MIT
+Type=sddm-theme
+Version=1.0
+Website=https://github.com/gaud2029/muthur-shell
+MainScript=Main.qml
+Theme-Id=muthur
+Theme-API=2.0
+QtVersion=6

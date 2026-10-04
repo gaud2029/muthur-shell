@@ -152,6 +152,20 @@ Never make it the default theme (`install-plymouth.sh` without flags, or
 `plymouth-set-default-theme`) without the user: it rebuilds the initramfs,
 and the disk's LUKS prompt is drawn by this theme.
 
+## Testing the SDDM theme
+
+`dotfiles/sddm/install-sddm.sh --preview` runs `sddm-greeter-qt6
+--test-mode` on a temp copy of the theme for 30 s (test mode covers every
+screen and can't be left, so it runs under `timeout`), as the user — no root, so it
+can be run and captured directly (`grim -s 1`: it opens one full-screen
+window per output). `console.log` goes to the journal
+(`journalctl --user -t sddm-greeter-qt6`), not stdout. In test mode
+`sddm.hostName` is empty, power actions are unavailable and logging in
+does nothing; the user list and sessions are real. Installing
+(`install-sddm.sh` without flags) needs the user's sudo in a real
+terminal. Edits to CrtScreen/VectorTerrain/TypedText reach the greeter
+too (they're copied in), so check `--preview` after changing them.
+
 ## Testing generated configs
 
 `ThemeStore` regenerates on every preset change:

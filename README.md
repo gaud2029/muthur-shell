@@ -274,6 +274,32 @@ misbehaves at boot, <kbd>Esc</kbd> switches Plymouth to plain text, and
 removing `splash` from the kernel command line in Limine's menu boots
 without it.
 
+## The login screen — SDDM
+
+`dotfiles/sddm/muthur/` turns SDDM's greeter into the lock screen: the
+same tube, terrain, clock and `[ PRIORITY ONE ]` console, with MU/TH/UR
+naming the vessel and the crew member before asking for the ident. A
+refused password tears and shakes the picture; an accepted one powers
+the tube off as the session starts.
+
+Keys: type the password and <kbd>Enter</kbd>; <kbd>↑</kbd>/<kbd>↓</kbd>
+for another crew member, <kbd>F1</kbd> for another session,
+<kbd>F10</kbd>/<kbd>F11</kbd>/<kbd>F12</kbd> to suspend, restart or power
+off (twice — the first press only arms, like the drawer). The status
+line's items do the same on click.
+
+It reuses the shell's `CrtScreen.qml`, `VectorTerrain.qml` and
+`TypedText.qml` (copied in at install, since the greeter's `sddm` user
+can't read `/home`), with a fixed palette in its own `Theme.qml`.
+
+```sh
+dotfiles/sddm/install-sddm.sh --preview   # the greeter on every screen for 30 s, no root, login does nothing
+dotfiles/sddm/install-sddm.sh             # install and select it (/etc/sddm.conf.d/muthur.conf)
+dotfiles/sddm/install-sddm.sh --revert    # back to SDDM's default theme
+```
+
+Rerun the installer after changing the theme or those shared files.
+
 ## Beyond the shell — theming the rest of the desktop
 
 Switching presets in `[SYS] > [LOOK]` regenerates config for everything
@@ -344,6 +370,7 @@ dotfiles/
   fuzzel/             launcher config, themed to match the shell
   labwc/              window-manager config: themed, 4 workspaces, keybinds, autostart, 10px grid, angled corners
   plymouth/           MU/TH/UR boot screen (Plymouth script theme) and its installer
+  sddm/               MU/TH/UR login screen (SDDM greeter theme) and its installer
   alacritty/          terminal config, themed
   herdr/              config.toml for the terminal workspace manager, themed via ANSI colors
   nvim/               LazyVim config, themed (and live-reloaded)
