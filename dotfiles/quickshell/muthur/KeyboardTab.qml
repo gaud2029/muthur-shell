@@ -185,7 +185,7 @@ Item {
                     readonly property int maxRows: 8
                     readonly property bool scrolls: count > maxRows
 
-                    width: scrolls ? parent.width - theme.gridUnit - theme.px(8) : parent.width
+                    width: scrolls ? parent.width - theme.gridUnit - theme.scrollBarWidth : parent.width
                     // Rows overlap by 1px so neighbours share a border.
                     height: Math.min(count, maxRows) * (rowHeight - 1) + 1
                     spacing: -1

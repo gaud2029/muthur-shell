@@ -71,7 +71,7 @@ Column {
             id: list
             readonly property bool scrolls: root.options.length > root.maxRows
 
-            width: scrolls ? parent.width - theme.gridUnit - theme.px(8) : parent.width
+            width: scrolls ? parent.width - theme.gridUnit - theme.scrollBarWidth : parent.width
             // Rows overlap by 1px, like the Column above.
             height: Math.min(root.options.length, root.maxRows) * (root.rowHeight - 1) + 1
             spacing: -1

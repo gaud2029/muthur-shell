@@ -15,7 +15,7 @@ Rectangle {
     anchors.bottom: flickable.bottom
     anchors.left: flickable.right
     anchors.leftMargin: theme.gridUnit
-    width: theme.px(8)
+    width: theme.scrollBarWidth
     visible: needed
     color: "transparent"
     border.color: theme.colorDim

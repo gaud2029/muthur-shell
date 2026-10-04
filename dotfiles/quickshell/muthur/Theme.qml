@@ -47,6 +47,7 @@ QtObject {
     readonly property int barThickness: gridUnit * 8
     readonly property int buttonSize: gridUnit * 6
     readonly property int tile: gridUnit * 4
+    readonly property int scrollBarWidth: px(12)
     readonly property int panelWidth: gridUnit * 120
     readonly property int panelHeight: gridUnit * 144
 }
