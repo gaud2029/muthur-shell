@@ -1,0 +1,15 @@
+[Plymouth Theme]
+Name=MU/TH/UR 6000
+Description=Boot screen of the muthur shell: MU/TH/UR 6000 waking up on a green-phosphor CRT
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/muthur
+ScriptFile=/usr/share/plymouth/themes/muthur/muthur.script
+ConsoleLogBackgroundColor=0x000000
+
+# Read by mkinitcpio's plymouth hook to put these fonts in the initramfs
+# (as Plymouth.ttf / Plymouth-monospace.ttf); the script's "Mono" font
+# names pick the monospace one.
+Font=Noto Sans Mono 14
+MonospaceFont=Noto Sans Mono 14

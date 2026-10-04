@@ -1,0 +1,475 @@
+# MU/TH/UR 6000 boot screen (GitHub issue #24), the boot-time sibling of
+# the shell's lock screen. The tube powers on, MU/TH/UR types its header,
+# and every unit systemd reports scrolls by as a console line, each
+# marked OK when the next one starts; a bar at the bottom tracks boot
+# progress. The LUKS passphrase prompt is the lock screen's IDENTIFY
+# console. Fixed palette: black, bone-white and grey text, green phosphor
+# for the accents.
+#
+# Plymouth script notes: no string case conversion or formatting, so
+# padding is done by hand; Image.Text is costly, so a line's image is
+# rendered once and sprites only move or swap images.
+
+#----------------------------------------- Palette and metrics ------------
+
+Window.SetBackgroundTopColor(0, 0, 0);
+Window.SetBackgroundBottomColor(0, 0, 0);
+
+W = Window.GetWidth();
+H = Window.GetHeight();
+X0 = Window.GetX();
+Y0 = Window.GetY();
+
+# Text size follows the screen: 24px on a 1080p panel.
+size = Math.Int(H / 45);
+if (size < 12) size = 12;
+FONT = "Noto Sans Mono " + size;
+FONT_BOLD = "Noto Sans Mono Bold " + size;
+FONT_BIG = "Noto Sans Mono Bold " + Math.Int(size * 1.6);
+
+fun text(str, r, g, b, a, font)
+{
+    if (!font) font = global.FONT;
+    return Image.Text(str, r, g, b, a, font);
+}
+
+# Bone, grey, dim grey; phosphor green; amber and red for trouble.
+fun bone(str)  { return text(str, 0.86, 0.88, 0.82, 1); }
+fun grey(str)  { return text(str, 0.55, 0.58, 0.55, 1); }
+fun dim(str)   { return text(str, 0.32, 0.35, 0.33, 1); }
+fun green(str) { return text(str, 0.2, 1, 0.4, 1); }
+fun amber(str) { return text(str, 1, 0.75, 0.2, 1); }
+fun red(str)   { return text(str, 1, 0.3, 0.25, 1); }
+
+# Character cell, measured once (monospace).
+probe = text("MMMMMMMMMM", 1, 1, 1, 1);
+CW = probe.GetWidth() / 10;
+LH = Math.Int(probe.GetHeight() * 1.25);
+MARGIN = Math.Int(size * 2);
+COLS = Math.Int((W - 2 * MARGIN) / CW);
+
+MODE = Plymouth.GetMode();
+SHUTDOWN = (MODE == "shutdown" || MODE == "reboot");
+
+t = 0;  # frames since start, at 50 fps
+
+fun repeat(str, n)
+{
+    out = "";
+    for (i = 0; i < n; i++)
+        out += str;
+    return out;
+}
+
+fun pad3(n)
+{
+    if (n < 10) return "00" + n;
+    if (n < 100) return "0" + n;
+    return "" + n;
+}
+
+# A string cut to at most n characters, with an ellipsis.
+fun fit(str, n)
+{
+    if (str.Length() <= n) return str;
+    return str.SubString(0, n - 1) + "~";
+}
+
+#----------------------------------------- CRT ----------------------------
+
+LINE_IMAGE = Image("line.png");
+
+scan.sprite = Sprite(Image("scanline.png").Tile(W, H));
+scan.sprite.SetPosition(X0, Y0, 900);
+scan.sprite.SetOpacity(0.35);
+
+band.image = Image("band.png").Scale(W, Math.Int(H * 0.22));
+band.sprite = Sprite(band.image);
+band.sprite.SetPosition(X0, Y0 - band.image.GetHeight(), 800);
+
+# The power-on beam: a bright line opening sideways, then the picture.
+beam.sprite = Sprite();
+beam.sprite.SetZ(1000);
+POWER_ON = 18;  # frames
+
+#----------------------------------------- Header -------------------------
+
+header_text[0] = "MU/TH/UR 6000";
+header_text[1] = "WEYLAND-YUTANI CORP   INTERFACE 2037";
+if (MODE == "reboot")
+    header_text[2] = "RESTART SEQUENCE INITIATED";
+else if (SHUTDOWN)
+    header_text[2] = "SHUTDOWN SEQUENCE INITIATED";
+else
+    header_text[2] = "SYSTEM START   PRIORITY: ROUTINE";
+
+for (i = 0; i < 3; i++)
+{
+    header[i].sprite = Sprite();
+    header[i].sprite.SetPosition(X0 + MARGIN, Y0 + MARGIN + i * LH, 10);
+    header[i].shown = 0;
+}
+
+rule.sprite = Sprite(LINE_IMAGE.Scale(W - 2 * MARGIN, 1));
+rule.sprite.SetPosition(X0 + MARGIN, Y0 + MARGIN + Math.Int(3.4 * LH), 10);
+rule.sprite.SetOpacity(0);
+
+typed_chars = 0;  # characters of the header typed so far, all lines
+
+fun type_header()
+{
+    budget = global.typed_chars;
+    for (i = 0; i < 3; i++)
+    {
+        want = global.header_text[i].Length();
+        if (budget < want) n = budget; else n = want;
+        if (n < 0) n = 0;
+        budget -= want;
+        if (n != global.header[i].shown)
+        {
+            global.header[i].shown = n;
+            str = global.header_text[i].SubString(0, n);
+            if (i == 0)
+                global.header[i].sprite.SetImage(text(str, 0.2, 1, 0.4, 1, global.FONT_BIG));
+            else if (i == 1)
+                global.header[i].sprite.SetImage(grey(str));
+            else
+                global.header[i].sprite.SetImage(bone(str));
+        }
+    }
+    # The big first line is taller: push the others down under it.
+    if (global.header[0].sprite.GetImage())
+    {
+        top = global.Y0 + global.MARGIN + global.header[0].sprite.GetImage().GetHeight() + Math.Int(global.LH * 0.3);
+        global.header[1].sprite.SetY(top);
+        global.header[2].sprite.SetY(top + global.LH);
+        global.rule.sprite.SetY(top + Math.Int(2.3 * global.LH));
+        global.LOG_TOP = top + Math.Int(2.9 * global.LH);
+    }
+}
+
+LOG_TOP = Y0 + MARGIN + 5 * LH;
+
+#----------------------------------------- Boot log -----------------------
+
+# Room between the header and the progress line.
+LOG_ROWS = Math.Int((H - 2 * MARGIN - 9 * LH) / LH);
+if (LOG_ROWS < 4) LOG_ROWS = 4;
+
+log_count = 0;  # lines logged so far
+
+for (i = 0; i < LOG_ROWS; i++)
+{
+    row[i].sprite = Sprite();
+    row[i].sprite.SetZ(10);
+}
+
+# "> NAME .......... [ OK ]" padded to the full width.
+fun log_line(name, state)
+{
+    tail = " [ " + state + " ]";
+    name = fit(name, global.COLS - tail.Length() - 4);
+    return "> " + name + " " + repeat(".", global.COLS - name.Length() - tail.Length() - 3) + tail;
+}
+
+fun log_add(name)
+{
+    # The line that was running is done.
+    if (global.log_count > 0)
+    {
+        last = global.log_count - 1;
+        global.entry[last].image = grey(log_line(global.entry[last].name, "OK"));
+    }
+    global.entry[global.log_count].name = name;
+    global.log_count++;
+    log_layout();
+}
+
+fun log_layout()
+{
+    first = global.log_count - global.LOG_ROWS;
+    if (first < 0) first = 0;
+    for (i = 0; i < global.LOG_ROWS; i++)
+    {
+        k = first + i;
+        global.row[i].sprite.SetPosition(global.X0 + global.MARGIN, global.LOG_TOP + i * global.LH, 10);
+        if (k < global.log_count - 1)
+        {
+            global.row[i].sprite.SetImage(global.entry[k].image);
+            # Older lines fade toward the top.
+            global.row[i].sprite.SetOpacity(0.45 + 0.55 * (i + 1) / global.LOG_ROWS);
+        }
+        else if (k >= global.log_count)
+        {
+            global.row[i].sprite.SetOpacity(0);
+        }
+        else
+        {
+            global.live_row = i;
+            global.row[i].sprite.SetOpacity(1);
+        }
+    }
+}
+
+live_row = -1;
+live_frame = -1;
+
+SPIN[0] = "|"; SPIN[1] = "/"; SPIN[2] = "-"; SPIN[3] = "\\";
+
+# The running line, in green with a spinner, redrawn a few times a second.
+fun draw_live()
+{
+    if (global.log_count == 0 || global.live_row < 0) return;
+    frame = Math.Int(global.t / 6);
+    if (frame == global.live_frame) return;
+    global.live_frame = frame;
+    last = global.log_count - 1;
+    global.row[global.live_row].sprite.SetImage(
+        green(log_line(global.entry[last].name, global.SPIN[frame % 4] + " ")));
+}
+
+# Lines MU/TH/UR prints by itself while the initramfs is still too early
+# for systemd to report anything.
+FILLER[0] = "CORE MEMORY BANKS";
+FILLER[1] = "NAVIGATION SUBSYSTEM";
+FILLER[2] = "LIFE SUPPORT";
+FILLER[3] = "HYPERSLEEP CONTROL";
+FILLER[4] = "EXTERNAL COMMUNICATIONS";
+FILLER[5] = "SECURE STORAGE";
+fillers = 0;
+real_status = 0;
+
+fun status_callback(status)
+{
+    global.real_status = 1;
+    log_add(status);
+}
+
+Plymouth.SetUpdateStatusFunction(status_callback);
+
+#----------------------------------------- Progress -----------------------
+
+progress = 0;
+progress_frame = -1;
+
+progress_line.sprite = Sprite();
+progress_line.sprite.SetPosition(X0 + MARGIN, Y0 + H - MARGIN - LH, 10);
+
+fun progress_callback(duration, value)
+{
+    global.progress = value;
+}
+
+Plymouth.SetBootProgressFunction(progress_callback);
+
+fun draw_progress()
+{
+    frame = Math.Int(global.t / 6);
+    if (frame == global.progress_frame) return;
+    global.progress_frame = frame;
+    if (global.SHUTDOWN)
+    {
+        global.progress_line.sprite.SetImage(amber("POWERING DOWN " + global.SPIN[frame % 4]));
+        return;
+    }
+    pct = Math.Int(global.progress * 100);
+    if (pct > 100) pct = 100;
+    label = "LOADING ";
+    tail = " " + pad3(pct) + "% " + global.SPIN[frame % 4];
+    cells = global.COLS - label.Length() - tail.Length() - 2;
+    full = Math.Int(cells * global.progress);
+    if (full > cells) full = cells;
+    global.progress_line.sprite.SetImage(
+        green(label + "[" + repeat("#", full) + repeat(".", cells - full) + "]" + tail));
+}
+
+#----------------------------------------- IDENTIFY prompt ----------------
+
+# The LUKS passphrase (and any other question) as the lock screen's
+# console, centered over a dimmed log.
+mode = "normal";
+
+for (i = 0; i < 5; i++)
+{
+    dialog[i].sprite = Sprite();
+    dialog[i].sprite.SetZ(20);
+}
+frame_top.sprite = Sprite();
+frame_top.sprite.SetZ(20);
+frame_bottom.sprite = Sprite();
+frame_bottom.sprite.SetZ(20);
+
+dialog_prompt = "";
+dialog_answer = "";
+dialog_message = "";
+dialog_frame = -1;
+
+DIALOG_COLS = 56;
+if (DIALOG_COLS > COLS) DIALOG_COLS = COLS;
+
+fun dialog_place(i, image, row)
+{
+    global.dialog[i].sprite.SetImage(image);
+    global.dialog[i].sprite.SetX(global.X0 + (global.W - global.DIALOG_COLS * global.CW) / 2);
+    global.dialog[i].sprite.SetY(global.Y0 + global.H / 2 + (row - 2) * global.LH);
+    global.dialog[i].sprite.SetOpacity(1);
+}
+
+fun dialog_draw()
+{
+    blink = Math.Int(global.t / 25) % 2;
+    caps = Plymouth.GetCapslockState();
+    frame = blink + 2 * caps;
+    if (frame == global.dialog_frame) return;
+    global.dialog_frame = frame;
+
+    if (blink) cursor = "_"; else cursor = " ";
+    dialog_place(0, green("[ PRIORITY ONE ]"), -1);
+    dialog_place(1, bone("SECURE STORAGE LOCKED. CREW IDENT REQUIRED."), 0);
+    dialog_place(2, dim(fit(global.dialog_prompt, global.DIALOG_COLS)), 1);
+    dialog_place(3, green("IDENTIFY: " + fit(global.dialog_answer, global.DIALOG_COLS - 12) + cursor), 3);
+    if (global.dialog_message != "")
+        dialog_place(4, amber(fit(global.dialog_message, global.DIALOG_COLS)), 5);
+    else if (caps)
+        dialog_place(4, amber("CAPS LOCK IS ON."), 5);
+    else
+        global.dialog[4].sprite.SetOpacity(0);
+
+    rule_image = global.LINE_IMAGE.Scale(global.DIALOG_COLS * global.CW, 1);
+    x = global.X0 + (global.W - global.DIALOG_COLS * global.CW) / 2;
+    global.frame_top.sprite.SetImage(rule_image);
+    global.frame_top.sprite.SetPosition(x, global.Y0 + global.H / 2 - 3.4 * global.LH, 20);
+    global.frame_top.sprite.SetOpacity(1);
+    global.frame_bottom.sprite.SetImage(rule_image);
+    global.frame_bottom.sprite.SetPosition(x, global.Y0 + global.H / 2 + 4.6 * global.LH, 20);
+    global.frame_bottom.sprite.SetOpacity(1);
+}
+
+fun dialog_show(prompt, answer)
+{
+    global.mode = "dialog";
+    global.dialog_prompt = prompt;
+    global.dialog_answer = answer;
+    global.dialog_frame = -1;
+    for (i = 0; i < global.LOG_ROWS; i++)
+        global.row[i].sprite.SetOpacity(0);
+    global.message.sprite.SetOpacity(0);
+    global.progress_line.sprite.SetOpacity(0.25);
+    dialog_draw();
+}
+
+fun display_password_callback(prompt, bullets)
+{
+    dialog_show(prompt, repeat("*", bullets));
+}
+
+fun display_question_callback(prompt, entry)
+{
+    dialog_show(prompt, entry);
+}
+
+fun display_normal_callback()
+{
+    if (global.mode != "dialog") return;
+    global.mode = "normal";
+    global.dialog_message = "";
+    for (i = 0; i < 5; i++)
+        global.dialog[i].sprite.SetOpacity(0);
+    global.frame_top.sprite.SetOpacity(0);
+    global.frame_bottom.sprite.SetOpacity(0);
+    global.progress_line.sprite.SetOpacity(1);
+    log_layout();
+}
+
+Plymouth.SetDisplayPasswordFunction(display_password_callback);
+Plymouth.SetDisplayQuestionFunction(display_question_callback);
+Plymouth.SetDisplayNormalFunction(display_normal_callback);
+
+#----------------------------------------- Messages -----------------------
+
+# Shown under the prompt while it's up, else above the progress line.
+message.sprite = Sprite();
+message.sprite.SetPosition(X0 + MARGIN, Y0 + H - MARGIN - 2 * LH, 10);
+
+fun display_message_callback(str)
+{
+    global.dialog_message = str;
+    global.dialog_frame = -1;
+    if (global.mode != "dialog")
+    {
+        global.message.sprite.SetImage(amber(fit(str, global.COLS)));
+        global.message.sprite.SetOpacity(1);
+    }
+}
+
+fun hide_message_callback(str)
+{
+    global.dialog_message = "";
+    global.dialog_frame = -1;
+    global.message.sprite.SetOpacity(0);
+}
+
+Plymouth.SetDisplayMessageFunction(display_message_callback);
+Plymouth.SetHideMessageFunction(hide_message_callback);
+
+#----------------------------------------- Refresh ------------------------
+
+fun refresh_callback()
+{
+    global.t++;
+
+    # Power-on: a beam widening from the center, then a brief flash.
+    if (global.t <= POWER_ON)
+    {
+        w = Math.Int(global.W * global.t / POWER_ON);
+        if (w < 2) w = 2;
+        h = Math.Int(global.H / 300);
+        if (h < 2) h = 2;
+        global.beam.sprite.SetImage(global.LINE_IMAGE.Scale(w, h));
+        global.beam.sprite.SetPosition(global.X0 + (global.W - w) / 2, global.Y0 + global.H / 2, 1000);
+        global.beam.sprite.SetOpacity(1);
+        return;
+    }
+    if (global.t <= POWER_ON + 15)
+    {
+        global.beam.sprite.SetImage(global.LINE_IMAGE.Scale(global.W, global.H));
+        global.beam.sprite.SetPosition(global.X0, global.Y0, 1000);
+        global.beam.sprite.SetOpacity(0.1 * (POWER_ON + 15 - global.t) / 15);
+        if (global.t == POWER_ON + 15)
+            global.beam.sprite.SetOpacity(0);
+    }
+
+    # The header types at ~1 character a frame, then the rule appears.
+    total = global.header_text[0].Length() + global.header_text[1].Length() + global.header_text[2].Length();
+    if (global.typed_chars <= total)
+    {
+        global.typed_chars++;
+        type_header();
+        if (global.typed_chars > total)
+        {
+            global.rule.sprite.SetOpacity(0.6);
+            log_layout();
+        }
+    }
+
+    # Until systemd says something, MU/TH/UR keeps the log moving.
+    if (!global.real_status && global.typed_chars > total && global.fillers < 6
+        && global.t % 20 == 0)
+    {
+        log_add(global.FILLER[global.fillers]);
+        global.fillers++;
+    }
+
+    if (global.mode == "dialog")
+        dialog_draw();
+    else
+        draw_live();
+
+    draw_progress();
+
+    # The brighter band rolling down the tube, about every 9 seconds.
+    y = (global.t * global.H / 450) % (global.H + global.band.image.GetHeight());
+    global.band.sprite.SetY(global.Y0 + y - global.band.image.GetHeight());
+}
+
+Plymouth.SetRefreshFunction(refresh_callback);

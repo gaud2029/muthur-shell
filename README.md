@@ -247,6 +247,33 @@ colors.
   `WAYLAND_DISPLAY=wayland-0 quickshell -c muthur -d`: it comes back up
   locked, and unlocks with your password.
 
+## The boot screen — Plymouth
+
+`dotfiles/plymouth/muthur/` is a Plymouth theme in the same voice as the
+lock screen: the tube powers on, MU/TH/UR types its header, every unit
+systemd starts scrolls by as a console line (marked `[ OK ]` when the
+next one starts) over a `LOADING [####....] 042%` bar, and the LUKS
+passphrase is asked for by the same `[ PRIORITY ONE ]` / `IDENTIFY:`
+console. Shutdown and reboot get their own header and a `POWERING DOWN`
+line. Fixed palette (black, bone, grey, phosphor green), not the shell's
+preset: the theme lives in the initramfs.
+
+It isn't installed by `install.sh` — it needs root and rebuilds the
+initramfs:
+
+```sh
+dotfiles/plymouth/install-plymouth.sh --preview   # play it in a window, no reboot
+dotfiles/plymouth/install-plymouth.sh             # make it the boot theme (mkinitcpio -P)
+dotfiles/plymouth/install-plymouth.sh --revert    # back to cachyos
+```
+
+`--preview` uses Plymouth's X11 renderer through Xwayland, so it needs
+`xorg-xhost` (it lets root's `plymouthd` in for the run, then revokes it).
+Run it from a terminal, sudo asks for the password. If the theme ever
+misbehaves at boot, <kbd>Esc</kbd> switches Plymouth to plain text, and
+removing `splash` from the kernel command line in Limine's menu boots
+without it.
+
 ## Beyond the shell — theming the rest of the desktop
 
 Switching presets in `[SYS] > [LOOK]` regenerates config for everything
@@ -316,6 +343,7 @@ dotfiles/
                       scripts/ holds the palette and usage-stats helpers
   fuzzel/             launcher config, themed to match the shell
   labwc/              window-manager config: themed, 4 workspaces, keybinds, autostart, 10px grid, angled corners
+  plymouth/           MU/TH/UR boot screen (Plymouth script theme) and its installer
   alacritty/          terminal config, themed
   herdr/              config.toml for the terminal workspace manager, themed via ANSI colors
   nvim/               LazyVim config, themed (and live-reloaded)

@@ -129,6 +129,29 @@ WAYLAND_DISPLAY=wayland-1 grim shot.png
   test shell. To preview LockView without locking, put it in a full-screen
   overlay `PanelWindow` and step `LockScreen.phase` / `answer` / `idle`.
 
+## Testing the Plymouth theme
+
+`dotfiles/plymouth/install-plymouth.sh --preview` plays the boot and
+shutdown screens in a window. It needs root, and sudo needs a real
+terminal (a `!` command has none): ask the user to run it in alacritty,
+and capture meanwhile with a background loop that waits for
+`pgrep -x plymouthd` and runs `grim -s 1` every second (all outputs: the
+window may open on an external screen). Logs end up readable in
+`/tmp/muthur-plymouth-{boot,shutdown}.log`; a script error shows there as
+a parse/execution error and at boot as a blank screen.
+
+Why the preview is built the way it is: with udev, plymouthd goes for the
+DRM devices the compositor owns and falls back to text, so it's started
+with `plymouth.ignore-udev` (renderer list, x11 first); and Xwayland
+only lets the user's clients in, so the script grants root with `xhost`
+for the run (Xwayland exits 10 s after its last client and forgets
+grants made earlier). The x11 renderer refreshes far slower than DRM, so
+typing and the power-on flash look slower there than at boot.
+
+Never make it the default theme (`install-plymouth.sh` without flags, or
+`plymouth-set-default-theme`) without the user: it rebuilds the initramfs,
+and the disk's LUKS prompt is drawn by this theme.
+
 ## Testing generated configs
 
 `ThemeStore` regenerates on every preset change:
