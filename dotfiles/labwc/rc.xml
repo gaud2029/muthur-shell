@@ -46,7 +46,7 @@
       these two values in place): repeats per second, and ms before the
       first repeat.
     -->
-    <repeatRate>80</repeatRate>
+    <repeatRate>77</repeatRate>
     <repeatDelay>410</repeatDelay>
     <!--
       Workspaces: Super+N to go, Super+Alt+N to send the window along
