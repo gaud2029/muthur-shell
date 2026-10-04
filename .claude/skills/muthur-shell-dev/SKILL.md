@@ -57,6 +57,8 @@ that closes any popups, so take the screenshot *before* restoring):
   `ThemeStore.applyPreset("tron")`, `setBarPosition("top")`,
   `setSizeMultiplier(2)`, `setGridUnit(5)`, `setDefaultAgent("claude")`,
   `setWallpaper("/path.png")` / `clearWallpaper()`, `setTerminalOpacity(80)`.
+  `setMainScreen("DP-3")`, `setBarOnMainOnly(true)` (bars only on that output;
+  capture each output with `grim -o NAME` to check).
   **Always put things back** — these persist in `theme.ini` and the user
   keeps their own choices there (check `grep -E "^preset|^barPosition|^gridUnit" theme.ini` first).
 - Give a widget an `id`/`property alias` temporarily when the hook needs

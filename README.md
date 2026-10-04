@@ -97,7 +97,8 @@ back to the stock package.
 
 A thin strip on one screen edge — left by default, but `[SYS] > [LOOK]`
 moves it to any of the four edges and every widget and popup follows the
-orientation. It reserves its space, so windows never sit under it. Every
+orientation. It's on every screen, or only on the main one
+(`[SYS] > [DISPLAY]`). It reserves its space, so windows never sit under it. Every
 size in the shell derives from one grid unit (5px × a 1x–4x multiplier,
 both adjustable), so the whole thing scales together, fonts included.
 
@@ -173,7 +174,8 @@ reserving space, so the window layout never shifts.
   (labeled with its output), set through logind's `SetBrightness` so no
   root helper is needed; polls sysfs while open so the brightness keys are
   reflected. External monitors (DDC/CI) aren't covered. An **ARRANGE**
-  button opens `wdisplays` for output position, mode and scale.
+  button opens `wdisplays` for output position, mode and scale. **MAIN DISPLAY** picks one of the connected screens, and **BAR ON**
+  puts the bar on all of them or only on that one.
 - **KEYBOARD** — the configured layouts (click one to make it active,
   `REMOVE` to drop it), a search over every layout and variant xkb knows
   to add more (`fr`, `canada`, `dvorak`...), and key repeat: rate and

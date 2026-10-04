@@ -131,6 +131,48 @@ Item {
                 font.pixelSize: theme.px(11)
                 font.letterSpacing: theme.letterSpacing
             }
+
+            Text {
+                text: "MAIN DISPLAY"
+                color: theme.colorDim
+                font.family: theme.fontFamily
+                font.pixelSize: theme.px(11)
+                font.letterSpacing: theme.letterSpacing
+            }
+
+            Dropdown {
+                width: parent.width
+                current: Quickshell.screens.find(s => s.name === ThemeStore.mainScreen) || null
+                options: Quickshell.screens
+                // Built-in panels report their model as "Unknown".
+                labelFor: s => s ? [s.name, s.model === "Unknown" ? "" : s.model, s.width + "×" + s.height]
+                    .filter(x => x).join("  ·  ") : "-"
+                onPicked: s => ThemeStore.setMainScreen(s.name)
+            }
+
+            Text {
+                text: "BAR ON"
+                color: theme.colorDim
+                font.family: theme.fontFamily
+                font.pixelSize: theme.px(11)
+                font.letterSpacing: theme.letterSpacing
+            }
+
+            Row {
+                spacing: theme.gridUnit * 2
+
+                TerminalButton {
+                    label: "ALL DISPLAYS"
+                    selected: !ThemeStore.barOnMainOnly
+                    onClicked: ThemeStore.setBarOnMainOnly(false)
+                }
+
+                TerminalButton {
+                    label: "MAIN ONLY"
+                    selected: ThemeStore.barOnMainOnly
+                    onClicked: ThemeStore.setBarOnMainOnly(true)
+                }
+            }
         }
     }
 

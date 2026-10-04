@@ -250,6 +250,11 @@ QtObject {
         // Layout (GitHub issue #12). int/string only: Qt.labs.settings
         // hands a `real` back as a string after a round-trip.
         property string barPosition: "left"
+        // The main display's output name ("" = the first screen), and
+        // whether the bar is on every screen ("all") or only that one
+        // ("main"). GitHub issue #22.
+        property string mainScreen: ""
+        property string barScreens: "all"
         property int sizeMultiplier: 1
         property int gridUnit: 5
 
@@ -437,6 +442,21 @@ QtObject {
     }
     readonly property real scale: root.gridUnit * root.sizeMultiplier / 5
     readonly property int fontSize: Math.max(1, Math.round(13 * scale))
+
+    // The saved main display while it's connected, else the first screen.
+    readonly property string mainScreen: {
+        const names = Quickshell.screens.map(s => s.name);
+        return names.includes(root.store.mainScreen) ? root.store.mainScreen : (names[0] || "");
+    }
+    readonly property bool barOnMainOnly: root.store.barScreens === "main"
+
+    function setMainScreen(name) {
+        root.store.mainScreen = name;
+    }
+
+    function setBarOnMainOnly(only) {
+        root.store.barScreens = only ? "main" : "all";
+    }
 
     function setBarPosition(position) {
         if (barPositions.includes(position))

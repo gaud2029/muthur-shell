@@ -13,8 +13,12 @@ ShellRoot {
         Focus.active;
     }
 
+    // Every screen, or only the main one (ThemeStore.mainScreen, set in
+    // [SYS] > DISPLAY).
     Variants {
-        model: Quickshell.screens
+        model: ThemeStore.barOnMainOnly
+            ? Quickshell.screens.filter(s => s.name === ThemeStore.mainScreen)
+            : Quickshell.screens
 
         Bar {
             required property var modelData
