@@ -8,6 +8,16 @@ PanelWindow {
 
     readonly property string position: theme.barPosition
     readonly property bool vertical: theme.vertical
+    // Focus mode: everything but the launcher's cursor goes, leaving the
+    // bar's plain background; the window and its reserved space stay
+    // (Focus.qml).
+    readonly property bool folded: Focus.active
+
+    onFoldedChanged: if (folded) {
+        for (const p of popupPanels)
+            p.visible = false;
+        drawer.visible = false;
+    }
 
     // Screen corner + margins that put a popup right beside `item`, opening
     // toward the bar's far end so it can't overflow whichever end the
@@ -79,6 +89,7 @@ PanelWindow {
         width: root.vertical ? 1 : parent.width
         height: root.vertical ? parent.height : 1
         color: theme.colorFg
+        visible: !root.folded
     }
 
     // Widgets flow along the bar from each end: a "start" group at the
@@ -113,14 +124,12 @@ PanelWindow {
             // themselves 1-unit apart, so their sections need clearer gaps.
             spacing: theme.gridUnit * 4
 
+            // Folds the bar away into focus mode and back (fuzzel is on
+            // Super+Space).
             TerminalButton {
                 id: launcher
                 square: true
-                onClicked: {
-                    const p = root.popupPlacement(launcher);
-                    Quickshell.execDetached(["fuzzel", "--anchor", p.anchor,
-                                             "--x-margin", String(p.x), "--y-margin", String(p.y)]);
-                }
+                onClicked: Focus.toggle()
 
                 // The terminal cursor, breathing instead of blinking.
                 Rectangle {
@@ -140,16 +149,19 @@ PanelWindow {
             Workspaces {
                 id: workspaces
                 screen: root.screen
+                visible: !root.folded
             }
 
             WindowList {
                 lengthBudget: root.windowListBudget
+                visible: !root.folded
             }
         }
 
         BarGroup {
             id: endGroup
             atEnd: true
+            visible: !root.folded
 
             NowPlaying {}
 

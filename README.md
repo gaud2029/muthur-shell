@@ -103,9 +103,12 @@ both adjustable), so the whole thing scales together, fonts included.
 
 From the start of the bar:
 
-- **Launcher** — a square button with a breathing cursor block. Opens
-  `fuzzel` right beside it, wherever the bar is (`Super+Space` does the
-  same from labwc).
+- **Focus mode** — a square button with a breathing cursor block. Click
+  it and the whole bar folds away on every screen, leaving only that
+  cursor in the corner; click again to bring it back. Its space stays
+  reserved, so windows don't move or resize. Open popups close on the way
+  out. Also `quickshell ipc -c muthur call focus toggle`. (The launcher,
+  `fuzzel`, is on `Super+Space`.)
 - **Workspaces** — one tile per workspace, read from labwc through
   `ext-workspace-v1`. Click to switch; urgent ones are highlighted. The
   labwc config defines four (`Super+1..4` to go, `Super+Alt+1..4` to

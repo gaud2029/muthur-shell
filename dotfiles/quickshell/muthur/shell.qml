@@ -5,9 +5,13 @@ import QtQuick
 import Quickshell
 
 ShellRoot {
-    // Singletons load on first use; touch the lock now so its IPC target
-    // ("quickshell ipc -c muthur call lock lock") exists from the start.
-    Component.onCompleted: LockScreen.locked
+    // Singletons load on first use; touch the ones with IPC targets now
+    // ("quickshell ipc -c muthur call lock lock", "... call focus toggle")
+    // so they exist from the start.
+    Component.onCompleted: {
+        LockScreen.locked;
+        Focus.active;
+    }
 
     Variants {
         model: Quickshell.screens
