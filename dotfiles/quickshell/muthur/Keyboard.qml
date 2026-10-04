@@ -26,6 +26,13 @@ Singleton {
         // form, comma-separated, and the index of the active one.
         property string layouts: ""
         property int active: 0
+
+        // Typing sounds: the key theme ("off" = no player), the ambience
+        // under the keys, and volume and ambience level in percent.
+        property string soundTheme: "off"
+        property string soundAmbienceType: "drone"
+        property int soundVolume: 50
+        property int soundAmbience: 50
     }
 
     readonly property var layouts: store.layouts ? store.layouts.split(",") : ["us"]
@@ -192,6 +199,121 @@ Singleton {
             root.store.layouts = (Quickshell.env("XKB_DEFAULT_LAYOUT") || "us").split(",")[0];
         root.readRepeat();
         root.apply();
+        root.syncPlayer();
+    }
+
+    // --- Typing sounds (GitHub issue #21) ------------------------------
+    //
+    // muthur-keysound plays them: a PipeWire player that takes key
+    // presses from the muthur-keysound-input system service (keycodes
+    // never reach it, only what kind of key and roughly where) and
+    // synthesizes the theme's sounds, placed left to right like the keys,
+    // over a binaural drone that swells while typing. It runs only while
+    // a theme is picked, and takes its settings over stdin.
+    // Both are installed by dotfiles/keysound/install-keysound.sh.
+
+    readonly property var soundThemes: [
+        { key: "off", label: "OFF", about: "" },
+        { key: "muthur", label: "MU/TH/UR", about: "TERMINAL BLIPS. ITS DRONE: A MAINFRAME HUM, THETA 6 HZ." },
+        { key: "nostromo", label: "NOSTROMO", about: "HEAVY DECK CLICKS. ITS DRONE: THE ENGINE ROOM, ALPHA 10 HZ." },
+        { key: "thocc", label: "NOSTROMO THOCC", about: "DEEP AND CREAMY, ALL BODY AND NO CLICK: A LUBED BOARD ON A HEAVY CASE." }
+    ]
+    readonly property var soundAmbiences: [
+        { key: "drone", label: "THEME DRONE", about: "THE KEY THEME'S BINAURAL DRONE: A CLOSE PITCH IN EACH EAR, HEARD AS A SLOW BEAT." },
+        { key: "vessel", label: "VESSEL", about: "INSIDE THE SHIP: AIR HANDLING, A DEEP RUMBLE, THE HULL TICKING NOW AND THEN. NO PITCH." },
+        { key: "rain", label: "HULL RAIN", about: "RAIN ON THE HULL: A FINE HISS OVERHEAD, A MUFFLED ROAR, DROPS ALL AROUND, A LEAK TO THE LEFT." },
+        { key: "softrain", label: "SOFT RAIN", about: "RAIN HEARD THROUGH THICK PLATING: A MUFFLED WASH SWELLING IN SLOW GUSTS, THE ODD HEAVY DROP. NOTHING HIGH." },
+        { key: "lowerdeck", label: "LOWER DECK", about: "MACHINERY TURNING OVER BELOW: A BROAD THROB WITH NO PITCH, A STEAM VENT LETTING GO NOW AND THEN." },
+        { key: "bridge", label: "BRIDGE", about: "A QUIET ROOM: SOFT AIR AND RELAYS TICKING IN THE CONSOLES AROUND YOU." },
+        { key: "lifesupport", label: "LIFE SUPPORT", about: "VENTILATION BREATHING IN AND OUT, A CONSOLE CHIRPING NOW AND THEN." }
+    ]
+    readonly property string soundTheme: soundThemes.some(t => t.key === store.soundTheme) ? store.soundTheme : "off"
+    readonly property string soundAmbienceType: soundAmbiences.some(a => a.key === store.soundAmbienceType) ? store.soundAmbienceType : "drone"
+    readonly property int soundVolume: Math.max(0, Math.min(100, store.soundVolume))
+    readonly property int soundAmbience: Math.max(0, Math.min(100, store.soundAmbience))
+
+    // "off"; "starting"; "missing" (the player isn't installed);
+    // "waiting" (no input service to listen to); "connected".
+    property string soundStatus: "off"
+
+    function setSoundTheme(key) {
+        if (!root.soundThemes.some(t => t.key === key))
+            return;
+        root.store.soundTheme = key;
+        root.syncPlayer();
+        root.sendSound();
+    }
+
+    function setSoundAmbienceType(key) {
+        if (!root.soundAmbiences.some(a => a.key === key))
+            return;
+        root.store.soundAmbienceType = key;
+        root.sendSound();
+    }
+
+    function setSoundVolume(percent) {
+        root.store.soundVolume = Math.max(0, Math.min(100, Math.round(percent)));
+        root.sendSound();
+    }
+
+    function setSoundAmbience(percent) {
+        root.store.soundAmbience = Math.max(0, Math.min(100, Math.round(percent)));
+        root.sendSound();
+    }
+
+    // A sweep of keys from left to right.
+    function testSound() {
+        if (root.player.running)
+            root.player.write("test\n");
+    }
+
+    function sendSound() {
+        if (root.player.running && root.soundTheme !== "off")
+            root.player.write("theme " + root.soundTheme + "\nambience " + root.soundAmbienceType
+                + "\nvolume " + root.soundVolume / 100
+                + "\ndrone " + root.soundAmbience / 100 + "\n");
+    }
+
+    // Started and stopped by hand rather than bound: a player that dies
+    // while a theme is on gets restarted (see onExited).
+    function syncPlayer() {
+        const wanted = root.soundTheme !== "off";
+        if (wanted && !root.player.running) {
+            root.soundStatus = "starting";
+            root.player.running = true;
+            missingCheck.restart();
+        } else if (!wanted) {
+            root.player.running = false;
+            root.soundStatus = "off";
+        }
+    }
+
+    readonly property Process player: Process {
+        command: ["muthur-keysound"]
+        stdinEnabled: true
+        stdout: SplitParser {
+            onRead: line => {
+                if (line === "input connected" || line === "input waiting") {
+                    root.soundStatus = line.slice(6);
+                    root.sendSound();
+                }
+            }
+        }
+        onExited: if (root.soundTheme !== "off" && root.soundStatus !== "missing") restartPlayer.restart()
+    }
+
+    // The player says "input waiting" as soon as it runs; silence means
+    // it never started.
+    Timer {
+        id: missingCheck
+        interval: 1500
+        onTriggered: if (root.soundStatus === "starting") root.soundStatus = "missing"
+    }
+
+    Timer {
+        id: restartPlayer
+        interval: 2000
+        onTriggered: root.syncPlayer()
     }
 
     IpcHandler {

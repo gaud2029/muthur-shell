@@ -152,6 +152,25 @@ Never make it the default theme (`install-plymouth.sh` without flags, or
 `plymouth-set-default-theme`) without the user: it rebuilds the initramfs,
 and the disk's LUKS prompt is drawn by this theme.
 
+## Testing the typing sounds
+
+Build the player into the scratchpad (`gcc -O2 -Wall -o "$S/muthur-keysound"
+dotfiles/keysound/muthur-keysound.c $(pkg-config --cflags --libs
+libpipewire-0.3) -lm`) and check it without hearing anything:
+- `muthur-keysound --render out.raw 14 hypersleep` writes simulated typing
+  (raw f32 stereo 48 kHz): `ffmpeg -f f32le -ar 48000 -ac 2 -i out.raw
+  out.wav`, then `astats` for levels/clipping and `showwavespic` /
+  `showspectrumpic` to see the left/right placement and the drone
+  following the typing.
+- Live, with a fake feed: a small Python server on a socket under
+  `$XDG_RUNTIME_DIR` (the scratchpad path is too long for AF_UNIX) sending
+  bytes (`kind | pos << 2`), the player started with
+  `MUTHUR_KEYSOUND_SOCKET` pointing at it and `volume 0` on stdin so
+  nothing plays on the user's speakers.
+The real feed only works installed (it needs the `input` group); never add
+the user to `input` to test it. Picking a theme from a hook persists in
+`keyboard.ini`: set it back to `off` afterwards.
+
 ## Testing the Limine theme
 
 There's no preview short of a reboot, and `/boot` (the ESP) is root-only,

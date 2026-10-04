@@ -266,6 +266,115 @@ Item {
                 width: parent.width
                 placeholder: "TEST: HOLD A KEY HERE"
             }
+
+            Item { width: 1; height: theme.gridUnit }
+
+            SectionHeader { text: "TYPING SOUND" }
+
+            Hint {
+                text: "AN AMBIENCE WHILE YOU TYPE: EACH KEY SOUNDS WHERE IT IS, LEFT TO RIGHT, OVER AN AMBIENCE THAT SWELLS AS YOU GO. BEST ON HEADPHONES."
+            }
+
+            Flow {
+                width: parent.width
+                spacing: theme.gridUnit * 2
+
+                Repeater {
+                    model: Keyboard.soundThemes
+
+                    TerminalButton {
+                        required property var modelData
+                        label: modelData.label
+                        selected: Keyboard.soundTheme === modelData.key
+                        onClicked: Keyboard.setSoundTheme(modelData.key)
+                    }
+                }
+            }
+
+            Hint {
+                visible: text.length > 0
+                color: theme.colorFg
+                text: (Keyboard.soundThemes.find(t => t.key === Keyboard.soundTheme) || {}).about || ""
+            }
+
+            Text {
+                visible: Keyboard.soundTheme !== "off"
+                text: "AMBIENCE"
+                color: theme.colorDim
+                font.family: theme.fontFamily
+                font.pixelSize: theme.px(11)
+                font.letterSpacing: theme.letterSpacing
+            }
+
+            Flow {
+                visible: Keyboard.soundTheme !== "off"
+                width: parent.width
+                spacing: theme.gridUnit * 2
+
+                Repeater {
+                    model: Keyboard.soundAmbiences
+
+                    TerminalButton {
+                        required property var modelData
+                        label: modelData.label
+                        selected: Keyboard.soundAmbienceType === modelData.key
+                        onClicked: Keyboard.setSoundAmbienceType(modelData.key)
+                    }
+                }
+            }
+
+            Hint {
+                visible: Keyboard.soundTheme !== "off"
+                color: theme.colorFg
+                text: (Keyboard.soundAmbiences.find(a => a.key === Keyboard.soundAmbienceType) || {}).about || ""
+            }
+
+            VolumeSlider {
+                visible: Keyboard.soundTheme !== "off"
+                width: parent.width
+                label: "VOLUME"
+                value: Keyboard.soundVolume / 100
+                onMoved: v => Keyboard.setSoundVolume(v * 100)
+            }
+
+            VolumeSlider {
+                visible: Keyboard.soundTheme !== "off"
+                width: parent.width
+                label: "AMBIENCE LEVEL"
+                value: Keyboard.soundAmbience / 100
+                onMoved: v => Keyboard.setSoundAmbience(v * 100)
+            }
+
+            // Whether the player and the keypress feed are there.
+            Row {
+                visible: Keyboard.soundTheme !== "off"
+                width: parent.width
+                spacing: theme.gridUnit * 2
+
+                TerminalButton {
+                    id: testButton
+                    label: "TEST"
+                    visible: Keyboard.soundStatus === "connected" || Keyboard.soundStatus === "waiting"
+                    onClicked: Keyboard.testSound()
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - (testButton.visible ? testButton.width + theme.gridUnit * 2 : 0)
+                    wrapMode: Text.WordWrap
+                    text: ({
+                        starting: "STARTING PLAYER...",
+                        connected: "INPUT LINK ACTIVE.",
+                        waiting: "NO INPUT LINK: THE KEYPRESS SERVICE ISN'T RUNNING. RUN dotfiles/keysound/install-keysound.sh",
+                        missing: "PLAYER NOT INSTALLED. RUN dotfiles/keysound/install-keysound.sh"
+                    })[Keyboard.soundStatus] || ""
+                    color: Keyboard.soundStatus === "connected" ? theme.colorGreen
+                         : Keyboard.soundStatus === "starting" ? theme.colorDim : theme.colorYellow
+                    font.family: theme.fontFamily
+                    font.pixelSize: theme.px(11)
+                    font.letterSpacing: theme.letterSpacing
+                }
+            }
         }
     }
 

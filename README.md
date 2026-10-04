@@ -53,8 +53,8 @@ changes to the QML don't need a restart.
 
 ### Optional: the MU/TH/UR boot chain
 
-The lock screen comes with the shell. The boot menu, boot screen and
-login screen are opt-in, each with its own installer (they need root, so
+The lock screen comes with the shell. The boot menu, boot screen, login
+screen and typing sounds are opt-in, each with its own installer (they need root, so
 run them from a terminal: sudo asks for your password) and a `--revert`:
 
 | Screen | Install | Revert | Details |
@@ -62,6 +62,7 @@ run them from a terminal: sudo asks for your password) and a `--revert`:
 | Boot menu (Limine) | `dotfiles/limine/install-limine.sh` | `… --revert` | [below](#the-boot-menu--limine) |
 | Boot screen (Plymouth) | `dotfiles/plymouth/install-plymouth.sh` | `… --revert` | [below](#the-boot-screen--plymouth) |
 | Login screen (SDDM) | `dotfiles/sddm/install-sddm.sh` | `… --revert` | [below](#the-login-screen--sddm) |
+| Typing sounds | `dotfiles/keysound/install-keysound.sh` | `… --revert` | [below](#typing-sounds) |
 | Lock screen | `./install.sh` | swaylock, see [below](#the-lock-screen--muthur-6000) | |
 
 ### Optional: snap-to-grid and angled corners on labwc
@@ -177,7 +178,8 @@ reserving space, so the window layout never shifts.
   switch layouts, so the shell writes the active one alone to
   `labwc/environment.d/muthur-keyboard.env` (`XKB_DEFAULT_LAYOUT`) and
   reconfigures labwc; key repeat is rewritten in place in `rc.xml`
-  (`<repeatRate>` / `<repeatDelay>`).
+  (`<repeatRate>` / `<repeatDelay>`). Also the **typing sound** theme,
+  volume and ambience ([below](#typing-sounds)).
 - **LOOK** — everything about the appearance:
   - twenty-five color presets, each a full 16-color palette previewed
     in its row — Neo in the Matrix, Blade Runner, Tron, Tron Ares,
@@ -212,6 +214,74 @@ reserving space, so the window layout never shifts.
 <img src="docs/screenshots/desktop-akira-wallpaper.png" alt="A palette generated from an Akira wallpaper, with fastfetch in a translucent terminal over it" width="960">
 
 *Preset: **Wallpaper** — the palette generated from an *Akira* wallpaper (Kaneda red pulled from the poster), with fastfetch in a terminal at **94% opacity** so the poster reads through it.*
+
+## Typing sounds
+
+An ambience while you type, picked in `[SYS] > [KEYBOARD]`. Every key
+press makes a sound placed where the key is: on headphones the far ear
+hears it a fraction of a millisecond later and a little softer, so typing
+moves from ear to ear. Under it an ambience swells while you type and ebbs
+away a few seconds after the last key. Everything is synthesized on the
+fly; there are no sound files.
+
+The keys:
+
+| Theme | Sound |
+|---|---|
+| MU/TH/UR | terminal blips |
+| NOSTROMO | heavy deck clicks over a low thunk |
+| NOSTROMO THOCC | deep and creamy, all body and no click: a lubed board on a heavy case |
+
+The ambience, chosen separately:
+
+| Ambience | Sound |
+|---|---|
+| THEME DRONE | the key theme's binaural drone: a close pitch in each ear, heard as a slow beat inside the head (theta for MU/TH/UR, alpha for the NOSTROMOs) |
+| VESSEL | inside the ship: air handling, a deep rumble, the hull ticking or something clanking far off now and then — no pitch to fix on |
+| HULL RAIN | rain on the hull: a fine hiss overhead, a muffled roar, drops all around, a leak to the left |
+| SOFT RAIN | rain heard through thick plating: a muffled wash swelling in slow gusts, the odd heavy drop — nothing high |
+| LOWER DECK | machinery turning over below: a broad throb with no pitch, a steam vent letting go now and then |
+| BRIDGE | a quiet room: soft air and relays ticking in the consoles around you |
+| LIFE SUPPORT | ventilation breathing in and out on a slow cycle, a console chirping now and then |
+
+Space, Enter and Backspace have their own sounds; modifiers are silent.
+VOLUME sets the whole thing, AMBIENCE LEVEL the ambience alone (0 for
+keys only).
+
+Two pieces, both from `dotfiles/keysound/`:
+
+- **`muthur-keysound-input`**, a system service, reads the keyboards. It
+  runs as a throwaway user in the `input` group inside a tight sandbox,
+  opens the keyboards only while the shell is listening, and passes on
+  nothing but "a key, of this kind, about here" (seven positions, left to
+  right) over `/run/muthur-keysound/events.sock`. The keycode is dropped on
+  the spot, so no user process gets keyboard access and nothing that leaves
+  the service can be turned back into text.
+- **`muthur-keysound`**, the player the shell starts while a theme is
+  picked: one persistent PipeWire stream at ~5 ms latency, about 1% of a
+  core while sounding and close to nothing when quiet.
+
+### Install
+
+From a terminal (sudo asks for your password; needs gcc and PipeWire's
+headers, both there on CachyOS):
+
+```sh
+dotfiles/keysound/install-keysound.sh            # build the player into /usr/local/bin, install and start the service
+dotfiles/keysound/install-keysound.sh --status   # check
+```
+
+Then pick a theme in `[SYS] > [KEYBOARD]`; `TEST` plays a sweep across the
+keyboard. The panel says what's missing if either piece isn't there.
+Rerun the installer after changing the player or the service.
+
+### Revert
+
+Picking `OFF` stops the player. To remove everything:
+
+```sh
+dotfiles/keysound/install-keysound.sh --revert   # stop and remove the service, the player and their files
+```
 
 ## `[AI]` — Claude Code / Codex usage
 
@@ -481,6 +551,7 @@ dotfiles/
                       scripts/ holds the palette and usage-stats helpers
   fuzzel/             launcher config, themed to match the shell
   labwc/              window-manager config: themed, 4 workspaces, keybinds, autostart, 10px grid, angled corners
+  keysound/           typing sounds: keypress feed service, PipeWire player (C) and their installer
   limine/             MU/TH/UR boot menu theme (wallpaper + limine.conf block) and its installer
   plymouth/           MU/TH/UR boot screen (Plymouth script theme) and its installer
   sddm/               MU/TH/UR login screen (SDDM greeter theme) and its installer
