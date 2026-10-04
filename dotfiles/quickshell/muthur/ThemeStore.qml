@@ -214,7 +214,26 @@ QtObject {
           colors: { color0: "#141414", color1: "#b09090", color2: "#a0b0a0", color3: "#b0b090",
                     color4: "#9090b0", color5: "#b090b0", color6: "#90b0b0", color7: "#c8c8c8",
                     color8: "#5a5a5a", color9: "#d0b0b0", color10: "#b8d0b8", color11: "#d0d0b0",
-                    color12: "#b0b0d0", color13: "#d0b0d0", color14: "#b0d0d0", color15: "#ffffff" } }
+                    color12: "#b0b0d0", color13: "#d0b0d0", color14: "#b0d0d0", color15: "#ffffff" } },
+        // For work, not for show: carbon grey that isn't black, soft grey
+        // text that isn't white (8.6:1), a steel-blue accent, and hue
+        // slots muted but kept apart and readable (5:1 and up) so
+        // diagnostics and diffs still tell red from green.
+        { key: "corpoCarbon", name: "CORPO CARBON",
+          special: { background: "#2b2d30", foreground: "#c9ccd0", cursor: "#a3b6c8" },
+          colors: { color0: "#35383c", color1: "#d48a8a", color2: "#8fb08a", color3: "#c8b47a",
+                    color4: "#86a2c4", color5: "#ad95c3", color6: "#7fb2b5", color7: "#c9ccd0",
+                    color8: "#83888f", color9: "#e0a0a0", color10: "#a6c49f", color11: "#dac793",
+                    color12: "#a0b8d6", color13: "#c2aed4", color14: "#9ac7c9", color15: "#e8eaec" } },
+        // Its light twin: a mid-light grey that doesn't glare, dark grey
+        // text (9.5:1), the same steel accent darkened, hue slots dark
+        // enough to read on it.
+        { key: "corpoCarbonLight", name: "CORPO CARBON LIGHT",
+          special: { background: "#d4d6d9", foreground: "#2a2d31", cursor: "#405871" },
+          colors: { color0: "#e4e5e7", color1: "#8c4242", color2: "#3e643a", color3: "#6a5821",
+                    color4: "#3d5880", color5: "#664b80", color6: "#2d6265", color7: "#4a4e54",
+                    color8: "#5d6269", color9: "#7a3838", color10: "#355632", color11: "#5c4c1c",
+                    color12: "#344c6e", color13: "#58416e", color14: "#275457", color15: "#1d2024" } }
     ]
 
     // The wallpaper-derived palette, when a wallpaper is set, appears as
