@@ -186,8 +186,9 @@ reserving space, so the window layout never shifts.
   (`<repeatRate>` / `<repeatDelay>`). Also the **typing sound** theme,
   volume and ambience ([below](#typing-sounds)).
 - **LOOK** — everything about the appearance:
-  - twenty-seven color presets, each a full 16-color palette previewed
-    in its row — Neo in the Matrix, Blade Runner, Tron, Tron Ares,
+  - twenty-seven color presets, each a full 16-color palette (its first
+    four colors shown in its row), with four wallpapers of its own on the
+    right (below) — Neo in the Matrix, Blade Runner, Tron, Tron Ares,
     Hackers 1995, Ghost in the Shell, Cybergoth, Blade Runner 2049,
     Nostromo, Neuromancer, Akira, Deus Ex, Serial Experiments Lain,
     Cyberpunk 2077, SHODAN, The Fifth Element, RoboCop, Minority Report,
@@ -494,6 +495,33 @@ Stuck at the login screen? Switch to a TTY (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>
 log in, run `--revert`, then `sudo systemctl restart sddm`.
 
 ## Wallpapers
+
+### Every theme's own four
+
+Each preset comes with four quiet wallpapers drawn in its colors — the
+main one, plus the palette's third and fourth — and almost no text:
+
+1. **GRID** — a fine drafting grid, a few colored crosses on the major lines
+2. **TOPO** — topographic lines, the preset's name small in a corner
+3. **HORIZON** — the lock screen's wireframe ground plane fading into a horizon
+4. **DOTS** — a dot matrix swelling and thinning like a halftone
+
+In `[SYS] > [LOOK]` they appear as four small sketches to the right of the
+preset's name (the same vector drawings for every preset, in its colors,
+so nothing heavy is loaded). Click one to switch to that preset with that
+wallpaper; click the name or the swatch for the preset with its first
+one. They're pre-drawn by `wallpapers/themed.py`, which reads the presets
+from `ThemeStore.qml` (about three seconds and 2 MB per preset):
+
+```sh
+wallpapers/themed.py                   # every preset, into ~/.local/share/muthur-shell/wallpapers
+wallpapers/themed.py tron corpoCarbon  # only these
+```
+
+A preset without drawn wallpapers simply shows no sketches; new ones
+appear the next time the tab opens.
+
+### A set of nine
 
 `wallpapers/generate.py` draws nine wallpapers in the shell's palettes —
 SVG written by hand, rendered by `rsvg-convert` — into

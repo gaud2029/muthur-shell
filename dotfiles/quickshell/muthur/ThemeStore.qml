@@ -86,15 +86,17 @@ QtObject {
                     color4: "#5a7890", color5: "#a87888", color6: "#70a8b0", color7: "#d8c0a0",
                     color8: "#6a4020", color9: "#e86050", color10: "#c0b080", color11: "#f0c070",
                     color12: "#80a0b8", color13: "#c898a8", color14: "#90c8d0", color15: "#f8ecd8" } },
-        // The Nostromo's bone-white padded corridors: one of the two light
-        // presets. Dark warm text, an amber status light as the focus,
-        // and color0 whiter than the background so panel surfaces lift.
+        // The Nostromo's bone-white padded corridors, in the shade of a
+        // lit corridor rather than fresh paint. Dark warm text, a deep
+        // amber status light as the focus, and color0 lighter than the
+        // background so panel surfaces lift. Hue slots darkened to read
+        // on the bone (4.5:1 and up).
         { key: "nostromo", name: "NOSTROMO",
-          special: { background: "#e8e4d8", foreground: "#2c2a26", cursor: "#c07a18" },
-          colors: { color0: "#f4f1e8", color1: "#a83428", color2: "#3e7a48", color3: "#a07818",
-                    color4: "#3c6088", color5: "#7a4a80", color6: "#2e7880", color7: "#5c5850",
-                    color8: "#8a8478", color9: "#c04a3c", color10: "#4c9058", color11: "#c09428",
-                    color12: "#5078a8", color13: "#98609a", color14: "#3e949c", color15: "#1a1814" } },
+          special: { background: "#d8d3c4", foreground: "#26241f", cursor: "#7c4f10" },
+          colors: { color0: "#e4dfd2", color1: "#a03126", color2: "#32623a", color3: "#6f5311",
+                    color4: "#385a7f", color5: "#75477b", color6: "#255f66", color7: "#58544c",
+                    color8: "#767066", color9: "#8c362c", color10: "#305b37", color11: "#654e15",
+                    color12: "#385476", color13: "#6b446c", color14: "#25595e", color15: "#1a1814" } },
         // "The color of television, tuned to a dead channel": static grey
         // background, ice-pale cyan text, Chiba neon pink as the focus.
         { key: "neuromancer", name: "NEUROMANCER",
@@ -119,14 +121,15 @@ QtObject {
                     color4: "#6a8098", color5: "#a88070", color6: "#88a898", color7: "#c0a878",
                     color8: "#6a5020", color9: "#e07058", color10: "#c0c078", color11: "#f8e0a8",
                     color12: "#88a0b8", color13: "#c8a090", color14: "#a8c8b8", color15: "#fff4dc" } },
-        // The Wired: the other light preset. Pale grey with white panel
-        // surfaces (color0), near-black text and a deep red focus.
+        // The Wired: a cool mid grey with lighter panel surfaces (color0),
+        // near-black text and a deep red focus; hue slots darkened to
+        // read on the grey (4.5:1 and up).
         { key: "lain", name: "SERIAL EXPERIMENTS LAIN",
-          special: { background: "#d4d4d8", foreground: "#2e2e34", cursor: "#9c1420" },
-          colors: { color0: "#ececf0", color1: "#9c1420", color2: "#4a7a5a", color3: "#8a7830",
-                    color4: "#405880", color5: "#6c4a80", color6: "#3a7880", color7: "#606068",
-                    color8: "#8c8c94", color9: "#c02838", color10: "#5c9070", color11: "#a89040",
-                    color12: "#5870a0", color13: "#8860a0", color14: "#4c949c", color15: "#1c1c20" } },
+          special: { background: "#c9c9ce", foreground: "#28282e", cursor: "#9c1420" },
+          colors: { color0: "#dcdce1", color1: "#9c1420", color2: "#375a43", color3: "#5e5221",
+                    color4: "#3c5277", color5: "#654578", color6: "#2b595f", color7: "#4e4e54",
+                    color8: "#6b6b73", color9: "#921e2a", color10: "#345240", color11: "#574a21",
+                    color12: "#3c4c6d", color13: "#5d416d", color14: "#2a5156", color15: "#1c1c20" } },
         // Night City: electric yellow on black, cyan focus, magenta and
         // red left neon.
         { key: "cyberpunk2077", name: "CYBERPUNK 2077",
@@ -200,14 +203,14 @@ QtObject {
                     color4: "#5890a0", color5: "#9878a8", color6: "#68c0a0", color7: "#c0d0a0",
                     color8: "#4a6820", color9: "#e07858", color10: "#c8f070", color11: "#e8e070",
                     color12: "#80b0c0", color13: "#b898c8", color14: "#90e0c0", color15: "#f4f8e8" } },
-        // E-paper: the light twin of Monochrome. Paper grey (not pure
-        // white, like a real panel), ink-black text and focus, and the
+        // E-paper: the light twin of Monochrome. Paper grey (a real
+        // panel's, not white), ink-black text and focus, and the
         // hue slots reduced to greys with the faintest tint.
         { key: "eInk", name: "E-INK",
-          special: { background: "#e4e4e0", foreground: "#1c1c1a", cursor: "#000000" },
-          colors: { color0: "#f2f2ee", color1: "#6a5050", color2: "#506050", color3: "#605c48",
-                    color4: "#4c5060", color5: "#5c5060", color6: "#4c5c5c", color7: "#5a5a58",
-                    color8: "#8c8c88", color9: "#584040", color10: "#405040", color11: "#4c4838",
+          special: { background: "#d2d2cc", foreground: "#1c1c1a", cursor: "#000000" },
+          colors: { color0: "#e0e0da", color1: "#6a5050", color2: "#4b5a4b", color3: "#5c5845",
+                    color4: "#4c5060", color5: "#5c5060", color6: "#4a5959", color7: "#525250",
+                    color8: "#71716d", color9: "#584040", color10: "#405040", color11: "#4c4838",
                     color12: "#3c4050", color13: "#4c4050", color14: "#3c4c4c", color15: "#101010" } },
         { key: "monochrome", name: "MONOCHROME",
           special: { background: "#0a0a0a", foreground: "#c8c8c8", cursor: "#ffffff" },
@@ -362,6 +365,65 @@ QtObject {
     }
 
     readonly property bool themeFromWallpaper: root.store.themeFromWallpaper !== 0
+
+    // Every preset's own wallpapers, pre-drawn by wallpapers/themed.py:
+    // <dir>/<preset key>/<design>.png, with square thumbs/ beside them.
+    readonly property string themedWallpapersPath: Quickshell.env("HOME") + "/.local/share/muthur-shell/wallpapers"
+    readonly property var themedDesigns: ["1-grid", "2-topo", "3-horizon", "4-dots"]
+
+    function themedWallpaper(key, i) {
+        return root.themedWallpapersPath + "/" + key + "/" + root.themedDesigns[i] + ".png";
+    }
+
+    // The four designs as small vector sketches for the LOOK tab
+    // (WallpaperLayout.qml), in a 100x100 box: dim lines, the darker
+    // major lines, and the accent. Same sketch for every preset.
+    readonly property var wallpaperLayouts: [
+        { name: "grid", fill: false,
+          base: "M10 0V100M20 0V100M40 0V100M50 0V100M70 0V100M80 0V100M0 10H100M0 20H100M0 40H100M0 50H100M0 70H100M0 80H100",
+          major: "M30 0V100M60 0V100M90 0V100M0 30H100M0 60H100M0 90H100",
+          accent: "M26 30H34M30 26V34M56 60H64M60 56V64" },
+        { name: "topo", fill: false,
+          base: "M44.1 40.0L40.3 42.9L37.4 44.8L34.0 46.6L29.4 46.3L26.8 43.3L28.1 40.0L26.4 36.5L29.4 33.7L34.0 33.8L37.4 35.2L40.6 36.9L44.1 40.0ZM52.0 40.0L44.3 44.8L40.9 49.6L34.0 53.6L25.9 51.2L21.9 45.6L22.0 40.0L18.3 32.8L25.9 28.8L34.0 29.6L40.9 30.4L47.9 33.6L52.0 40.0ZM61.9 40.0L54.0 49.2L50.8 63.3L34.0 66.3L21.8 56.9L10.5 50.8L3.9 40.0L3.8 26.0L21.8 23.1L34.0 19.9L50.8 16.7L60.8 27.6L61.9 40.0ZM82.2 72.0L81.7 74.6L79.3 76.5L76.0 76.0L73.3 75.8L69.5 75.0L70.2 72.0L71.3 69.8L73.3 68.2L76.0 66.4L79.3 67.5L79.9 70.2L82.2 72.0ZM87.8 72.0L87.3 77.2L82.8 81.4L76.0 80.1L70.8 79.2L63.3 77.9L63.8 72.0L66.5 67.6L70.8 64.8L76.0 60.9L82.8 62.6L84.1 68.3L87.8 72.0ZM93.0 72.0L92.4 79.6L86.6 86.7L76.0 84.7L68.6 82.3L57.5 80.6L57.0 72.0L61.2 65.2L68.6 61.7L76.0 55.9L86.6 57.3L88.7 66.2L93.0 72.0Z",
+          major: "",
+          accent: "M57.7 40.0L48.3 46.6L45.5 55.9L34.0 60.8L23.5 54.6L17.1 47.8L13.7 40.0L10.2 29.0L23.5 25.4L34.0 25.6L45.5 24.1L55.2 30.2L57.7 40.0Z" },
+        { name: "horizon", fill: false,
+          base: "M50 55L-70.0 100M50 55L-46.0 100M50 55L-22.0 100M50 55L2.0 100M50 55L26.0 100M50 55L50.0 100M50 55L74.0 100M50 55L98.0 100M50 55L122.0 100M50 55L146.0 100M50 55L170.0 100M0 100.0H100M0 87.1H100M0 77.5H100M0 70.0H100M0 64.0H100",
+          major: "",
+          accent: "M0 55H100" },
+        { name: "dots", fill: true,
+          base: "M5.4 6.0a0.6 0.6 0 1 0 1.3 0a0.6 0.6 0 1 0 -1.3 0M17.8 6.0a0.7 0.7 0 1 0 1.4 0a0.7 0.7 0 1 0 -1.4 0M30.3 6.0a0.7 0.7 0 1 0 1.5 0a0.7 0.7 0 1 0 -1.5 0M42.7 6.0a0.8 0.8 0 1 0 1.5 0a0.8 0.8 0 1 0 -1.5 0M55.3 6.0a0.7 0.7 0 1 0 1.4 0a0.7 0.7 0 1 0 -1.4 0M67.8 6.0a0.7 0.7 0 1 0 1.3 0a0.7 0.7 0 1 0 -1.3 0M80.4 6.0a0.6 0.6 0 1 0 1.2 0a0.6 0.6 0 1 0 -1.2 0M92.9 6.0a0.6 0.6 0 1 0 1.2 0a0.6 0.6 0 1 0 -1.2 0M5.2 18.5a0.8 0.8 0 1 0 1.5 0a0.8 0.8 0 1 0 -1.5 0M17.5 18.5a1.0 1.0 0 1 0 1.9 0a1.0 1.0 0 1 0 -1.9 0M29.8 18.5a1.2 1.2 0 1 0 2.3 0a1.2 1.2 0 1 0 -2.3 0M42.3 18.5a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0 -2.4 0M54.9 18.5a1.1 1.1 0 1 0 2.1 0a1.1 1.1 0 1 0 -2.1 0M67.6 18.5a0.9 0.9 0 1 0 1.7 0a0.9 0.9 0 1 0 -1.7 0M80.3 18.5a0.7 0.7 0 1 0 1.4 0a0.7 0.7 0 1 0 -1.4 0M92.9 18.5a0.6 0.6 0 1 0 1.3 0a0.6 0.6 0 1 0 -1.3 0M4.9 31.0a1.1 1.1 0 1 0 2.1 0a1.1 1.1 0 1 0 -2.1 0M16.9 31.0a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0 -3.2 0M28.9 31.0a2.1 2.1 0 1 0 4.2 0a2.1 2.1 0 1 0 -4.2 0M41.3 31.0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M54.2 31.0a1.8 1.8 0 1 0 3.7 0a1.8 1.8 0 1 0 -3.7 0M67.2 31.0a1.3 1.3 0 1 0 2.5 0a1.3 1.3 0 1 0 -2.5 0M80.1 31.0a0.9 0.9 0 1 0 1.7 0a0.9 0.9 0 1 0 -1.7 0M92.8 31.0a0.7 0.7 0 1 0 1.3 0a0.7 0.7 0 1 0 -1.3 0M4.6 43.5a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0 -2.8 0M16.2 43.5a2.3 2.3 0 1 0 4.6 0a2.3 2.3 0 1 0 -4.6 0M27.8 43.5a3.2 3.2 0 1 0 6.5 0a3.2 3.2 0 1 0 -6.5 0M40.1 43.5a3.4 3.4 0 1 0 6.9 0a3.4 3.4 0 1 0 -6.9 0M53.2 43.5a2.8 2.8 0 1 0 5.5 0a2.8 2.8 0 1 0 -5.5 0M66.7 43.5a1.8 1.8 0 1 0 3.5 0a1.8 1.8 0 1 0 -3.5 0M80.0 43.5a1.0 1.0 0 1 0 2.1 0a1.0 1.0 0 1 0 -2.1 0M92.8 43.5a0.7 0.7 0 1 0 1.4 0a0.7 0.7 0 1 0 -1.4 0M4.5 56.0a1.5 1.5 0 1 0 3.1 0a1.5 1.5 0 1 0 -3.1 0M15.9 56.0a2.6 2.6 0 1 0 5.3 0a2.6 2.6 0 1 0 -5.3 0M27.3 56.0a3.7 3.7 0 1 0 7.4 0a3.7 3.7 0 1 0 -7.4 0M39.6 56.0a3.9 3.9 0 1 0 7.9 0a3.9 3.9 0 1 0 -7.9 0M52.8 56.0a3.2 3.2 0 1 0 6.3 0a3.2 3.2 0 1 0 -6.3 0M66.5 56.0a2.0 2.0 0 1 0 4.0 0a2.0 2.0 0 1 0 -4.0 0M79.9 56.0a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0M92.8 56.0a0.7 0.7 0 1 0 1.5 0a0.7 0.7 0 1 0 -1.5 0M4.7 68.5a1.3 1.3 0 1 0 2.7 0a1.3 1.3 0 1 0 -2.7 0M16.3 68.5a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M27.9 68.5a3.1 3.1 0 1 0 6.1 0a3.1 3.1 0 1 0 -6.1 0M40.2 68.5a3.3 3.3 0 1 0 6.5 0a3.3 3.3 0 1 0 -6.5 0M53.4 68.5a2.6 2.6 0 1 0 5.3 0a2.6 2.6 0 1 0 -5.3 0M66.8 68.5a1.7 1.7 0 1 0 3.4 0a1.7 1.7 0 1 0 -3.4 0M80.0 68.5a1.0 1.0 0 1 0 2.0 0a1.0 1.0 0 1 0 -2.0 0M92.8 68.5a0.7 0.7 0 1 0 1.4 0a0.7 0.7 0 1 0 -1.4 0M5.0 81.0a1.0 1.0 0 1 0 2.0 0a1.0 1.0 0 1 0 -2.0 0M17.0 81.0a1.5 1.5 0 1 0 2.9 0a1.5 1.5 0 1 0 -2.9 0M29.1 81.0a1.9 1.9 0 1 0 3.8 0a1.9 1.9 0 1 0 -3.8 0M41.5 81.0a2.0 2.0 0 1 0 4.0 0a2.0 2.0 0 1 0 -4.0 0M54.3 81.0a1.7 1.7 0 1 0 3.4 0a1.7 1.7 0 1 0 -3.4 0M67.3 81.0a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0 -2.4 0M80.2 81.0a0.8 0.8 0 1 0 1.6 0a0.8 0.8 0 1 0 -1.6 0M92.8 81.0a0.7 0.7 0 1 0 1.3 0a0.7 0.7 0 1 0 -1.3 0M5.3 93.5a0.7 0.7 0 1 0 1.5 0a0.7 0.7 0 1 0 -1.5 0M17.6 93.5a0.9 0.9 0 1 0 1.8 0a0.9 0.9 0 1 0 -1.8 0M29.9 93.5a1.1 1.1 0 1 0 2.1 0a1.1 1.1 0 1 0 -2.1 0M42.4 93.5a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0M55.0 93.5a1.0 1.0 0 1 0 2.0 0a1.0 1.0 0 1 0 -2.0 0M67.7 93.5a0.8 0.8 0 1 0 1.6 0a0.8 0.8 0 1 0 -1.6 0M80.3 93.5a0.7 0.7 0 1 0 1.4 0a0.7 0.7 0 1 0 -1.4 0M92.9 93.5a0.6 0.6 0 1 0 1.2 0a0.6 0.6 0 1 0 -1.2 0",
+          major: "",
+          accent: "" }
+    ]
+
+    // The presets whose wallpapers have been drawn (one folder each).
+    property var themedKeys: []
+
+    readonly property Process themedScan: Process {
+        command: ["sh", "-c", "ls -1 \"$1\" 2>/dev/null", "sh", root.themedWallpapersPath]
+        stdout: StdioCollector {
+            onStreamFinished: root.themedKeys = this.text.split("\n").filter(k => k)
+        }
+    }
+
+    function scanThemedWallpapers() {
+        root.themedScan.running = true;
+    }
+
+    // A preset and one of its own wallpapers together (index -1: the
+    // preset alone, the wallpaper as it is). The image's colors aren't
+    // analyzed — the theme already is its palette — and the WALLPAPER
+    // preset from an earlier custom image goes away.
+    function pickTheme(key, index) {
+        root.applyPreset(key);
+        if (index < 0)
+            return;
+        root.store.wallpaper = root.themedWallpaper(key, index);
+        root.store.wallpaperColors = "";
+        root.wallpaperError = "";
+        root.showWallpaper();
+    }
 
     function setThemeFromWallpaper(on) {
         root.store.themeFromWallpaper = on ? 1 : 0;
@@ -1002,5 +1064,6 @@ QtObject {
         root.writeColorScheme();
         if (root.wallpaper)
             root.showWallpaper();
+        root.scanThemedWallpapers();
     }
 }

@@ -7,6 +7,9 @@ Item {
 
     Theme { id: theme }
 
+    // Wallpapers drawn since the last look show up on the next open.
+    onVisibleChanged: if (visible) ThemeStore.scanThemedWallpapers()
+
     component SectionHeader: Text {
         color: theme.colorFg
         font.family: theme.fontFamily
@@ -14,25 +17,39 @@ Item {
         font.letterSpacing: theme.letterSpacing
     }
 
-    // One preset: its 16 ANSI slots on its own background, then its name.
+    // One preset: its first four colors on its own background, its name,
+    // and its four wallpapers (wallpapers/themed.py) on the right. A
+    // thumbnail picks the preset with that wallpaper; the rest of the row
+    // picks it with the first one, or alone if none were drawn.
     component PresetRow: Rectangle {
         id: swatchRow
         required property var modelData
         readonly property bool active: ThemeStore.preset === modelData.key
+        readonly property bool hasWallpapers: ThemeStore.themedKeys.includes(modelData.key)
 
         width: parent ? parent.width : 0
-        height: theme.gridUnit * 8
+        height: theme.gridUnit * 10
         color: "transparent"
         border.color: active ? theme.colorFocus : theme.colorDim
         border.width: 1
 
-        Row {
+        MouseArea {
             anchors.fill: parent
-            anchors.margins: theme.gridUnit * 2
+            cursorShape: Qt.PointingHandCursor
+            onClicked: ThemeStore.pickTheme(swatchRow.modelData.key, swatchRow.hasWallpapers ? 0 : -1)
+        }
+
+        Row {
+            anchors.left: parent.left
+            anchors.right: thumbs.left
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.leftMargin: theme.gridUnit * 2
+            anchors.rightMargin: theme.gridUnit * 2
             spacing: theme.gridUnit * 2
 
-            // The preset's 16 ANSI slots, on its own background.
+            // The preset's first four ANSI slots, on its own background.
             Rectangle {
+                id: swatchBox
                 width: swatches.width + theme.gridUnit * 2
                 height: theme.tile
                 color: swatchRow.modelData.special.background
@@ -45,7 +62,7 @@ Item {
                     spacing: 1
 
                     Repeater {
-                        model: 16
+                        model: 4
 
                         Rectangle {
                             required property int index
@@ -59,6 +76,8 @@ Item {
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
+                width: parent.width - swatchBox.width - parent.spacing
+                elide: Text.ElideRight
                 text: (swatchRow.active ? "> " : "  ") + swatchRow.modelData.name
                 color: swatchRow.active ? theme.colorFocus : theme.colorFg
                 font.family: theme.fontFamily
@@ -67,9 +86,48 @@ Item {
             }
         }
 
-        MouseArea {
-            anchors.fill: parent
-            onClicked: ThemeStore.applyPreset(swatchRow.modelData.key)
+        Row {
+            id: thumbs
+            anchors.right: parent.right
+            anchors.rightMargin: theme.gridUnit
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: theme.gridUnit
+
+            Repeater {
+                model: 4
+
+                Rectangle {
+                    id: thumb
+                    required property int index
+                    readonly property string path: ThemeStore.themedWallpaper(swatchRow.modelData.key, index)
+                    readonly property bool current: ThemeStore.wallpaper === path
+
+                    visible: swatchRow.hasWallpapers
+                    width: theme.gridUnit * 8
+                    height: theme.gridUnit * 8
+                    color: "transparent"
+                    border.width: current ? 2 : 1
+                    border.color: current ? theme.colorFocus
+                                : thumbMouse.containsMouse ? theme.colorFg : theme.colorDim
+
+                    WallpaperLayout {
+                        anchors.fill: parent
+                        anchors.margins: thumb.border.width
+                        design: thumb.index
+                        background: swatchRow.modelData.special.background
+                        line: swatchRow.modelData.colors.color8
+                        accent: swatchRow.modelData.special.cursor
+                    }
+
+                    MouseArea {
+                        id: thumbMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: ThemeStore.pickTheme(swatchRow.modelData.key, thumb.index)
+                    }
+                }
+            }
         }
     }
 
