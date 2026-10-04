@@ -274,6 +274,26 @@ misbehaves at boot, <kbd>Esc</kbd> switches Plymouth to plain text, and
 removing `splash` from the kernel command line in Limine's menu boots
 without it.
 
+## The boot menu — Limine
+
+Before Plymouth, Limine's menu gets the same tube: a still of the
+wireframe descent under scanlines (`dotfiles/limine/muthur/wallpaper.png`,
+drawn by `make-wallpaper.sh`), the entries in phosphor green, and
+`MU/TH/UR 6000 // SELECT BOOT SEQUENCE` as the branding line.
+
+```sh
+dotfiles/limine/install-limine.sh           # theme the menu (copies the wallpaper to the ESP)
+dotfiles/limine/install-limine.sh --show    # the theme options limine.conf has now
+dotfiles/limine/install-limine.sh --revert  # undo
+```
+
+`limine.conf` is CachyOS's: limine-entry-tool rewrites its boot entries on
+every kernel or snapshot update but keeps the global options at the top,
+so the theme lives there as one marked block. The theme options CachyOS
+ships are commented out with a `#muthur# ` prefix rather than deleted
+(`--revert` restores them), and the config's checksum is re-enrolled
+when that protection is enabled.
+
 ## The login screen — SDDM
 
 `dotfiles/sddm/muthur/` turns SDDM's greeter into the lock screen: the
@@ -369,6 +389,7 @@ dotfiles/
                       scripts/ holds the palette and usage-stats helpers
   fuzzel/             launcher config, themed to match the shell
   labwc/              window-manager config: themed, 4 workspaces, keybinds, autostart, 10px grid, angled corners
+  limine/             MU/TH/UR boot menu theme (wallpaper + limine.conf block) and its installer
   plymouth/           MU/TH/UR boot screen (Plymouth script theme) and its installer
   sddm/               MU/TH/UR login screen (SDDM greeter theme) and its installer
   alacritty/          terminal config, themed

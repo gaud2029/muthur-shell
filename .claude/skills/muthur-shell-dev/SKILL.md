@@ -152,6 +152,18 @@ Never make it the default theme (`install-plymouth.sh` without flags, or
 `plymouth-set-default-theme`) without the user: it rebuilds the initramfs,
 and the disk's LUKS prompt is drawn by this theme.
 
+## Testing the Limine theme
+
+There's no preview short of a reboot, and `/boot` (the ESP) is root-only,
+so `limine.conf` can't even be read without the user's sudo. Test
+`install-limine.sh`'s editing on a copy instead: a sample CachyOS-style
+`limine.conf` in the scratchpad, the script with its sudo line and
+`ESP=` pointed there and `limine-enroll-config` stubbed out; check that a
+second install leaves one block and that `--revert` gives back the
+original byte for byte. The user installs and reboots. Never edit
+`limine.conf` without re-enrolling (`limine-enroll-config`): with
+ENABLE_ENROLL_LIMINE_CONFIG on, a changed config refuses to boot.
+
 ## Testing the SDDM theme
 
 `dotfiles/sddm/install-sddm.sh --preview` runs `sddm-greeter-qt6
