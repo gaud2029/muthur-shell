@@ -202,7 +202,11 @@ reserving space, so the window layout never shifts.
     (ImageMagick, no pywal needed) derives one more preset from the
     image's dominant hue in the same muted style, applies it everywhere
     and shows the image with `swaybg`; the choice persists across
-    restarts (`CLEAR` goes back to a solid theme-colored background);
+    restarts (`CLEAR` goes back to a solid theme-colored background).
+    **ON PICK** decides what a click does to the colors: `USE ITS COLORS`
+    switches to that palette, `KEEP THEME` only changes the image (the
+    palette is still offered as the WALLPAPER preset). `wallpapers/generate.py`
+    draws a set in the shell's palettes into that folder ([below](#wallpapers));
   - the bar position, the 1x–4x size multiplier and the base grid unit
     (3–10px), with a readout of the resulting bar and font size; fuzzel's
     font follows the size too;
@@ -488,6 +492,29 @@ dotfiles/sddm/install-sddm.sh --revert    # remove /etc/sddm.conf.d/muthur.conf:
 
 Stuck at the login screen? Switch to a TTY (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F3</kbd>),
 log in, run `--revert`, then `sudo systemctl restart sddm`.
+
+## Wallpapers
+
+`wallpapers/generate.py` draws nine wallpapers in the shell's palettes —
+SVG written by hand, rendered by `rsvg-convert` — into
+`~/Pictures/Wallpapers`, where `[SYS] > [LOOK]` lists them:
+
+| File | Look |
+|---|---|
+| `muthur-corpo-carbon`, `-light` | topographic lines over a faint dot grid, one in steel blue, for work |
+| `muthur-crt-phosphor`, `-amber` | the lock screen's tube as a still: header, Special Order 937, the wireframe descent, scanlines |
+| `muthur-nostromo-schematic-bone`, `-dark` | a technical drawing of the Nostromo: side elevation, dimensions, callouts, title block |
+| `muthur-flow-neo` | streamlines through a noise field, in Neo's greens |
+| `muthur-ridges-hackers` | stacked ridgelines, cyan to magenta |
+| `muthur-contours-tron` | glowing contour lines with one orange level |
+
+```sh
+wallpapers/generate.py                          # 3440x1440 into ~/Pictures/Wallpapers
+wallpapers/generate.py ~/elsewhere --size 1920x1080 --only flow-neo
+```
+
+The same size always draws the same images; swaybg crops to fill each
+screen, and the designs keep their subject clear of the sides.
 
 ## Beyond the shell — theming the rest of the desktop
 

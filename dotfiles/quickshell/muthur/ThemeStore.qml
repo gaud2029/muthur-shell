@@ -292,6 +292,10 @@ QtObject {
         // tab's thumbnail grid lists ("" = ~/Pictures/Wallpapers).
         property string wallpaper: ""
         property string wallpaperColors: ""
+        // 1: picking a wallpaper also switches to its palette (the
+        // WALLPAPER preset); 0: the current theme stays, the palette is
+        // still offered as a preset. int: see the note above.
+        property int themeFromWallpaper: 1
         property string wallpapersPath: ""
     }
 
@@ -344,8 +348,9 @@ QtObject {
     }
 
     // Analyzes the image with scripts/wallpaper-palette.py, makes the
-    // result the WALLPAPER preset, applies it and shows the image with
-    // swaybg. A bad path leaves the current theme alone and reports.
+    // result the WALLPAPER preset, applies it (unless themeFromWallpaper
+    // is off) and shows the image with swaybg. A bad path leaves the
+    // current theme alone and reports.
     function setWallpaper(path) {
         path = path.trim();
         if (!path)
@@ -354,6 +359,12 @@ QtObject {
         root.wallpaperBusy = true;
         root.paletteProcess.command = [Quickshell.shellDir + "/scripts/wallpaper-palette.py", path];
         root.paletteProcess.running = true;
+    }
+
+    readonly property bool themeFromWallpaper: root.store.themeFromWallpaper !== 0
+
+    function setThemeFromWallpaper(on) {
+        root.store.themeFromWallpaper = on ? 1 : 0;
     }
 
     function clearWallpaper() {
@@ -390,7 +401,8 @@ QtObject {
                 }
                 root.store.wallpaper = data.wallpaper;
                 root.store.wallpaperColors = JSON.stringify(data);
-                root.applyPreset("wallpaper");
+                if (root.themeFromWallpaper)
+                    root.applyPreset("wallpaper");
                 root.showWallpaper();
             }
         }
