@@ -4,7 +4,7 @@ A [Quickshell](https://quickshell.outfoxxed.me/) desktop shell for
 [labwc](https://labwc.github.io/) that looks like a computer from a
 film: it started as the MU/TH/UR 6000
 terminal from *Alien* and grew into a sci-fi / cyberpunk desktop in
-general — one shell, twenty-seven palettes, from the Nostromo's bone-white
+general — one shell, thirty-three palettes, from the Nostromo's bone-white
 corridors to Night City neon — on top of an old-school, simple Unix
 desktop: a window manager, a bar, a launcher, and terminals. The rules
 stay the same whatever the palette: monospace text, scanlines, sharp
@@ -186,17 +186,18 @@ reserving space, so the window layout never shifts.
   (`<repeatRate>` / `<repeatDelay>`). Also the **typing sound** theme,
   volume and ambience ([below](#typing-sounds)).
 - **LOOK** — everything about the appearance:
-  - twenty-seven color presets, each a full 16-color palette (its first
+  - thirty-three color presets, each a full 16-color palette (its first
     four colors shown in its row), with four wallpapers of its own on the
     right (below) — Neo in the Matrix, Blade Runner, Tron, Tron Ares,
     Hackers 1995, Ghost in the Shell, Cybergoth, Blade Runner 2049,
     Nostromo, Neuromancer, Akira, Deus Ex, Serial Experiments Lain,
     Cyberpunk 2077, SHODAN, The Fifth Element, RoboCop, Minority Report,
     Johnny Mnemonic, Altered Carbon, Psycho-Pass, Cowboy Bebop,
-    MU-TH-UR 6000, E-Ink, Monochrome, and Corpo Carbon and Corpo Carbon
+    MU-TH-UR 6000, E-Ink, Monochrome, Corpo Carbon and Corpo Carbon
     Light (plain greys for work: easy on the eyes, still well contrasted),
-    listed in `DARK` and `LIGHT`
-    groups (Nostromo, Lain and E-Ink are light; the WALLPAPER palette is
+    LCARS and LCARS Light, Becoming Human, Millennium Falcon, White Corp
+    and E-Paper, listed in `DARK` and `LIGHT`
+    groups (the light ones stay mid-toned rather than white; the WALLPAPER palette is
     sorted by its background);
   - a **WALLPAPERS PATH** (default `~/Pictures/Wallpapers`) whose images
     show as a thumbnail grid (up to 24). Click one: `scripts/wallpaper-palette.py`

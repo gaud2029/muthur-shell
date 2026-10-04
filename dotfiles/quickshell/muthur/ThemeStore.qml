@@ -236,7 +236,56 @@ QtObject {
           colors: { color0: "#e4e5e7", color1: "#8c4242", color2: "#3e643a", color3: "#6a5821",
                     color4: "#3d5880", color5: "#664b80", color6: "#2d6265", color7: "#4a4e54",
                     color8: "#5d6269", color9: "#7a3838", color10: "#355632", color11: "#5c4c1c",
-                    color12: "#344c6e", color13: "#58416e", color14: "#275457", color15: "#1d2024" } }
+                    color12: "#344c6e", color13: "#58416e", color14: "#275457", color15: "#1d2024" } },
+        // Starfleet's LCARS console as it's meant to be seen: rounded
+        // orange, lilac and periwinkle bars on black. Peach type, the
+        // classic orange as the focus.
+        { key: "lcars", name: "LCARS",
+          special: { background: "#110f17", foreground: "#ffcc99", cursor: "#ff9900" },
+          colors: { color0: "#1e1a27", color1: "#d46a6a", color2: "#9acc8f", color3: "#ff9900",
+                    color4: "#9999ff", color5: "#cc99cc", color6: "#88bbee", color7: "#d8c8b8",
+                    color8: "#6c6280", color9: "#ee8a7a", color10: "#b8e0a8", color11: "#ffcc66",
+                    color12: "#b8b8ff", color13: "#e0b8e0", color14: "#aad4ff", color15: "#fff0e0" } },
+        // Starfleet's LCARS panels in daylight: a lavender-grey console, near-black type, the
+        // orange and lavender of the interface (orange and its accent held at 3.6-4:1 to stay orange).
+        { key: "lcarsLight", name: "LCARS LIGHT",
+          special: { background: "#bdb0c4", foreground: "#1d1623", cursor: "#7f3b11" },
+          colors: { color0: "#cec4d3", color1: "#7a2a2a", color2: "#294c42", color3: "#7c4918",
+                    color4: "#3d3b8b", color5: "#643068", color6: "#1f4a53", color7: "#433d4a",
+                    color8: "#61596c", color9: "#712222", color10: "#264339", color11: "#774312",
+                    color12: "#2f2f90", color13: "#592c59", color14: "#1f4249", color15: "#1d1623" } },
+        // Detroit: Become Human's menu: cool android grey, the blue of an LED ring as the focus,
+        // deviant red in the red slot, teal for the green.
+        { key: "becomingHuman", name: "BECOMING HUMAN",
+          special: { background: "#b4c0c8", foreground: "#142028", cursor: "#114e6c" },
+          colors: { color0: "#c9d1d7", color1: "#951a24", color2: "#195353", color3: "#574b1f",
+                    color4: "#145079", color5: "#504479", color6: "#105365", color7: "#3f484f",
+                    color8: "#58656f", color9: "#811f29", color10: "#1b4b4b", color11: "#4d431e",
+                    color12: "#17476b", color13: "#483b77", color14: "#134a58", color15: "#142028" } },
+        // The Falcon's weathered hull plating: warm worn grey, olive and rust from the panel
+        // stripes, a red-orange focus (rust and accent held at 3.6-4:1 to stay warm).
+        { key: "millenniumFalcon", name: "MILLENNIUM FALCON",
+          special: { background: "#b6b2a8", foreground: "#161613", cursor: "#85301c" },
+          colors: { color0: "#c6c3bb", color1: "#79281e", color2: "#3d472a", color3: "#7c451c",
+                    color4: "#354556", color5: "#593a4c", color6: "#2c4847", color7: "#403e39",
+                    color8: "#5e5b54", color9: "#67281d", color10: "#373e28", color11: "#70441f",
+                    color12: "#303c4d", color13: "#4d3543", color14: "#2a403f", color15: "#161613" } },
+        // Corporate white gone grey under office light: a darker light theme, neutral steel grey,
+        // black type, a navy focus, hue slots muted to ink.
+        { key: "whiteCorp", name: "WHITE CORP",
+          special: { background: "#aaadb1", foreground: "#0e0f11", cursor: "#243f5a" },
+          colors: { color0: "#bdbfc2", color1: "#6e2929", color2: "#274631", color3: "#483f22",
+                    color4: "#2b4060", color5: "#48395e", color6: "#1e4449", color7: "#383a3e",
+                    color8: "#54575b", color9: "#5c2828", color10: "#253d2d", color11: "#3e3620",
+                    color12: "#29384f", color13: "#3e334d", color14: "#1e3c40", color15: "#0e0f11" } },
+        // A color e-reader's page: warm grey paper (not pale), ink-black type, a sepia focus,
+        // and the faded, desaturated hues of a Kaleido screen.
+        { key: "ePaper", name: "E-PAPER",
+          special: { background: "#bfbaac", foreground: "#1c1b18", cursor: "#594325" },
+          colors: { color0: "#cfcbc0", color1: "#6e3b33", color2: "#424d38", color3: "#544827",
+                    color4: "#3d4a5a", color5: "#564454", color6: "#384d4c", color7: "#47443d",
+                    color8: "#656056", color9: "#61352d", color10: "#3b4532", color11: "#4b4123",
+                    color12: "#374252", color13: "#4c3c4b", color14: "#334543", color15: "#1c1b18" } }
     ]
 
     // The wallpaper-derived palette, when a wallpaper is set, appears as
