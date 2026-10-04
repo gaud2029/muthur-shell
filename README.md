@@ -51,6 +51,19 @@ default handler for opening folders. A `gtk-3.0`/`gtk-4.0` `gtk.css`
 the shell didn't write is backed up too, since the shell regenerates it. Quickshell hot-reloads on file save, so once it's running most
 changes to the QML don't need a restart.
 
+### Optional: the MU/TH/UR boot chain
+
+The lock screen comes with the shell. The boot menu, boot screen and
+login screen are opt-in, each with its own installer (they need root, so
+run them from a terminal: sudo asks for your password) and a `--revert`:
+
+| Screen | Install | Revert | Details |
+|---|---|---|---|
+| Boot menu (Limine) | `dotfiles/limine/install-limine.sh` | `… --revert` | [below](#the-boot-menu--limine) |
+| Boot screen (Plymouth) | `dotfiles/plymouth/install-plymouth.sh` | `… --revert` | [below](#the-boot-screen--plymouth) |
+| Login screen (SDDM) | `dotfiles/sddm/install-sddm.sh` | `… --revert` | [below](#the-login-screen--sddm) |
+| Lock screen | `./install.sh` | swaylock, see [below](#the-lock-screen--muthur-6000) | |
+
 ### Optional: snap-to-grid and angled corners on labwc
 
 Two settings in the labwc config need a patched labwc:
@@ -247,6 +260,41 @@ colors.
   `WAYLAND_DISPLAY=wayland-0 quickshell -c muthur -d`: it comes back up
   locked, and unlocks with your password.
 
+### Install
+
+Nothing to do beyond `./install.sh`: the lock screen is part of the shell,
+and `dotfiles/labwc/autostart` (symlinked as `~/.config/labwc/autostart`)
+starts swayidle with `scripts/lock.sh` as the locker:
+
+```sh
+LOCK=~/.config/quickshell/muthur/scripts/lock.sh
+swayidle -w \
+	timeout 7200 "$LOCK" \
+	timeout 600 'wlopm --off \*' \
+	resume 'wlopm --on \*' \
+	before-sleep "$LOCK" >/dev/null 2>&1 &
+```
+
+That's: lock after 2 hours idle, screens off after 10 minutes (back on
+at the first input), and lock before suspend. Change the delays there
+(in seconds). They apply at the next login, or
+right away by restarting swayidle with the same arguments
+(`pkill -x swayidle`, then run the two lines above from a terminal).
+
+### Revert
+
+To lock with swaylock again instead, point `LOCK` at it in
+`dotfiles/labwc/autostart` and log in again:
+
+```sh
+LOCK="swaylock -f -c 000000"
+```
+
+The drawer's `LOCK` button keeps using the MU/TH/UR screen. To stop
+locking on idle altogether, delete the `timeout 7200 "$LOCK"` line
+(keep `before-sleep` so suspend still locks). `scripts/lock.sh` already
+falls back to swaylock by itself whenever the shell isn't running.
+
 ## The boot screen — Plymouth
 
 `dotfiles/plymouth/muthur/` is a Plymouth theme in the same voice as the
@@ -258,21 +306,33 @@ console. Shutdown and reboot get their own header and a `POWERING DOWN`
 line. Fixed palette (black, bone, grey, phosphor green), not the shell's
 preset: the theme lives in the initramfs.
 
-It isn't installed by `install.sh` — it needs root and rebuilds the
-initramfs:
+### Install
+
+It isn't installed by `install.sh`: it needs root and rebuilds the
+initramfs. From a terminal (sudo asks for your password):
 
 ```sh
-dotfiles/plymouth/install-plymouth.sh --preview   # play it in a window, no reboot
-dotfiles/plymouth/install-plymouth.sh             # make it the boot theme (mkinitcpio -P)
-dotfiles/plymouth/install-plymouth.sh --revert    # back to cachyos
+dotfiles/plymouth/install-plymouth.sh --preview   # optional: play it in a window first, no reboot
+dotfiles/plymouth/install-plymouth.sh             # copy it to /usr/share/plymouth/themes/muthur,
+                                                  # make it the default theme, rebuild the initramfs
 ```
 
-`--preview` uses Plymouth's X11 renderer through Xwayland, so it needs
-`xorg-xhost` (it lets root's `plymouthd` in for the run, then revokes it).
-Run it from a terminal, sudo asks for the password. If the theme ever
-misbehaves at boot, <kbd>Esc</kbd> switches Plymouth to plain text, and
-removing `splash` from the kernel command line in Limine's menu boots
-without it.
+Then reboot. `--preview` uses Plymouth's X11 renderer through Xwayland,
+so it needs `xorg-xhost` (it lets root's `plymouthd` in for the run, then
+revokes it). Kernel upgrades keep the theme: mkinitcpio rebuilds the
+initramfs with the configured default. Rerun the installer after changing
+the theme.
+
+### Revert
+
+```sh
+dotfiles/plymouth/install-plymouth.sh --revert    # back to the cachyos theme, initramfs rebuilt
+```
+
+If the theme ever misbehaves at boot, <kbd>Esc</kbd> switches Plymouth to
+plain text (the disk passphrase is still asked for), and removing `splash`
+from the kernel command line in Limine's menu (<kbd>E</kbd> on the entry)
+boots without Plymouth at all.
 
 ## The boot menu — Limine
 
@@ -281,18 +341,35 @@ wireframe descent under scanlines (`dotfiles/limine/muthur/wallpaper.png`,
 drawn by `make-wallpaper.sh`), the entries in phosphor green, and
 `MU/TH/UR 6000 // SELECT BOOT SEQUENCE` as the branding line.
 
-```sh
-dotfiles/limine/install-limine.sh           # theme the menu (copies the wallpaper to the ESP)
-dotfiles/limine/install-limine.sh --show    # the theme options limine.conf has now
-dotfiles/limine/install-limine.sh --revert  # undo
-```
-
 `limine.conf` is CachyOS's: limine-entry-tool rewrites its boot entries on
 every kernel or snapshot update but keeps the global options at the top,
 so the theme lives there as one marked block. The theme options CachyOS
-ships are commented out with a `#muthur# ` prefix rather than deleted
-(`--revert` restores them), and the config's checksum is re-enrolled
-when that protection is enabled.
+ships are commented out with a `#muthur# ` prefix rather than deleted,
+and the config's checksum is re-enrolled when that protection is enabled.
+
+### Install
+
+From a terminal (sudo asks for your password):
+
+```sh
+dotfiles/limine/install-limine.sh           # copy the wallpaper to the ESP (/boot/muthur/),
+                                            # add the theme block to limine.conf
+dotfiles/limine/install-limine.sh --show    # check: the theme options limine.conf has now
+```
+
+Then reboot. `limine.conf` is backed up first as `limine.conf.muthur-bak`.
+Running it again replaces the block (after `make-wallpaper.sh`, say)
+instead of adding a second one; kernel updates keep it.
+
+### Revert
+
+```sh
+dotfiles/limine/install-limine.sh --revert  # remove the block and /boot/muthur/,
+                                            # re-enable the CachyOS theme options
+```
+
+A theme option Limine doesn't like never stops it from booting: at worst
+the menu looks off. The previous config stays in `limine.conf.muthur-bak`.
 
 ## The login screen — SDDM
 
@@ -312,13 +389,28 @@ It reuses the shell's `CrtScreen.qml`, `VectorTerrain.qml` and
 `TypedText.qml` (copied in at install, since the greeter's `sddm` user
 can't read `/home`), with a fixed palette in its own `Theme.qml`.
 
+### Install
+
+From a terminal (sudo asks for your password):
+
 ```sh
-dotfiles/sddm/install-sddm.sh --preview   # the greeter on every screen for 30 s, no root, login does nothing
-dotfiles/sddm/install-sddm.sh             # install and select it (/etc/sddm.conf.d/muthur.conf)
-dotfiles/sddm/install-sddm.sh --revert    # back to SDDM's default theme
+dotfiles/sddm/install-sddm.sh --preview   # optional: the greeter on every screen for 30 s,
+                                          # no root; test mode, so logging in does nothing
+dotfiles/sddm/install-sddm.sh             # copy it to /usr/share/sddm/themes/muthur and
+                                          # select it in /etc/sddm.conf.d/muthur.conf
 ```
 
-Rerun the installer after changing the theme or those shared files.
+The next login screen (log out, or reboot) uses it. Rerun the installer
+after changing the theme or the shell files it borrows.
+
+### Revert
+
+```sh
+dotfiles/sddm/install-sddm.sh --revert    # remove /etc/sddm.conf.d/muthur.conf: SDDM's default theme
+```
+
+Stuck at the login screen? Switch to a TTY (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>F3</kbd>),
+log in, run `--revert`, then `sudo systemctl restart sddm`.
 
 ## Beyond the shell — theming the rest of the desktop
 
