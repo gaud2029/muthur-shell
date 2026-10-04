@@ -74,7 +74,7 @@ Column {
                 anchors.right: value.left
                 anchors.rightMargin: theme.gridUnit * 2
                 anchors.verticalCenter: parent.verticalCenter
-                height: theme.gridUnit
+                height: theme.gridUnit * 2
                 color: "transparent"
                 border.color: theme.colorDim
                 border.width: 1

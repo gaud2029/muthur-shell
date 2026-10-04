@@ -14,7 +14,7 @@ Item {
 
     Theme { id: theme }
 
-    implicitHeight: theme.px(35)
+    implicitHeight: theme.px(40)
 
     function valueAt(x) {
         return Math.max(0, Math.min(1, x / track.width));
@@ -53,7 +53,7 @@ Item {
         Rectangle {
             id: track
             width: parent.width
-            height: theme.gridUnit * 2
+            height: theme.gridUnit * 3
             color: "transparent"
             border.color: theme.colorFg
             border.width: 1

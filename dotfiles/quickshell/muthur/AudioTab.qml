@@ -43,6 +43,8 @@ Item {
         contentHeight: column.height
         clip: true
 
+        FastScroll { flickable: scroller }
+
         Column {
             id: column
             width: parent.width

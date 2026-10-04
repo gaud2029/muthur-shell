@@ -83,6 +83,8 @@ Item {
         contentHeight: column.height
         clip: true
 
+        FastScroll { flickable: scroller }
+
         Column {
             id: column
             width: parent.width
@@ -183,13 +185,15 @@ Item {
                     readonly property int maxRows: 8
                     readonly property bool scrolls: count > maxRows
 
-                    width: scrolls ? parent.width - theme.gridUnit * 2 : parent.width
+                    width: scrolls ? parent.width - theme.gridUnit - theme.px(8) : parent.width
                     // Rows overlap by 1px so neighbours share a border.
                     height: Math.min(count, maxRows) * (rowHeight - 1) + 1
                     spacing: -1
                     clip: true
                     boundsBehavior: Flickable.StopAtBounds
                     model: root.matches
+
+                    FastScroll { flickable: results; notch: 90 }
 
                     delegate: Rectangle {
                         id: match

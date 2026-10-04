@@ -71,13 +71,15 @@ Column {
             id: list
             readonly property bool scrolls: root.options.length > root.maxRows
 
-            width: scrolls ? parent.width - theme.gridUnit * 2 : parent.width
+            width: scrolls ? parent.width - theme.gridUnit - theme.px(8) : parent.width
             // Rows overlap by 1px, like the Column above.
             height: Math.min(root.options.length, root.maxRows) * (root.rowHeight - 1) + 1
             spacing: -1
             clip: true
             boundsBehavior: Flickable.StopAtBounds
             model: root.options
+
+            FastScroll { flickable: list; notch: 90 }
 
             // Scroll the current option into view on opening, and again
             // when the options are replaced while open (a model reset

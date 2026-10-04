@@ -40,7 +40,7 @@ Column {
 
     Rectangle {
         width: parent.width
-        height: theme.gridUnit * 2
+        height: theme.gridUnit * 3
         color: "transparent"
         border.color: theme.colorFg
         border.width: 1
