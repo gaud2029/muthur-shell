@@ -285,7 +285,16 @@ QtObject {
           colors: { color0: "#cfcbc0", color1: "#6e3b33", color2: "#424d38", color3: "#544827",
                     color4: "#3d4a5a", color5: "#564454", color6: "#384d4c", color7: "#47443d",
                     color8: "#656056", color9: "#61352d", color10: "#3b4532", color11: "#4b4123",
-                    color12: "#374252", color13: "#4c3c4b", color14: "#334543", color15: "#1c1b18" } }
+                    color12: "#374252", color13: "#4c3c4b", color14: "#334543", color15: "#1c1b18" } },
+        // Taylor Swift's "Pink Clouding", after a photo of a storm at sunset: the cloud's dusk
+        // violet shadow as the ground, its salmon-lit tops as ink, the coral glow as the focus,
+        // the rose of the lit cloud (second, so the wallpapers turn pink) and the gold behind it.
+        { key: "pinkCloud", name: "PINK CLOUD",
+          special: { background: "#241f2e", foreground: "#ebbcb6", cursor: "#f0938c" },
+          colors: { color0: "#302939", color1: "#e88a92", color2: "#e3a0c8", color3: "#e8c088",
+                    color4: "#9ea8dc", color5: "#cf95c4", color6: "#87b9c9", color7: "#ebbcb6",
+                    color8: "#7d6879", color9: "#f2a3a9", color10: "#eeb9d8", color11: "#f0d0a0",
+                    color12: "#b4bce6", color13: "#ddaed4", color14: "#a1cad7", color15: "#f6dcd6" } }
     ]
 
     // The wallpaper-derived palette, when a wallpaper is set, appears as
