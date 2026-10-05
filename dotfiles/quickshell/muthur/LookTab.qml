@@ -228,6 +228,32 @@ Item {
                 }
             }
 
+            // Whether picking an image also recolors everything after it.
+            Row {
+                spacing: theme.gridUnit * 2
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "ON PICK"
+                    color: theme.colorDim
+                    font.family: theme.fontFamily
+                    font.pixelSize: theme.px(11)
+                    font.letterSpacing: theme.letterSpacing
+                }
+
+                TerminalButton {
+                    label: "USE ITS COLORS"
+                    selected: ThemeStore.themeFromWallpaper
+                    onClicked: ThemeStore.setThemeFromWallpaper(true)
+                }
+
+                TerminalButton {
+                    label: "KEEP THEME"
+                    selected: !ThemeStore.themeFromWallpaper
+                    onClicked: ThemeStore.setThemeFromWallpaper(false)
+                }
+            }
+
             FolderListModel {
                 id: wallpapers
                 folder: "file://" + ThemeStore.wallpapersPath
@@ -335,32 +361,6 @@ Item {
                     label: "CLEAR"
                     visible: ThemeStore.wallpaper.length > 0
                     onClicked: ThemeStore.clearWallpaper()
-                }
-            }
-
-            // Whether picking an image also recolors everything after it.
-            Row {
-                spacing: theme.gridUnit * 2
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "ON PICK"
-                    color: theme.colorDim
-                    font.family: theme.fontFamily
-                    font.pixelSize: theme.px(11)
-                    font.letterSpacing: theme.letterSpacing
-                }
-
-                TerminalButton {
-                    label: "USE ITS COLORS"
-                    selected: ThemeStore.themeFromWallpaper
-                    onClicked: ThemeStore.setThemeFromWallpaper(true)
-                }
-
-                TerminalButton {
-                    label: "KEEP THEME"
-                    selected: !ThemeStore.themeFromWallpaper
-                    onClicked: ThemeStore.setThemeFromWallpaper(false)
                 }
             }
 
