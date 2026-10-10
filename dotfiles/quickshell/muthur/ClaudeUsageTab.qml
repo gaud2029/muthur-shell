@@ -74,6 +74,7 @@ Item {
                 width: parent.width
                 visible: ClaudeUsage.loaded && ClaudeUsage.fallbackMessage.length === 0
                 label: "SESSION (5H)"
+                showUsed: true
                 remainingPercent: ClaudeUsage.sessionRemaining
                 subtitle: ClaudeUsage.sessionReset
             }
@@ -82,6 +83,7 @@ Item {
                 width: parent.width
                 visible: ClaudeUsage.loaded && ClaudeUsage.fallbackMessage.length === 0
                 label: "WEEK"
+                showUsed: true
                 remainingPercent: ClaudeUsage.weekRemaining
                 subtitle: ClaudeUsage.weekReset
             }

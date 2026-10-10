@@ -5,6 +5,10 @@ Column {
 
     property string label: ""
     property real remainingPercent: 0
+    // Show and fill what's been used instead of what's left (AI quotas);
+    // the colour still follows what's left.
+    property bool showUsed: false
+    readonly property real shownPercent: showUsed ? 100 - remainingPercent : remainingPercent
     property string subtitle: ""
     // Draw the subtitle in the full foreground colour instead of dim,
     // and/or pulse it, for states that deserve attention (e.g. a
@@ -31,7 +35,7 @@ Column {
 
         Text {
             anchors.right: parent.right
-            text: Math.round(root.remainingPercent) + "% LEFT"
+            text: Math.round(root.shownPercent) + (root.showUsed ? "% USED" : "% LEFT")
             color: theme.colorFg
             font.family: theme.fontFamily
             font.pixelSize: theme.px(12)
@@ -49,7 +53,7 @@ Column {
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: parent.width * Math.max(0, Math.min(100, root.remainingPercent)) / 100
+            width: parent.width * Math.max(0, Math.min(100, root.shownPercent)) / 100
             color: theme.levelColor(root.remainingPercent)
         }
     }

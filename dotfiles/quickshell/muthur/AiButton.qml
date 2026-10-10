@@ -1,8 +1,9 @@
 import QtQuick
 
 // The [AI] button. When a default agent is chosen in the AI panel it
-// carries that agent's 5-hour session bar under the label, the way [POW]
-// carries the charge level; otherwise it's a plain square button.
+// carries that agent's 5-hour session bar under the label, filled with
+// what's been used like the AI panel's bars (colour still follows what's
+// left); otherwise it's a plain square button.
 Rectangle {
     id: root
 
@@ -50,7 +51,7 @@ Rectangle {
                 anchors.left: parent.left
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
-                width: parent.width * Math.max(0, Math.min(100, root.remaining)) / 100
+                width: parent.width * Math.max(0, Math.min(100, 100 - root.remaining)) / 100
                 color: root.filled ? theme.colorBg : theme.levelColor(root.remaining)
             }
         }

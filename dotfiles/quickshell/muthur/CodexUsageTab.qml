@@ -82,6 +82,7 @@ Item {
                 width: parent.width
                 visible: CodexUsage.loaded && CodexUsage.installed && CodexUsage.fallbackMessage.length === 0 && CodexUsage.sessionAvailable
                 label: "SESSION (5H)"
+                showUsed: true
                 remainingPercent: CodexUsage.sessionRemaining
                 subtitle: CodexUsage.sessionReset
             }
@@ -90,6 +91,7 @@ Item {
                 width: parent.width
                 visible: CodexUsage.loaded && CodexUsage.installed && CodexUsage.fallbackMessage.length === 0 && CodexUsage.weekAvailable
                 label: "WEEK"
+                showUsed: true
                 remainingPercent: CodexUsage.weekRemaining
                 subtitle: CodexUsage.weekReset
             }
