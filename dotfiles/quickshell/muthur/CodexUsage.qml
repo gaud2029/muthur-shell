@@ -128,7 +128,8 @@ Singleton {
 
     Process {
         id: whichProcess
-        command: ["which", "codex"]
+        // labwc starts the shell without ~/.local/bin on PATH (only .bashrc adds it).
+        command: ["sh", "-c", "export PATH=\"$HOME/.local/bin:$PATH\"; command -v codex"]
         stdout: StdioCollector {
             onStreamFinished: {
                 if (!root.fetching)

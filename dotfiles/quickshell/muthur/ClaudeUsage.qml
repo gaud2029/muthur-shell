@@ -84,7 +84,8 @@ Singleton {
 
     Process {
         id: usageProcess
-        command: ["claude", "-p", "/usage"]
+        // labwc starts the shell without ~/.local/bin on PATH (only .bashrc adds it).
+        command: ["sh", "-c", "export PATH=\"$HOME/.local/bin:$PATH\"; exec claude -p /usage"]
 
         stdout: StdioCollector {
             onStreamFinished: {
