@@ -300,7 +300,9 @@ The ambient sound:
 | LIFE SUPPORT | ventilation breathing in and out on a slow cycle, a console chirping now and then |
 
 Space, Enter and Backspace have their own sounds; modifiers are silent.
-The keys' VOLUME and the ambience's LEVEL are separate. A continuous
+The keys play **ALWAYS** or only **IN FOCUS MODE** (muted the rest of the
+time; the player keeps running, so they're there the moment focus mode
+comes on). The keys' VOLUME and the ambience's LEVEL are separate. A continuous
 ambience doesn't need the input service below, only the player.
 
 Two pieces, both from `dotfiles/keysound/`:

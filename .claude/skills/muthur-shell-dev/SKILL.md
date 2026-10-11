@@ -300,12 +300,16 @@ too (they're copied in), so check `--preview` after changing them.
   lazily, so a hook-driven change followed by a hot reload can race
   (the reload re-reads the ini before the write lands). Restart cleanly
   after settings-changing hooks.
-- **Changing a `Settings` block's declaration under a running shell**
-  (adding/removing a property) makes the hot reload write the *int*
-  properties back to their defaults in the ini (strings survive) — the
-  user's volumes, sizes, etc. are lost. Stop quickshell before editing a
-  `Settings` block, edit, then start it again; if it happened, put the
-  user's values back with the shell stopped.
+- **Adding a property to a `Settings` block** makes the next load write
+  the declared *defaults* to the ini (ints and some strings), while the
+  in-memory values stay the file's old ones — everything looks right
+  until the next start, which loads the defaults. The user's volumes,
+  sizes, etc. are lost. Seen on a clean restart, not only hot reload.
+  Before: `muthur snapshot save`; after starting: `diff` the ini, then
+  rewrite each clobbered value by setting it to something else and back
+  (`muthur set k other; muthur set k value` — a restore skips values that
+  already match in memory, so it won't fix the file). Check that they
+  survive a restart.
 - **sysfs emits no inotify events** — `FileView.watchChanges` won't fire
   for `/sys/class/backlight/*`; poll with a `Timer` + `reload()`. amdgpu's
   `actual_brightness` is a non-linear readback; show `brightness`.

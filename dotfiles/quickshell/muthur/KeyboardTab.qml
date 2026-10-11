@@ -266,6 +266,23 @@ Item {
                 text: (Keyboard.soundThemes.find(t => t.key === Keyboard.soundTheme) || {}).about || ""
             }
 
+            // Always, or only while focus mode is on (muted otherwise).
+            Row {
+                visible: Keyboard.soundTheme !== "off"
+                spacing: theme.gridUnit * 2
+
+                TerminalButton {
+                    label: "ALWAYS"
+                    selected: Keyboard.soundWhen === "always"
+                    onClicked: Keyboard.setSoundWhen("always")
+                }
+                TerminalButton {
+                    label: "IN FOCUS MODE"
+                    selected: Keyboard.soundWhen === "focus"
+                    onClicked: Keyboard.setSoundWhen("focus")
+                }
+            }
+
             VolumeSlider {
                 visible: Keyboard.soundTheme !== "off"
                 width: parent.width

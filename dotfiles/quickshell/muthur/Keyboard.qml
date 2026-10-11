@@ -31,6 +31,8 @@ Singleton {
         // (both off = no player); whether the ambience follows typing (1)
         // or plays all along (0); key volume and ambience level in percent.
         property string soundTheme: "off"
+        // When the keys sound: "always", or "focus" (only in focus mode).
+        property string soundWhen: "always"
         property string soundAmbienceType: "drone"
         property int soundAmbienceFollow: 1
         property int soundVolume: 50
@@ -247,6 +249,13 @@ Singleton {
         { key: "lifesupport", label: "LIFE SUPPORT", about: "VENTILATION BREATHING IN AND OUT, A CONSOLE CHIRPING NOW AND THEN." }
     ]
     readonly property string soundTheme: soundThemes.some(t => t.key === store.soundTheme) ? store.soundTheme : "off"
+    readonly property string soundWhen: store.soundWhen === "focus" ? "focus" : "always"
+    // The keys sound now: a theme is picked, and it's always or focus
+    // mode is on. Otherwise the player keeps running with the keys at
+    // volume 0 (no start-up delay when focus mode comes on, and the
+    // theme's drone stays the ambience's).
+    readonly property bool soundKeysActive: soundTheme !== "off" && (soundWhen === "always" || Focus.active)
+    onSoundKeysActiveChanged: sendSound()
     readonly property string soundAmbienceType: soundAmbiences.some(a => a.key === store.soundAmbienceType) ? store.soundAmbienceType : "drone"
     readonly property bool soundAmbienceFollow: store.soundAmbienceFollow !== 0
     readonly property bool soundWanted: soundTheme !== "off" || soundAmbienceType !== "off"
@@ -262,6 +271,13 @@ Singleton {
             return;
         root.store.soundTheme = key;
         root.syncPlayer();
+        root.sendSound();
+    }
+
+    function setSoundWhen(when) {
+        if (when !== "always" && when !== "focus")
+            return;
+        root.store.soundWhen = when;
         root.sendSound();
     }
 
@@ -288,17 +304,26 @@ Singleton {
         root.sendSound();
     }
 
-    // A sweep of keys from left to right.
+    // A sweep of keys from left to right — heard even while the keys are
+    // muted outside focus mode.
     function testSound() {
-        if (root.player.running)
-            root.player.write("test\n");
+        if (!root.player.running)
+            return;
+        root.player.write("volume " + root.soundVolume / 100 + "\ntest\n");
+        testMute.restart();
+    }
+
+    Timer {
+        id: testMute
+        interval: 1500
+        onTriggered: root.sendSound()
     }
 
     function sendSound() {
         if (root.player.running)
             root.player.write("theme " + root.soundTheme + "\nambience " + root.soundAmbienceType
                 + "\nfollow " + (root.soundAmbienceFollow ? 1 : 0)
-                + "\nvolume " + root.soundVolume / 100
+                + "\nvolume " + (root.soundKeysActive ? root.soundVolume / 100 : 0)
                 + "\ndrone " + root.soundAmbience / 100 + "\n");
     }
 
