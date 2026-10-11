@@ -702,8 +702,14 @@ dotfiles/
   starship/           prompt config in the shell's [ LABEL ] style, themed via ANSI colors
 docs/screenshots/    the captures above
 wallpapers/
+ci/                  lint.sh and load-test.sh (headless load of the shell), hooks/pre-push
 install.sh
 ```
+
+The checks run locally before every push once the hook is enabled in a
+clone: `git config core.hooksPath ci/hooks` (`git push --no-verify`
+skips them once). GitHub Actions runs the same scripts on pull requests,
+or by hand with `gh workflow run CI`.
 
 Generated, gitignored files (`theme.ini`, `keyboard.ini`, `colors.ini`,
 `themerc-override`, `environment.d/muthur-keyboard.env`,

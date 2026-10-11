@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Runs the CI checks locally before every push, so GitHub Actions only
+# runs on pull requests and by hand. Enabled per clone with
+#   git config core.hooksPath ci/hooks
+# Bypass once with `git push --no-verify`.
+#
+# Checks the working tree, so uncommitted changes count too.
+set -e
+cd "$(git rev-parse --show-toplevel)"
+if ! git diff --quiet HEAD; then
+    echo "pre-push: note: uncommitted changes are included in the checks"
+fi
+echo "pre-push: ci/lint.sh"
+if ! out=$(ci/lint.sh 2>&1); then
+    grep -v '^ok' <<< "$out"
+    echo "pre-push: lint failed, push aborted"
+    exit 1
+fi
+echo "pre-push: ci/load-test.sh"
+ci/load-test.sh || { echo "pre-push: load test failed, push aborted"; exit 1; }

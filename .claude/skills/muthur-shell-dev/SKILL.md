@@ -38,7 +38,9 @@ A clean start logs no warnings. Any `WARN`, `TypeError`, `ReferenceError`,
 `Grid contains more visible items` means a binding silently failed to
 render; fix it before calling a change verified.
 
-Before committing, run what CI runs (`.github/workflows/ci.yml`):
+Before committing, run what CI runs (`.github/workflows/ci.yml`; the
+`ci/hooks/pre-push` hook runs them again on every push, and Actions only
+runs on PRs and by hand):
 `ci/lint.sh` (QML syntax, `bash -n`/shellcheck, Python, the keysound C)
 and `ci/load-test.sh`, which loads a *copy* of the config on a headless
 labwc with its own HOME, runtime dir and D-Bus, opens every `muthur ui`

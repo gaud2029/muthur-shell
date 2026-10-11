@@ -1,9 +1,11 @@
 name: CI
 
-# The same scripts run locally: ci/lint.sh and ci/load-test.sh.
+# The same scripts run locally before every push (ci/hooks/pre-push), so
+# this only runs on pull requests and by hand (Actions > CI > Run
+# workflow, or `gh workflow run CI`).
 on:
-  push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   lint:
