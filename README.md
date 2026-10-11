@@ -183,6 +183,18 @@ mode; critical notifications pop up regardless. Also from a script or
 keybind: `quickshell ipc -c muthur call notifications toggleDnd` (or
 `clear`).
 
+## On-screen display
+
+The volume, mic-mute and brightness keys go through the shell (labwc's
+`rc.xml` binds them to `quickshell ipc -c muthur call osd volumeUp`,
+`volumeDown`, `mute`, `micMute`, `brightnessUp`, `brightnessDown`): it
+changes PipeWire's default output or input, or the backlight through
+logind (no `brightnessctl`), in 5% steps, and shows the result for a
+moment, centered just off the bar on the main screen —
+`VOL [■■■■■■■■■■■■□□□□□□□□] 060%`, `MUTED` in red, `MIC LIVE`, `BRT …`.
+Raising or lowering the volume unmutes it, and brightness never goes
+below 1%. Switching keyboard layouts shows `KBD US > CA` the same way.
+
 ## `[SYS]` — network, bluetooth, audio, display, keyboard, look
 
 - **NETWORK** — Wi-Fi on/off and the visible networks with signal

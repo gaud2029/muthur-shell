@@ -7,8 +7,8 @@ import Quickshell
 ShellRoot {
     // Singletons load on first use; touch the ones with IPC targets now
     // ("quickshell ipc -c muthur call lock lock", "... call focus toggle")
-    // so they exist from the start. NotificationPopups below starts the
-    // notification server.
+    // so they exist from the start. NotificationPopups and OsdWindow below
+    // start the notification server and the "osd" target.
     Component.onCompleted: {
         LockScreen.locked;
         Focus.active;
@@ -16,6 +16,11 @@ ShellRoot {
 
     // Notification popups, on the main screen only.
     NotificationPopups {
+        screen: Quickshell.screens.find(s => s.name === ThemeStore.mainScreen) || Quickshell.screens[0]
+    }
+
+    // Volume/brightness/layout OSD, on the main screen too.
+    OsdWindow {
         screen: Quickshell.screens.find(s => s.name === ThemeStore.mainScreen) || Quickshell.screens[0]
     }
 

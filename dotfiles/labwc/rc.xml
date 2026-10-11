@@ -101,6 +101,29 @@
         <command>sh -c 'grim -g "$(slurp)" - | wl-copy'</command>
       </action>
     </keybind>
+    <!--
+      Volume, mic mute and brightness keys: the shell changes the value and
+      shows its OSD (replaces labwc's defaults, which need amixer and
+      brightnessctl).
+    -->
+    <keybind key="XF86AudioRaiseVolume">
+      <action name="Execute" command="quickshell ipc -c muthur call osd volumeUp" />
+    </keybind>
+    <keybind key="XF86AudioLowerVolume">
+      <action name="Execute" command="quickshell ipc -c muthur call osd volumeDown" />
+    </keybind>
+    <keybind key="XF86AudioMute">
+      <action name="Execute" command="quickshell ipc -c muthur call osd mute" />
+    </keybind>
+    <keybind key="XF86AudioMicMute">
+      <action name="Execute" command="quickshell ipc -c muthur call osd micMute" />
+    </keybind>
+    <keybind key="XF86MonBrightnessUp">
+      <action name="Execute" command="quickshell ipc -c muthur call osd brightnessUp" />
+    </keybind>
+    <keybind key="XF86MonBrightnessDown">
+      <action name="Execute" command="quickshell ipc -c muthur call osd brightnessDown" />
+    </keybind>
   </keyboard>
 
   <mouse>
