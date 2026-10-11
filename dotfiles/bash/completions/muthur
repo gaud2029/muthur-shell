@@ -1,0 +1,22 @@
+# Bash completion for the muthur command (GitHub issue #35). Installed to
+# ~/.local/share/bash-completion/completions/muthur by install.sh, where
+# bash-completion loads it on the first <TAB> after "muthur".
+#
+# The candidates come from `muthur __complete`, which reads the shell's
+# settings registry (or its last cached copy when the shell is down), so
+# a new setting completes with no change here.
+
+_muthur() {
+    local cur prev words cword
+    # -n : keeps "sys:look" one word.
+    _init_completion -n : || return
+
+    local line
+    COMPREPLY=()
+    while IFS= read -r line; do
+        [[ -n $line ]] && COMPREPLY+=("$(printf '%q' "$line")")
+    done < <(muthur __complete "${words[@]:1:cword}" 2>/dev/null)
+    __ltrim_colon_completions "$cur"
+}
+
+complete -F _muthur muthur

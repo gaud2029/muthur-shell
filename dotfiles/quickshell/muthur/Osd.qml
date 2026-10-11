@@ -101,17 +101,30 @@ Singleton {
         blockLoading: true
     }
 
-    // Never fully off: a black screen is a trap.
-    function brightnessStep(delta) {
+    // 0..1, or -1 without a backlight.
+    function brightness() {
         if (!backlight || maxBrightness <= 0)
-            return;
+            return -1;
         brightnessFile.reload();
-        const current = (parseInt(brightnessFile.text()) || 0) / maxBrightness;
-        const next = Math.max(0.01, Math.min(1, Math.round((current + delta) * 100) / 100));
+        return (parseInt(brightnessFile.text()) || 0) / maxBrightness;
+    }
+
+    // Never fully off: a black screen is a trap. Returns the level set.
+    function setBrightness(level) {
+        if (!backlight || maxBrightness <= 0)
+            return -1;
+        const next = Math.max(0.01, Math.min(1, Math.round(level * 100) / 100));
         Quickshell.execDetached(["busctl", "call", "org.freedesktop.login1",
             "/org/freedesktop/login1/session/auto", "org.freedesktop.login1.Session",
             "SetBrightness", "ssu", "backlight", backlight, String(Math.round(next * maxBrightness))]);
-        show("brightness", next, false);
+        return next;
+    }
+
+    function brightnessStep(delta) {
+        const current = brightness();
+        if (current < 0)
+            return;
+        show("brightness", setBrightness(current + delta), false);
     }
 
     // --- Keyboard layout ---------------------------------------------

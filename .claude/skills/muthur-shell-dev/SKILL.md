@@ -1,6 +1,6 @@
 ---
 name: muthur-shell-dev
-description: Use when testing changes to the muthur-shell quickshell config (the MU/TH/UR-themed bar/panel under dotfiles/quickshell/muthur) — launching it, restarting it safely, driving it with temporary hooks, and visually verifying results with screenshots.
+description: Use when testing changes to the muthur-shell quickshell config (the MU/TH/UR-themed bar/panel under dotfiles/quickshell/muthur) — launching it, restarting it safely, driving it with the `muthur` command (settings, opening popups, snapshot/restore of the user's settings) or temporary hooks, and visually verifying results with screenshots.
 ---
 
 # muthur-shell dev/test loop
@@ -42,8 +42,30 @@ verified.
 
 ## Driving the shell without clicks
 
-There's no way to click or type into the shell here, so exercise code paths
-with a **temporary hook**, screenshot, then restore the file from a backup
+**Use the `muthur` command first** (`dotfiles/bin/muthur`, on PATH as
+`~/.local/bin/muthur`; registry in `Cli.qml`). No QML edits, no hot
+reload, so no settings-ini races:
+
+```sh
+muthur snapshot save before-test          # ALWAYS first: the user's settings
+muthur set look.preset tron               # any setting: muthur list
+muthur set display.bar-position top
+muthur ui open sys:look                   # sys:<tab>, ai:<tab>, drawer, calendar, battery
+muthur ui open drawer --screen DP-4       # default: the main screen
+muthur ui close
+muthur get --json                         # every value, to compare
+muthur snapshot restore before-test       # put everything back, then
+diff <(muthur get --json) ~/.local/state/muthur/snapshots/before-test.json
+muthur snapshot delete before-test
+```
+
+A new setting in a panel gets a `Cli.qml` registry entry too (same setter
+the panel calls). A snapshot doesn't hold everything: e.g. restoring the
+wallpaper path re-picks it, but an image analysis it ran meanwhile
+(`wallpaperColors`) stays — compare `muthur list look.preset` counts.
+
+For what `muthur` can't reach (a widget's internal state, a code path with
+no setting), fall back to a **temporary hook**, screenshot, then restore the file from a backup
 copy (`cp Bar.qml "$S/Bar.qml.bak"` first; restoring triggers a hot reload
 that closes any popups, so take the screenshot *before* restoring):
 
@@ -53,7 +75,7 @@ that closes any popups, so take the screenshot *before* restoring):
   Panels: `controlPanel` (tabs `wifi`/`bluetooth`/`audio`/`display`/`keyboard`/`look`),
   `aiPanel` (`claude`/`codex`), `calendarPanel`, `batteryPanel`. The drawer
   needs its placement: `drawer.placement = root.popupPlacement(plusButton); drawer.visible = true`.
-- Change persisted settings (in `shell.qml`, `ShellRoot { Component.onCompleted: ... }`):
+- Change persisted settings — prefer `muthur set` — (in `shell.qml`, `ShellRoot { Component.onCompleted: ... }`):
   `ThemeStore.applyPreset("tron")`, `setBarPosition("top")`,
   `setSizeMultiplier(2)`, `setGridUnit(5)`, `setDefaultAgent("claude")`,
   `setWallpaper("/path.png")` / `clearWallpaper()`, `setTerminalOpacity(80)`.

@@ -338,6 +338,36 @@ Picking `OFF` stops the player. To remove everything:
 dotfiles/keysound/install-keysound.sh --revert   # stop and remove the service, the player and their files
 ```
 
+## The `muthur` command
+
+Every setting the panels expose can also be read and changed from a
+terminal or a script, through the running shell (`install.sh` links it
+into `~/.local/bin`, with bash completion for commands, settings and
+their values):
+
+```sh
+muthur get                          # every setting and its value
+muthur get look                     # a group
+muthur list                         # every setting: value, allowed values, what it does
+muthur set look.preset tron         # silent on success; errors list the allowed values
+muthur set display.nightlight.warm-at 20:30
+muthur set audio.ambience softrain
+muthur toggle notifications.dnd
+
+muthur lock | focus [on|off] | keyboard next | notifications clear
+muthur osd volume-up                # what the media keys call
+
+muthur ui open sys:look             # open a popup (drawer, sys:<tab>, ai:<tab>, calendar, battery)
+muthur ui close
+
+muthur snapshot save mine           # keep every setting...
+muthur snapshot restore mine        # ...and put them all back later
+```
+
+`--json` on `get` and `list` gives output for scripts. Exit codes: 0 ok,
+1 a bad command, setting or value, 2 the shell isn't running. Network and
+Bluetooth stay with `nmcli` and `bluetoothctl`.
+
 ## `[AI]` — Claude Code / Codex usage
 
 Session (5h) and weekly quota bars for both CLIs — from Claude Code's own
@@ -652,6 +682,7 @@ and hooks) isn't tracked here — the one-line change was made directly.
 
 ```
 dotfiles/
+  bin/muthur          the muthur command (Cli.qml in the shell holds its settings registry)
   quickshell/muthur/  the shell (QML) — ThemeStore.qml is the theme hub;
                       scripts/ holds the palette and usage-stats helpers
   fuzzel/             launcher config, themed to match the shell
@@ -665,7 +696,7 @@ dotfiles/
   nvim/               LazyVim config, themed (and live-reloaded)
   yazi/               file manager config in the shell's style, themed via ANSI colors
   btop/               system monitor config, themed
-  bash/               ~/.bashrc
+  bash/               ~/.bashrc, and completions/ for the muthur command
   starship/           prompt config in the shell's [ LABEL ] style, themed via ANSI colors
 docs/screenshots/    the captures above
 wallpapers/

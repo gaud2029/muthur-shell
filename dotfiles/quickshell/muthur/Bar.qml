@@ -249,4 +249,31 @@ PanelWindow {
         id: drawer
         screen: root.screen
     }
+
+    // `muthur ui open|close` (Ui.qml), for this screen.
+    Connections {
+        target: Ui
+
+        function onOpenRequested(target, screen) {
+            if (screen !== root.screen.name)
+                return;
+            if (target === "drawer") {
+                drawer.placement = root.popupPlacement(plusButton);
+                drawer.visible = true;
+                return;
+            }
+            const [panel, tab] = target.split(":");
+            const popup = { sys: controlPanel, ai: aiPanel, calendar: calendarPanel, battery: batteryPanel }[panel];
+            if (tab)
+                popup.currentTab = panel === "sys" ? Ui.sysTabs[tab] : tab;
+            if (!popup.visible)
+                root.togglePanel(popup);
+        }
+
+        function onCloseRequested() {
+            for (const p of root.popupPanels)
+                p.visible = false;
+            drawer.visible = false;
+        }
+    }
 }

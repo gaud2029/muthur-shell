@@ -80,6 +80,21 @@ Singleton {
         root.apply();
     }
 
+    // The whole list at once (`muthur set keyboard.layouts us,ca`): known
+    // layouts only, the active one kept if it stays. An error, or "".
+    function setLayouts(entries) {
+        if (entries.length === 0)
+            return "at least one layout is needed";
+        const unknown = entries.filter(e => !root.names[e]);
+        if (unknown.length > 0)
+            return "unknown layout: " + unknown.join(", ");
+        const current = root.current;
+        root.store.layouts = entries.join(",");
+        root.store.active = Math.max(0, entries.indexOf(current));
+        root.apply();
+        return "";
+    }
+
     // Every layout and variant xkb knows, as { key, name } sorted by name,
     // for the KEYBOARD tab's search; and the same names by key.
     property var catalog: []

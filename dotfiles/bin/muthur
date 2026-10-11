@@ -1,0 +1,333 @@
+#!/usr/bin/env python3
+"""muthur: control the muthur shell from the command line (GitHub issue #35).
+
+  muthur get [--json] [KEY|PREFIX]   settings (all, a group like look., or one)
+  muthur set KEY VALUE               change one, as its panel would (silent)
+  muthur toggle KEY                  flip an on/off setting (silent)
+  muthur list [--json] [PREFIX]      every setting: type, allowed values, help
+
+  muthur lock                        the lock screen
+  muthur focus [on|off|toggle]       focus mode (default: toggle)
+  muthur keyboard next               next keyboard layout
+  muthur notifications clear         dismiss every notification
+  muthur osd ACTION                  what the media keys call: volume-up,
+                                     volume-down, mute, mic-mute,
+                                     brightness-up, brightness-down
+
+  muthur ui open TARGET [--screen NAME]   open a popup (drawer, sys:look, ...)
+  muthur ui close                         close every popup
+
+  muthur snapshot save NAME          keep every setting
+  muthur snapshot restore NAME       put them all back
+  muthur snapshot list | delete NAME
+
+Exit codes: 0 ok, 1 bad command, key or value, 2 the shell isn't running.
+
+It talks to the running shell over `quickshell ipc` (the "muthur" target,
+Cli.qml, holds the settings registry). Bash completion:
+dotfiles/bash/completions/muthur, which calls `muthur __complete`.
+"""
+
+import json
+import os
+import shlex
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+CONFIG = "muthur"
+STATE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "muthur"
+CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "muthur" / "list.json"
+SNAPSHOTS = STATE / "snapshots"
+
+COMMANDS = ["get", "set", "toggle", "list", "lock", "focus", "keyboard",
+            "notifications", "osd", "ui", "snapshot", "help"]
+OSD = {"volume-up": "volumeUp", "volume-down": "volumeDown", "mute": "mute",
+       "mic-mute": "micMute", "brightness-up": "brightnessUp", "brightness-down": "brightnessDown"}
+
+
+class NotRunning(Exception):
+    pass
+
+
+def fail(message, code=1):
+    for line in message.splitlines():
+        print("muthur: " + line.removeprefix("error: "), file=sys.stderr)
+    sys.exit(code)
+
+
+def ipc(target, function, *args):
+    """Call a function of the running shell; its result as a string."""
+    cmd = ["quickshell", "ipc", "-c", CONFIG, "call", target, function, *args]
+    for attempt in range(15):
+        try:
+            p = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        except FileNotFoundError:
+            raise NotRunning("quickshell isn't installed")
+        out = p.stdout.rstrip("\n")
+        err = (p.stderr or "").strip()
+        # Mid hot-reload: try again for a few seconds.
+        if "Not ready to accept queries" in out + err:
+            time.sleep(0.2)
+            continue
+        if "No running instances" in out + err:
+            raise NotRunning("the shell isn't running")
+        if p.returncode != 0:
+            raise NotRunning((err or out or "quickshell ipc failed").splitlines()[0])
+        return out
+    raise NotRunning("the shell isn't answering (reloading?)")
+
+
+def call(target, function, *args):
+    """ipc(), failing on an "error: " result."""
+    out = ipc(target, function, *args)
+    if out.startswith("error: "):
+        fail(out)
+    return out
+
+
+def fetch_list():
+    """The settings registry, from the shell (cached for completion)."""
+    data = json.loads(call("muthur", "list"))
+    try:
+        CACHE.parent.mkdir(parents=True, exist_ok=True)
+        CACHE.write_text(json.dumps(data))
+    except OSError:
+        pass
+    return data
+
+
+def matching(keys, prefix):
+    """The keys under a prefix: exact, or a group ("look" or "look.")."""
+    if prefix in keys:
+        return [prefix]
+    group = prefix.rstrip(".") + "."
+    return [k for k in keys if k.startswith(group)]
+
+
+def table(rows):
+    """Columns padded to line up; the last one runs free."""
+    if not rows:
+        return
+    widths = [max(len(r[i]) for r in rows) for i in range(len(rows[0]) - 1)]
+    for r in rows:
+        print("  ".join(c.ljust(w) for c, w in zip(r, widths)) + "  " + r[-1])
+
+
+# --- Commands -----------------------------------------------------------
+
+def cmd_get(args):
+    as_json = "--json" in args
+    args = [a for a in args if a != "--json"]
+    if len(args) > 1:
+        fail("usage: muthur get [--json] [KEY|PREFIX]")
+    values = json.loads(call("muthur", "getAll"))
+    if args:
+        keys = matching(list(values), args[0])
+        if not keys:
+            fail(args[0] + ": unknown setting (muthur list)")
+        values = {k: values[k] for k in keys}
+        if len(keys) == 1 and keys[0] == args[0] and not as_json:
+            print(values[keys[0]])
+            return
+    if as_json:
+        print(json.dumps(values, indent=2))
+    else:
+        table([(k, v) for k, v in values.items()])
+
+
+def cmd_set(args):
+    if len(args) < 2:
+        fail("usage: muthur set KEY VALUE")
+    call("muthur", "set", args[0], " ".join(args[1:]))
+
+
+def cmd_toggle(args):
+    if len(args) != 1:
+        fail("usage: muthur toggle KEY")
+    call("muthur", "toggle", args[0])
+
+
+def describe_type(s):
+    if s["type"] == "int":
+        return f"{s['min']}..{s['max']}"
+    if s["type"] == "bool":
+        return "on|off"
+    if s["type"] == "enum":
+        values = s.get("values", [])
+        text = "|".join(values)
+        return text if len(text) <= 40 else f"{len(values)} choices"
+    return {"time": "HH:MM", "list": "a,b,..."}.get(s["type"], s["type"])
+
+
+def cmd_list(args):
+    as_json = "--json" in args
+    args = [a for a in args if a != "--json"]
+    data = fetch_list()
+    settings = data["settings"]
+    if args:
+        keys = matching([s["key"] for s in settings], args[0])
+        settings = [s for s in settings if s["key"] in keys]
+    if as_json:
+        print(json.dumps(settings, indent=2))
+        return
+    table([(s["key"], s["value"], "[" + describe_type(s) + "]", s["help"]) for s in settings])
+
+
+def cmd_focus(args):
+    mode = args[0] if args else "toggle"
+    if mode == "toggle":
+        call("muthur", "toggle", "focus")
+    elif mode in ("on", "off"):
+        call("muthur", "set", "focus", mode)
+    else:
+        fail("usage: muthur focus [on|off|toggle]")
+
+
+def cmd_ui(args):
+    if args[:1] == ["close"] and len(args) == 1:
+        call("muthur", "uiClose")
+        return
+    if args[:1] != ["open"] or len(args) not in (2, 4) or (len(args) == 4 and args[2] != "--screen"):
+        fail("usage: muthur ui open TARGET [--screen NAME] | muthur ui close")
+    call("muthur", "uiOpen", args[1], args[3] if len(args) == 4 else "")
+
+
+def snapshot_names():
+    return sorted(p.stem for p in SNAPSHOTS.glob("*.json")) if SNAPSHOTS.is_dir() else []
+
+
+def cmd_snapshot(args):
+    action = args[0] if args else ""
+    if action == "list" and len(args) == 1:
+        for name in snapshot_names():
+            print(name)
+        return
+    if action not in ("save", "restore", "delete") or len(args) != 2:
+        fail("usage: muthur snapshot save|restore|delete NAME | muthur snapshot list")
+    name = args[1]
+    if "/" in name or name.startswith("."):
+        fail(f"{name}: not a snapshot name")
+    path = SNAPSHOTS / (name + ".json")
+    if action == "save":
+        values = json.loads(call("muthur", "getAll"))
+        SNAPSHOTS.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(values, indent=2) + "\n")
+    elif not path.exists():
+        fail(f"{name}: no such snapshot (muthur snapshot list)")
+    elif action == "restore":
+        call("muthur", "setMany", path.read_text())
+    else:
+        path.unlink()
+
+
+def main(argv):
+    if not argv or argv[0] in ("help", "-h", "--help"):
+        print(__doc__.strip())
+        return
+    if argv[0] == "__complete":
+        complete(argv[1:])
+        return
+    cmd, args = argv[0], argv[1:]
+    simple = {
+        ("lock",): ("lock", "lock"),
+        ("keyboard", "next"): ("keyboard", "next"),
+        ("notifications", "clear"): ("notifications", "clear"),
+    }
+    if tuple(argv) in simple:
+        call(*simple[tuple(argv)])
+    elif cmd == "osd":
+        if len(args) != 1 or args[0] not in OSD:
+            fail("usage: muthur osd " + "|".join(OSD))
+        call("osd", OSD[args[0]])
+    elif cmd in ("get", "set", "toggle", "list", "focus", "ui", "snapshot"):
+        globals()["cmd_" + cmd](args)
+    else:
+        fail(f"{' '.join(argv)}: unknown command (muthur help)")
+
+
+# --- Completion ---------------------------------------------------------
+
+def registry():
+    """The registry, live if the shell is up, else the last cached copy."""
+    try:
+        data = json.loads(ipc("muthur", "list"))
+        CACHE.parent.mkdir(parents=True, exist_ok=True)
+        CACHE.write_text(json.dumps(data))
+        return data
+    except (NotRunning, ValueError, OSError):
+        try:
+            return json.loads(CACHE.read_text())
+        except (OSError, ValueError):
+            return {"settings": [], "ui": [], "screens": []}
+
+
+def dequote(word):
+    try:
+        return " ".join(shlex.split(word))
+    except ValueError:
+        return word.replace("\\", "").lstrip("'\"")
+
+
+def candidates(words):
+    """What can come next, given the words typed so far."""
+    n = len(words)
+    if n == 0:
+        return COMMANDS
+    cmd = words[0]
+    if cmd in ("get", "list"):
+        if n == 1:
+            settings = registry()["settings"]
+            groups = sorted({s["key"].split(".")[0] + "." for s in settings if "." in s["key"]})
+            return ["--json"] + groups + [s["key"] for s in settings]
+        return ["--json"] if "--json" not in words else []
+    if cmd in ("set", "toggle"):
+        settings = registry()["settings"]
+        if n == 1:
+            return [s["key"] for s in settings if cmd == "set" or s["type"] == "bool"]
+        if cmd == "set" and n == 2:
+            s = next((s for s in settings if s["key"] == words[1]), None)
+            if not s:
+                return []
+            if s["type"] == "bool":
+                return ["on", "off"]
+            return s.get("values", [])
+        return []
+    if n == 1:
+        return {"focus": ["on", "off", "toggle"], "keyboard": ["next"], "notifications": ["clear"],
+                "osd": list(OSD), "ui": ["open", "close"],
+                "snapshot": ["save", "restore", "list", "delete"]}.get(cmd, [])
+    if cmd == "ui" and words[1] == "open":
+        if n == 2:
+            return registry()["ui"]
+        if n == 3:
+            return ["--screen"]
+        if n == 4 and words[3] == "--screen":
+            return registry()["screens"]
+    if cmd == "snapshot" and words[1] in ("restore", "delete") and n == 2:
+        return snapshot_names()
+    return []
+
+
+def complete(words):
+    """`muthur __complete WORD... CURRENT`: the candidates for CURRENT."""
+    if not words:
+        words = [""]
+    done, current = words[:-1], dequote(words[-1])
+    options = candidates(done)
+    # keyboard.layouts takes a comma list: complete its last item.
+    if done[:2] == ["set", "keyboard.layouts"] and "," in current:
+        head, last = current.rsplit(",", 1)
+        print("\n".join(head + "," + o for o in options if o.startswith(last)))
+        return
+    print("\n".join(o for o in options if o.startswith(current)))
+
+
+if __name__ == "__main__":
+    try:
+        main(sys.argv[1:])
+    except NotRunning as e:
+        fail(str(e) + " (start it: quickshell -c muthur)", 2)
+    except KeyboardInterrupt:
+        sys.exit(130)

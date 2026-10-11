@@ -108,6 +108,8 @@ LINKS=(
   "nvim:nvim"
   "yazi:yazi"
   "btop:btop"
+  "bin/muthur:~/.local/bin/muthur"
+  "bash/completions/muthur:~/.local/share/bash-completion/completions/muthur"
 )
 
 link_one() {
