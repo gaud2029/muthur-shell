@@ -6,6 +6,8 @@ import Quickshell.Io
 // Claude Code quota, read from `claude -p /usage`. Refreshed every minute
 // while its tab is showing, and every 10 minutes in the background when
 // Claude is the default agent (the [AI] button shows its session bar).
+// The last good read is cached on disk and kept when a fetch fails, so
+// the panel always has numbers to show, with their age.
 Singleton {
     id: root
 
@@ -16,19 +18,59 @@ Singleton {
     property string sessionReset: ""
     property real weekRemaining: 0
     property string weekReset: ""
-    property string fallbackMessage: ""
-    property bool loaded: false
-    readonly property bool ready: loaded && fallbackMessage.length === 0
+    // When the numbers above were read (ms since epoch); 0 before the first read.
+    property real updatedAt: 0
+    property bool fetching: false
+    // Why the last fetch failed, cleared by the next good one.
+    property string error: ""
+    readonly property bool hasData: updatedAt > 0
+    // Shown instead of the bars only while there's no data at all.
+    readonly property string fallbackMessage: hasData ? "" : error
+    readonly property bool loaded: hasData || error.length > 0
+    readonly property bool ready: hasData
 
+    // A fetch takes a few seconds; never restart one that's running, or
+    // it ends with empty output and reads as a failure.
     function refresh() {
-        usageProcess.running = false;
+        if (usageProcess.running)
+            return;
+        fetching = true;
+        requestTimeout.restart();
         usageProcess.running = true;
     }
 
-    onActiveChanged: if (active) refresh()
-    onBackgroundChanged: if (background && !loaded) refresh()
-    Component.onCompleted: if (background) refresh()
+    // Reopening the panel right after a read shouldn't spawn another one.
+    function refreshIfStale() {
+        if (Date.now() - updatedAt > 30000)
+            refresh();
+    }
 
+    function finish(message) {
+        error = message;
+        fetching = false;
+        requestTimeout.stop();
+    }
+
+    onActiveChanged: if (active) refreshIfStale()
+    onBackgroundChanged: if (background) refreshIfStale()
+    Component.onCompleted: {
+        try {
+            const cached = JSON.parse(cacheFile.text());
+            sessionRemaining = cached.sessionRemaining;
+            sessionReset = cached.sessionReset;
+            weekRemaining = cached.weekRemaining;
+            weekReset = cached.weekReset;
+            updatedAt = cached.updatedAt;
+        } catch (e) {}
+        if (background)
+            refreshIfStale();
+    }
+
+    readonly property FileView cacheFile: FileView {
+        path: Quickshell.env("HOME") + "/.cache/muthur/claude-usage.json"
+        blockLoading: true
+        printErrors: false
+    }
 
     // Local token statistics (tokens by day / by model over the last 7
     // days), aggregated by scripts/ai-usage-stats.py from the CLI's own
@@ -82,6 +124,15 @@ Singleton {
         onTriggered: root.refresh()
     }
 
+    Timer {
+        id: requestTimeout
+        interval: 30000
+        onTriggered: {
+            root.finish("[ USAGE REQUEST TIMED OUT ]");
+            usageProcess.running = false;
+        }
+    }
+
     Process {
         id: usageProcess
         // labwc starts the shell without ~/.local/bin on PATH (only .bashrc adds it).
@@ -89,20 +140,29 @@ Singleton {
 
         stdout: StdioCollector {
             onStreamFinished: {
+                if (!root.fetching)
+                    return;
                 const text = this.text;
                 const sessionMatch = text.match(/Current session:\s*(\d+)%\s*used\s*·\s*resets\s*(.+)/);
                 const weekMatch = text.match(/Current week[^:]*:\s*(\d+)%\s*used\s*·\s*resets\s*(.+)/);
 
-                if (sessionMatch && weekMatch) {
-                    root.sessionRemaining = 100 - parseInt(sessionMatch[1]);
-                    root.sessionReset = "resets " + sessionMatch[2].trim();
-                    root.weekRemaining = 100 - parseInt(weekMatch[1]);
-                    root.weekReset = "resets " + weekMatch[2].trim();
-                    root.fallbackMessage = "";
-                } else {
-                    root.fallbackMessage = text.split("\n").find(l => l.trim().length > 0) || "[ COULDN'T READ USAGE ]";
+                if (!sessionMatch || !weekMatch) {
+                    root.finish(text.split("\n").find(l => l.trim().length > 0) || "[ COULDN'T READ USAGE ]");
+                    return;
                 }
-                root.loaded = true;
+                root.sessionRemaining = 100 - parseInt(sessionMatch[1]);
+                root.sessionReset = "resets " + sessionMatch[2].trim();
+                root.weekRemaining = 100 - parseInt(weekMatch[1]);
+                root.weekReset = "resets " + weekMatch[2].trim();
+                root.updatedAt = Date.now();
+                root.finish("");
+                root.cacheFile.setText(JSON.stringify({
+                    sessionRemaining: root.sessionRemaining,
+                    sessionReset: root.sessionReset,
+                    weekRemaining: root.weekRemaining,
+                    weekReset: root.weekReset,
+                    updatedAt: root.updatedAt
+                }) + "\n");
             }
         }
     }

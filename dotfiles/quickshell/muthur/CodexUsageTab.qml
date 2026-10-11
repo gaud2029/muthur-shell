@@ -80,7 +80,7 @@ Item {
 
             UsageBar {
                 width: parent.width
-                visible: CodexUsage.loaded && CodexUsage.installed && CodexUsage.fallbackMessage.length === 0 && CodexUsage.sessionAvailable
+                visible: CodexUsage.ready && CodexUsage.sessionAvailable
                 label: "SESSION (5H)"
                 showUsed: true
                 remainingPercent: CodexUsage.sessionRemaining
@@ -89,11 +89,16 @@ Item {
 
             UsageBar {
                 width: parent.width
-                visible: CodexUsage.loaded && CodexUsage.installed && CodexUsage.fallbackMessage.length === 0 && CodexUsage.weekAvailable
+                visible: CodexUsage.ready && CodexUsage.weekAvailable
                 label: "WEEK"
                 showUsed: true
                 remainingPercent: CodexUsage.weekRemaining
                 subtitle: CodexUsage.weekReset
+            }
+
+            UsageAge {
+                visible: CodexUsage.ready
+                usage: CodexUsage
             }
 
             Rectangle {

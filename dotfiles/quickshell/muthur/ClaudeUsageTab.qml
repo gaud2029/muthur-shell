@@ -72,7 +72,7 @@ Item {
 
             UsageBar {
                 width: parent.width
-                visible: ClaudeUsage.loaded && ClaudeUsage.fallbackMessage.length === 0
+                visible: ClaudeUsage.hasData
                 label: "SESSION (5H)"
                 showUsed: true
                 remainingPercent: ClaudeUsage.sessionRemaining
@@ -81,11 +81,15 @@ Item {
 
             UsageBar {
                 width: parent.width
-                visible: ClaudeUsage.loaded && ClaudeUsage.fallbackMessage.length === 0
+                visible: ClaudeUsage.hasData
                 label: "WEEK"
                 showUsed: true
                 remainingPercent: ClaudeUsage.weekRemaining
                 subtitle: ClaudeUsage.weekReset
+            }
+
+            UsageAge {
+                usage: ClaudeUsage
             }
 
             Rectangle {

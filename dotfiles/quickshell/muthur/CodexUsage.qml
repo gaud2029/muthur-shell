@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Io
 
 // Codex quota, read over the `codex app-server` JSON protocol. Same
-// refresh policy as ClaudeUsage.
+// refresh policy and on-disk cache as ClaudeUsage.
 Singleton {
     id: root
 
@@ -12,15 +12,23 @@ Singleton {
     readonly property bool background: ThemeStore.defaultAgent === "codex"
     property bool fetching: false
     property bool installed: false
-    property bool loaded: false
     property real sessionRemaining: 0
     property string sessionReset: ""
     property real weekRemaining: 0
     property string weekReset: ""
-    property string fallbackMessage: ""
     property bool sessionAvailable: false
     property bool weekAvailable: false
-    readonly property bool ready: loaded && installed && fallbackMessage.length === 0
+    // When the numbers above were read (ms since epoch); 0 before the first read.
+    property real updatedAt: 0
+    // Why the last fetch failed, cleared by the next good one.
+    property string error: ""
+    // Set once a fetch has finished, even one that found no codex.
+    property bool checked: false
+    readonly property bool hasData: updatedAt > 0
+    // Shown instead of the bars only while there's no data at all.
+    readonly property string fallbackMessage: hasData ? "" : error
+    readonly property bool loaded: hasData || checked
+    readonly property bool ready: hasData && installed
 
     function refresh() {
         if (fetching || whichProcess.running || usageProcess.running)
@@ -30,10 +38,16 @@ Singleton {
         whichProcess.running = true;
     }
 
+    // Reopening the panel right after a read shouldn't spawn another one.
+    function refreshIfStale() {
+        if (Date.now() - updatedAt > 30000)
+            refresh();
+    }
+
     function finish(message) {
-        fallbackMessage = message;
+        error = message;
         fetching = false;
-        loaded = true;
+        checked = true;
         requestTimeout.stop();
         whichProcess.running = false;
         usageProcess.running = false;
@@ -54,19 +68,54 @@ Singleton {
         const windows = limits ? [limits.primary, limits.secondary] : [];
         const session = windows.find(w => w && w.windowDurationMins === 300);
         const week = windows.find(w => w && w.windowDurationMins === 10080);
-        sessionAvailable = !!validWindow(session);
-        weekAvailable = !!validWindow(week);
-        sessionRemaining = sessionAvailable ? Math.max(0, Math.min(100, 100 - session.usedPercent)) : 0;
-        weekRemaining = weekAvailable ? Math.max(0, Math.min(100, 100 - week.usedPercent)) : 0;
+        const hasSession = !!validWindow(session);
+        const hasWeek = !!validWindow(week);
+        if (!hasSession && !hasWeek) {
+            finish("[ CODEX QUOTAS UNAVAILABLE ]");
+            return;
+        }
+        sessionAvailable = hasSession;
+        weekAvailable = hasWeek;
+        sessionRemaining = hasSession ? Math.max(0, Math.min(100, 100 - session.usedPercent)) : 0;
+        weekRemaining = hasWeek ? Math.max(0, Math.min(100, 100 - week.usedPercent)) : 0;
         sessionReset = resetText(session);
         weekReset = resetText(week);
-        finish(sessionAvailable || weekAvailable ? "" : "[ CODEX QUOTAS UNAVAILABLE ]");
+        updatedAt = Date.now();
+        finish("");
+        cacheFile.setText(JSON.stringify({
+            sessionAvailable: sessionAvailable,
+            sessionRemaining: sessionRemaining,
+            sessionReset: sessionReset,
+            weekAvailable: weekAvailable,
+            weekRemaining: weekRemaining,
+            weekReset: weekReset,
+            updatedAt: updatedAt
+        }) + "\n");
     }
 
-    onActiveChanged: if (active) refresh()
-    onBackgroundChanged: if (background && !loaded) refresh()
-    Component.onCompleted: if (background) refresh()
+    onActiveChanged: if (active) refreshIfStale()
+    onBackgroundChanged: if (background) refreshIfStale()
+    Component.onCompleted: {
+        try {
+            const cached = JSON.parse(cacheFile.text());
+            sessionAvailable = cached.sessionAvailable;
+            sessionRemaining = cached.sessionRemaining;
+            sessionReset = cached.sessionReset;
+            weekAvailable = cached.weekAvailable;
+            weekRemaining = cached.weekRemaining;
+            weekReset = cached.weekReset;
+            updatedAt = cached.updatedAt;
+            installed = true;
+        } catch (e) {}
+        if (background)
+            refreshIfStale();
+    }
 
+    readonly property FileView cacheFile: FileView {
+        path: Quickshell.env("HOME") + "/.cache/muthur/codex-usage.json"
+        blockLoading: true
+        printErrors: false
+    }
 
     // Local token statistics (tokens by day / by model over the last 7
     // days), aggregated by scripts/ai-usage-stats.py from the CLI's own
