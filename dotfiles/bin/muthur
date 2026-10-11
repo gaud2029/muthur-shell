@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""muthur: control the muthur shell from the command line (GitHub issue #35).
+"""muthur: control the muthur shell from the command line.
 
   muthur get [--json] [KEY|PREFIX]   settings (all, a group like look., or one)
   muthur set KEY VALUE               change one, as its panel would (silent)
@@ -23,10 +23,12 @@
 
 Exit codes: 0 ok, 1 bad command, key or value, 2 the shell isn't running.
 
-It talks to the running shell over `quickshell ipc` (the "muthur" target,
-Cli.qml, holds the settings registry). Bash completion:
-dotfiles/bash/completions/muthur, which calls `muthur __complete`.
+Tab completion covers commands, settings and their values.
 """
+
+# Talks to the running shell over `quickshell ipc`: the "muthur" target
+# (Cli.qml, GitHub issue #35) holds the settings registry. The bash
+# completion (dotfiles/bash/completions/muthur) calls `muthur __complete`.
 
 import json
 import os
