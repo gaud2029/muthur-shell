@@ -69,6 +69,7 @@ PACKAGES=(
   swayidle       # idle timer (labwc autostart)
   swaylock       # fallback locker when the shell isn't running (scripts/lock.sh)
   wlopm          # screen power on idle (labwc autostart)
+  wlsunset       # night light, run by the shell ([SYS] > DISPLAY)
   grim           # screenshots (Super+Shift+3/4)
   slurp          # region picker for the Super+Shift+4 screenshots
   wl-clipboard   # wl-copy, for Ctrl+Super+Shift+4 to the clipboard

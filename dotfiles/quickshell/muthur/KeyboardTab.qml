@@ -24,41 +24,6 @@ Item {
         font.letterSpacing: theme.letterSpacing
     }
 
-    // A bordered one-line input with a dim placeholder.
-    component Field: Rectangle {
-        property alias input: input_
-        property string placeholder: ""
-
-        height: theme.buttonSize
-        color: "transparent"
-        border.color: input_.activeFocus ? theme.colorFocus : theme.colorDim
-        border.width: 1
-
-        TextInput {
-            id: input_
-            anchors.fill: parent
-            anchors.margins: theme.gridUnit * 2
-            verticalAlignment: TextInput.AlignVCenter
-            clip: true
-            color: theme.colorFg
-            selectionColor: theme.colorDim
-            selectedTextColor: theme.colorFg
-            font.family: theme.fontFamily
-            font.pixelSize: theme.px(12)
-
-            Text {
-                anchors.fill: parent
-                visible: !input_.text && !input_.activeFocus
-                verticalAlignment: Text.AlignVCenter
-                text: parent.parent.placeholder
-                color: theme.colorDim
-                font.family: theme.fontFamily
-                font.pixelSize: theme.px(12)
-                font.letterSpacing: theme.letterSpacing
-            }
-        }
-    }
-
     // Matches for the search, minus the layouts already configured.
     readonly property string query: search.input.text.trim().toLowerCase()
     readonly property var matches: query.length === 0 ? []

@@ -39,7 +39,7 @@ asks for confirmation before changing anything (`--yes` skips the
 prompt). It first installs everything the configs rely on with
 `sudo pacman -S --needed` — labwc, quickshell, fuzzel, alacritty, starship,
 yazi, btop, swaybg/kanshi/swayidle/wlopm for the labwc autostart (and
-swaylock, the fallback locker),
+swaylock, the fallback locker), wlsunset for the night light,
 grim/slurp/wl-clipboard for the screenshot keys, Neovim,
 Noto fonts, and the NetworkManager/BlueZ/PipeWire/UPower services the
 panels talk to (`--no-packages` skips this; herdr isn't packaged and is
@@ -146,7 +146,8 @@ From the end of the bar:
   chosen, its 5-hour session quota shows as a bar under the label, like
   `[POW]`.
 - **`[SYS]`** — the system panel (below).
-- **`[+]`** — the drawer: system tray, MPRIS "now playing" with
+- **`[+]`** — the drawer: quick `NIGHT` (night light) and `DND`
+  (do-not-disturb) toggles, system tray, MPRIS "now playing" with
   previous / play-pause / next, the notification history (below), and
   along its bottom edge the session
   controls — `LOCK` (the lock screen below), `LOGOUT` (`labwc --exit`), `SUSPEND` and
@@ -178,7 +179,7 @@ inline replies.
 
 Every notification is kept in the drawer's history until dismissed
 (`CLEAR` dismisses them all); a dot on `[+]` marks ones that arrived
-since it was last opened. `DND` there stops the popups, and so does focus
+since it was last opened. `DND` at its top stops the popups, and so does focus
 mode; critical notifications pop up regardless. Also from a script or
 keybind: `quickshell ipc -c muthur call notifications toggleDnd` (or
 `clear`).
@@ -209,6 +210,12 @@ below 1%. Switching keyboard layouts shows `KBD US > CA` the same way.
   reflected. External monitors (DDC/CI) aren't covered. An **ARRANGE**
   button opens `wdisplays` for output position, mode and scale. **MAIN DISPLAY** picks one of the connected screens, and **BAR ON**
   puts the bar on all of them or only on that one.
+  **NIGHT LIGHT** warms the screens through `wlsunset`, which the shell
+  runs: on/off, then **ALWAYS**, **SCHEDULE** (warm from a set hour back
+  to day at another, with a half-hour fade) or **SUNSET/SUNRISE** (the
+  real ones at a latitude/longitude), and how warm (1900–6000 K; days
+  stay at 6500 K). Also the drawer's `NIGHT`, or
+  `quickshell ipc -c muthur call nightlight toggle`.
 - **KEYBOARD** — the configured layouts (click one to make it active,
   `REMOVE` to drop it), a search over every layout and variant xkb knows
   to add more (`fr`, `canada`, `dvorak`...), and key repeat: rate and

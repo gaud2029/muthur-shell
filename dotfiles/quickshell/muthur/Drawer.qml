@@ -7,7 +7,7 @@ import Quickshell.Services.Mpris
 
 // Ribbon opened by the [+]/[-] button — system tray (issue #7), MPRIS
 // "now playing" (issue #8) and the notification history (issue #25),
-// with do-not-disturb. Deliberately independent of the SYS/AI
+// under quick toggles for night light and do-not-disturb. Deliberately independent of the SYS/AI
 // popup-panel exclusion group, and not built on PopupPanel: it has no
 // tabs and a very different shape.
 PanelWindow {
@@ -114,6 +114,29 @@ PanelWindow {
         anchors.bottomMargin: sessionRow.height + theme.gridUnit * 9
         clip: true
         spacing: theme.gridUnit * 3
+
+        // Quick toggles: night light (set up in [SYS] > DISPLAY) and
+        // do-not-disturb.
+        Row {
+            spacing: theme.gridUnit * 2
+
+            TerminalButton {
+                label: "NIGHT"
+                selected: NightLight.enabled
+                onClicked: NightLight.toggle()
+            }
+            TerminalButton {
+                label: "DND"
+                selected: Notifications.dnd
+                onClicked: Notifications.dnd = !Notifications.dnd
+            }
+        }
+
+        Rectangle {
+            width: parent.width
+            height: 1
+            color: theme.colorDim
+        }
 
         Text {
             text: "TRAY"
@@ -262,7 +285,7 @@ PanelWindow {
             color: theme.colorDim
         }
 
-        // NOTIFICATIONS 3                          [DND] [CLEAR]
+        // NOTIFICATIONS 3                                [CLEAR]
         Item {
             width: parent.width
             height: theme.buttonSize
@@ -277,21 +300,12 @@ PanelWindow {
                 font.letterSpacing: theme.letterSpacing
             }
 
-            Row {
+            TerminalButton {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: theme.gridUnit * 2
-
-                TerminalButton {
-                    label: "DND"
-                    selected: Notifications.dnd
-                    onClicked: Notifications.dnd = !Notifications.dnd
-                }
-                TerminalButton {
-                    label: "CLEAR"
-                    visible: Notifications.history.length > 0
-                    onClicked: Notifications.clear()
-                }
+                label: "CLEAR"
+                visible: Notifications.history.length > 0
+                onClicked: Notifications.clear()
             }
         }
 

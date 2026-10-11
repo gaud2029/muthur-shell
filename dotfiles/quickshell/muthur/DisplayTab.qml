@@ -2,11 +2,12 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Screen brightness. Reads the kernel backlight devices under
-// /sys/class/backlight and sets them through logind's SetBrightness,
-// which the active session may call without root or a helper like
-// brightnessctl. External monitors (DDC/CI) aren't covered. Output layout
-// (position, mode, scale) is left to wdisplays, launched from the header.
+// Screen brightness and night light (NightLight.qml). Brightness reads
+// the kernel backlight devices under /sys/class/backlight and sets them
+// through logind's SetBrightness, which the active session may call
+// without root or a helper like brightnessctl. External monitors (DDC/CI)
+// aren't covered. Output layout (position, mode, scale) is left to
+// wdisplays, launched from the header.
 Item {
     id: root
 
@@ -174,6 +175,128 @@ Item {
                     selected: ThemeStore.barOnMainOnly
                     onClicked: ThemeStore.setBarOnMainOnly(true)
                 }
+            }
+
+            // Night light (NightLight.qml): on/off and when, then how warm.
+            Text {
+                text: "NIGHT LIGHT"
+                color: theme.colorDim
+                font.family: theme.fontFamily
+                font.pixelSize: theme.px(11)
+                font.letterSpacing: theme.letterSpacing
+            }
+
+            Flow {
+                width: parent.width
+                spacing: theme.gridUnit * 2
+
+                TerminalButton {
+                    label: NightLight.enabled ? "ON" : "OFF"
+                    selected: NightLight.enabled
+                    onClicked: NightLight.toggle()
+                }
+
+                Item { width: theme.gridUnit * 2; height: 1 }
+
+                Repeater {
+                    model: [
+                        { key: "always", label: "ALWAYS" },
+                        { key: "schedule", label: "SCHEDULE" },
+                        { key: "sun", label: "SUNSET/SUNRISE" }
+                    ]
+
+                    TerminalButton {
+                        required property var modelData
+                        label: modelData.label
+                        selected: NightLight.mode === modelData.key
+                        onClicked: NightLight.setMode(modelData.key)
+                    }
+                }
+            }
+
+            // Fixed hours: warm from SUNSET, back to day at SUNRISE (half an
+            // hour's fade each way).
+            Row {
+                visible: NightLight.mode === "schedule"
+                spacing: theme.gridUnit * 2
+
+                component TimeField: Field {
+                    required property string value
+                    signal edited(string text)
+                    width: theme.gridUnit * 16
+                    border.color: input.activeFocus ? theme.colorFocus
+                        : NightLight.validTime(input.text) ? theme.colorDim : theme.colorRed
+                    input.text: value
+                    input.inputMask: "99:99"
+                    input.onEditingFinished: edited(input.text)
+                }
+
+                component FieldLabel: Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: theme.colorFg
+                    font.family: theme.fontFamily
+                    font.pixelSize: theme.px(11)
+                    font.letterSpacing: theme.letterSpacing
+                }
+
+                FieldLabel { text: "WARM AT" }
+                TimeField {
+                    value: NightLight.store.sunset
+                    onEdited: t => NightLight.setTimes(t, NightLight.store.sunrise)
+                }
+                FieldLabel { text: "DAY AT" }
+                TimeField {
+                    value: NightLight.store.sunrise
+                    onEdited: t => NightLight.setTimes(NightLight.store.sunset, t)
+                }
+            }
+
+            // The real sunset and sunrise, from a location (decimal degrees,
+            // north and east positive).
+            Column {
+                visible: NightLight.mode === "sun"
+                width: parent.width
+                spacing: theme.gridUnit * 2
+
+                Row {
+                    spacing: theme.gridUnit * 2
+
+                    Field {
+                        id: latField
+                        width: theme.gridUnit * 30
+                        placeholder: "LATITUDE  45.5"
+                        input.text: NightLight.store.latitude
+                        input.onEditingFinished: NightLight.setLocation(latField.input.text, lonField.input.text)
+                    }
+                    Field {
+                        id: lonField
+                        width: theme.gridUnit * 30
+                        placeholder: "LONGITUDE -73.6"
+                        input.text: NightLight.store.longitude
+                        input.onEditingFinished: NightLight.setLocation(latField.input.text, lonField.input.text)
+                    }
+                }
+
+                Text {
+                    visible: !NightLight.locationSet
+                    text: "[ ENTER A LOCATION — DECIMAL DEGREES, NORTH/EAST POSITIVE ]"
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    color: theme.colorDim
+                    font.family: theme.fontFamily
+                    font.pixelSize: theme.px(11)
+                    font.letterSpacing: theme.letterSpacing
+                }
+            }
+
+            // Warmer to the right.
+            VolumeSlider {
+                width: parent.width
+                label: "WARMTH"
+                readonly property int span: NightLight.maxTemperature - NightLight.minTemperature
+                value: (NightLight.maxTemperature - NightLight.temperature) / span
+                readout: NightLight.temperature + " K"
+                onMoved: v => NightLight.setTemperature(NightLight.maxTemperature - v * span)
             }
         }
     }
