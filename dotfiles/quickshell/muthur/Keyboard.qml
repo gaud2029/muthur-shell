@@ -1,6 +1,5 @@
 pragma Singleton
 import QtQuick
-import Qt.labs.settings
 import Quickshell
 import Quickshell.Io
 
@@ -18,8 +17,8 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    readonly property Settings store: Settings {
-        fileName: Quickshell.shellDir + "/keyboard.ini"
+    readonly property IniSettings store: IniSettings {
+        location: "file://" + Quickshell.shellDir + "/keyboard.ini"
         category: "keyboard"
 
         // The configured layouts in xkb's "layout" or "layout(variant)"
@@ -28,13 +27,13 @@ Singleton {
         property int active: 0
 
         // Typing sounds: the key theme and the ambience, each can be "off"
-        // (both off = no player); whether the ambience follows typing (1)
-        // or plays all along (0); key volume and ambience level in percent.
+        // (both off = no player); whether the ambience follows typing or
+        // plays all along; key volume and ambience level in percent.
         property string soundTheme: "off"
         // When the keys sound: "always", or "focus" (only in focus mode).
         property string soundWhen: "always"
         property string soundAmbienceType: "drone"
-        property int soundAmbienceFollow: 1
+        property bool soundAmbienceFollow: true
         property int soundVolume: 50
         property int soundAmbience: 50
     }
@@ -257,7 +256,7 @@ Singleton {
     readonly property bool soundKeysActive: soundTheme !== "off" && (soundWhen === "always" || Focus.active)
     onSoundKeysActiveChanged: sendSound()
     readonly property string soundAmbienceType: soundAmbiences.some(a => a.key === store.soundAmbienceType) ? store.soundAmbienceType : "drone"
-    readonly property bool soundAmbienceFollow: store.soundAmbienceFollow !== 0
+    readonly property bool soundAmbienceFollow: store.soundAmbienceFollow
     readonly property bool soundWanted: soundTheme !== "off" || soundAmbienceType !== "off"
     readonly property int soundVolume: Math.max(0, Math.min(100, store.soundVolume))
     readonly property int soundAmbience: Math.max(0, Math.min(100, store.soundAmbience))
@@ -290,7 +289,7 @@ Singleton {
     }
 
     function setSoundAmbienceFollow(follow) {
-        root.store.soundAmbienceFollow = follow ? 1 : 0;
+        root.store.soundAmbienceFollow = follow;
         root.sendSound();
     }
 

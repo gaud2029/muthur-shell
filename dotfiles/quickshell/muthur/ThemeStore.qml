@@ -1,6 +1,5 @@
 pragma Singleton
 import QtQuick
-import Qt.labs.settings
 import Quickshell
 import Quickshell.Io
 
@@ -9,9 +8,9 @@ import Quickshell.Io
 // stays in sync and re-renders when the preset changes.
 //
 // Only the active preset key (and the layout settings) live in the inner
-// `Settings` item, so the ini file stays small; `presets` is static data
-// and never needs to round-trip through disk. `store.fileName` is set
-// explicitly because Qt.labs.settings otherwise needs QCoreApplication's
+// `IniSettings` item, so the ini file stays small; `presets` is static
+// data and never needs to round-trip through disk. `store.location` is
+// set explicitly because Settings otherwise needs QCoreApplication's
 // organizationName, which Quickshell doesn't set.
 QtObject {
     id: root
@@ -321,14 +320,13 @@ QtObject {
     readonly property var darkPresets: presets.filter(p => !isLightPalette(p))
     readonly property var lightPresets: presets.filter(p => isLightPalette(p))
 
-    readonly property Settings store: Settings {
-        fileName: Quickshell.shellDir + "/theme.ini"
+    readonly property IniSettings store: IniSettings {
+        location: "file://" + Quickshell.shellDir + "/theme.ini"
         category: "theme"
 
         property string preset: "neoInTheMatrix"
 
-        // Layout (GitHub issue #12). int/string only: Qt.labs.settings
-        // hands a `real` back as a string after a round-trip.
+        // Layout (GitHub issue #12).
         property string barPosition: "left"
         // The main display's output name ("" = the first screen), and
         // whether the bar is on every screen ("all") or only that one
@@ -338,7 +336,7 @@ QtObject {
         property int sizeMultiplier: 1
         property int gridUnit: 5
 
-        // Percent, so it stays an int (see above).
+        // Percent.
         property int terminalOpacity: 80
 
         // Monospace family for the shell, fuzzel and alacritty ("" = the
@@ -353,10 +351,10 @@ QtObject {
         // tab's thumbnail grid lists ("" = ~/Pictures/Wallpapers).
         property string wallpaper: ""
         property string wallpaperColors: ""
-        // 1: picking a wallpaper also switches to its palette (the
-        // WALLPAPER preset); 0: the current theme stays, the palette is
-        // still offered as a preset. int: see the note above.
-        property int themeFromWallpaper: 1
+        // Picking a wallpaper also switches to its palette (the WALLPAPER
+        // preset); off: the current theme stays, the palette is still
+        // offered as a preset.
+        property bool themeFromWallpaper: true
         property string wallpapersPath: ""
     }
 
@@ -422,7 +420,7 @@ QtObject {
         root.paletteProcess.running = true;
     }
 
-    readonly property bool themeFromWallpaper: root.store.themeFromWallpaper !== 0
+    readonly property bool themeFromWallpaper: root.store.themeFromWallpaper
 
     // Every preset's own wallpapers, pre-drawn by wallpapers/themed.py:
     // <dir>/<preset key>/<design>.png, with square thumbs/ beside them.
@@ -484,7 +482,7 @@ QtObject {
     }
 
     function setThemeFromWallpaper(on) {
-        root.store.themeFromWallpaper = on ? 1 : 0;
+        root.store.themeFromWallpaper = on;
     }
 
     function clearWallpaper() {

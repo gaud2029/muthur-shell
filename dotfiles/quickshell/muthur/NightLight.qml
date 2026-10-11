@@ -1,6 +1,5 @@
 pragma Singleton
 import QtQuick
-import Qt.labs.settings
 import Quickshell
 import Quickshell.Io
 
@@ -12,13 +11,11 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    readonly property Settings store: Settings {
-        fileName: Quickshell.shellDir + "/nightlight.ini"
+    readonly property IniSettings store: IniSettings {
+        location: "file://" + Quickshell.shellDir + "/nightlight.ini"
         category: "nightlight"
 
-        // int/string only (Qt.labs.settings round-trips bool and real as
-        // strings).
-        property int enabled: 0
+        property bool enabled: false
         // "always" (warm all the time), "schedule" (fixed hours) or "sun"
         // (sunset/sunrise at a location).
         property string mode: "schedule"
@@ -30,7 +27,7 @@ Singleton {
         property string longitude: ""
     }
 
-    readonly property bool enabled: store.enabled !== 0
+    readonly property bool enabled: store.enabled
     readonly property string mode: ["always", "schedule", "sun"].includes(store.mode) ? store.mode : "schedule"
     readonly property int temperature: Math.max(minTemperature, Math.min(maxTemperature, store.temperature))
     readonly property int minTemperature: 1900
@@ -51,7 +48,7 @@ Singleton {
     }
 
     function toggle() {
-        store.enabled = enabled ? 0 : 1;
+        store.enabled = !enabled;
     }
 
     function setMode(m) {

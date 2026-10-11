@@ -31,14 +31,12 @@ that same string as text. Two ways this bites:
 ```sh
 pkill -x quickshell   # exact process-name match, kills the real thing
 (cd /tmp && quickshell -c muthur > "$S/qs.log" 2>&1 &)   # background, log to scratchpad
-sleep 3; grep -iE "warn|error" "$S/qs.log" | grep -vi "settings type"
+sleep 3; grep -iE "warn|error" "$S/qs.log"
 ```
 
-The one warning that is always there and can be ignored: `The Settings type
-from Qt.labs.settings is deprecated` (ThemeStore.qml). Anything else —
-`WARN`, `TypeError`, `ReferenceError`, `Grid contains more visible items` —
-means a binding silently failed to render; fix it before calling a change
-verified.
+A clean start logs no warnings. Any `WARN`, `TypeError`, `ReferenceError`,
+`Grid contains more visible items` means a binding silently failed to
+render; fix it before calling a change verified.
 
 ## Driving the shell without clicks
 
@@ -295,21 +293,14 @@ too (they're copied in), so check `--preview` after changing them.
   methods); `WindowManager.windowsets` (ext-workspace-v1) is a plain JS
   array, and the manager binds lazily — a one-shot read right after
   startup sees `[]`, bindings pick it up.
-- **`Qt.labs.settings` round-trips `real` as a string** — persist ints
-  (percent) and strings only; it also never deletes keys, and writes
-  lazily, so a hook-driven change followed by a hot reload can race
-  (the reload re-reads the ini before the write lands). Restart cleanly
-  after settings-changing hooks.
-- **Adding a property to a `Settings` block** makes the next load write
-  the declared *defaults* to the ini (ints and some strings), while the
-  in-memory values stay the file's old ones — everything looks right
-  until the next start, which loads the defaults. The user's volumes,
-  sizes, etc. are lost. Seen on a clean restart, not only hot reload.
-  Before: `muthur snapshot save`; after starting: `diff` the ini, then
-  rewrite each clobbered value by setting it to something else and back
-  (`muthur set k other; muthur set k value` — a restore skips values that
-  already match in memory, so it won't fix the file). Check that they
-  survive a restart.
+- **Persisted settings use `IniSettings`** (QtCore's `Settings` plus two
+  repairs, see its header): every type round-trips (bool, real, int,
+  string), a new property can go anywhere in a block, and a change is on
+  disk at once, so a hot reload right after it reads the new value. Never
+  use `Settings` directly — plain QtCore/labs `Settings` writes the
+  defaults of the properties declared after a new one into the file, and
+  writes changes half a second late. It never deletes keys: a property
+  removed from a block stays in the ini (harmless).
 - **sysfs emits no inotify events** — `FileView.watchChanges` won't fire
   for `/sys/class/backlight/*`; poll with a `Timer` + `reload()`. amdgpu's
   `actual_brightness` is a non-linear readback; show `brightness`.
