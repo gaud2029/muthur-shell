@@ -38,6 +38,16 @@ A clean start logs no warnings. Any `WARN`, `TypeError`, `ReferenceError`,
 `Grid contains more visible items` means a binding silently failed to
 render; fix it before calling a change verified.
 
+Before committing, run what CI runs (`.github/workflows/ci.yml`):
+`ci/lint.sh` (QML syntax, `bash -n`/shellcheck, Python, the keysound C)
+and `ci/load-test.sh`, which loads a *copy* of the config on a headless
+labwc with its own HOME, runtime dir and D-Bus, opens every `muthur ui`
+target and fails on QML errors in the log — about 15 s, invisible, and
+it never touches the live shell or its .ini files. `KEEP=1` keeps its
+temp dir and log; `SHELL_DIR=<copy>` tests a deliberately broken copy.
+It catches errors in components that only load when a popup opens,
+which a restart of the live shell doesn't.
+
 ## Driving the shell without clicks
 
 **Use the `muthur` command first** (`dotfiles/bin/muthur`, on PATH as

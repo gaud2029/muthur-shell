@@ -1,0 +1,30 @@
+name: CI
+
+# The same scripts run locally: ci/lint.sh and ci/load-test.sh.
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    # Arch: qmllint matches the Qt the shell runs on, and Quickshell is packaged.
+    container: archlinux:latest
+    steps:
+      - name: Install tools
+        run: pacman -Syu --noconfirm --needed git qt6-declarative shellcheck python gcc pkgconf pipewire
+      - uses: actions/checkout@v4
+      - name: Trust the checkout
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Lint
+        run: ci/lint.sh
+
+  load:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install quickshell and labwc
+        run: pacman -Syu --noconfirm --needed git quickshell labwc dbus python ttf-dejavu
+      - uses: actions/checkout@v4
+      - name: Load the shell and open every popup
+        run: ci/load-test.sh
