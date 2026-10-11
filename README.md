@@ -62,7 +62,7 @@ run them from a terminal: sudo asks for your password) and a `--revert`:
 | Boot menu (Limine) | `dotfiles/limine/install-limine.sh` | `… --revert` | [below](#the-boot-menu--limine) |
 | Boot screen (Plymouth) | `dotfiles/plymouth/install-plymouth.sh` | `… --revert` | [below](#the-boot-screen--plymouth) |
 | Login screen (SDDM) | `dotfiles/sddm/install-sddm.sh` | `… --revert` | [below](#the-login-screen--sddm) |
-| Typing sounds | `dotfiles/keysound/install-keysound.sh` | `… --revert` | [below](#typing-sounds) |
+| Typing sounds | `dotfiles/keysound/install-keysound.sh` | `… --revert` | [below](#typing-sounds-and-ambient-sound) |
 | Lock screen | `./install.sh` | swaylock, see [below](#the-lock-screen--muthur-6000) | |
 
 ### Optional: snap-to-grid and angled corners on labwc
@@ -203,7 +203,7 @@ below 1%. Switching keyboard layouts shows `KBD US > CA` the same way.
 - **BT** — devices split into `CONNECTED` / `PAIRED` / `AVAILABLE`; a
   pairing agent auto-registers, so no `bluetoothctl` setup.
 - **AUDIO** — output/input volume sliders with mute toggles and a device
-  dropdown for each.
+  dropdown for each; at the bottom, the ambient sound (below).
 - **DISPLAY** — screen brightness, one slider per kernel backlight device
   (labeled with its output), set through logind's `SetBrightness` so no
   root helper is needed; polls sysfs while open so the brightness keys are
@@ -223,8 +223,8 @@ below 1%. Switching keyboard layouts shows `KBD US > CA` the same way.
   switch layouts, so the shell writes the active one alone to
   `labwc/environment.d/muthur-keyboard.env` (`XKB_DEFAULT_LAYOUT`) and
   reconfigures labwc; key repeat is rewritten in place in `rc.xml`
-  (`<repeatRate>` / `<repeatDelay>`). Also the **typing sound** theme,
-  volume and ambience ([below](#typing-sounds)).
+  (`<repeatRate>` / `<repeatDelay>`). Also the **typing sound** theme
+  and its volume ([below](#typing-sounds-and-ambient-sound)).
 - **LOOK** — everything about the appearance:
   - thirty-four color presets, each a full 16-color palette (its first
     four colors shown in its row), with four wallpapers of its own on the
@@ -268,14 +268,16 @@ below 1%. Switching keyboard layouts shows `KBD US > CA` the same way.
 
 *Preset: **Wallpaper** — the palette generated from an *Akira* wallpaper (Kaneda red pulled from the poster), with fastfetch in a terminal at **94% opacity** so the poster reads through it.*
 
-## Typing sounds
+## Typing sounds and ambient sound
 
-An ambience while you type, picked in `[SYS] > [KEYBOARD]`. Every key
-press makes a sound placed where the key is: on headphones the far ear
-hears it a fraction of a millisecond later and a little softer, so typing
-moves from ear to ear. Under it an ambience swells while you type and ebbs
-away a few seconds after the last key. Everything is synthesized on the
-fly; there are no sound files.
+Key sounds, picked in `[SYS] > [KEYBOARD]`: every key press makes a sound
+placed where the key is — on headphones the far ear hears it a fraction of
+a millisecond later and a little softer, so typing moves from ear to ear.
+And an ambient sound, picked at the bottom of `[SYS] > [AUDIO]`,
+independent of the keys (either can be `OFF`): **CONTINUOUS**, or
+**FOLLOWS TYPING**, swelling while you type and ebbing away a few seconds
+after the last key. Everything is synthesized on the fly; there are no
+sound files.
 
 The keys:
 
@@ -285,11 +287,11 @@ The keys:
 | NOSTROMO | heavy deck clicks over a low thunk |
 | NOSTROMO THOCC | deep and creamy, all body and no click: a lubed board on a heavy case |
 
-The ambience, chosen separately:
+The ambient sound:
 
 | Ambience | Sound |
 |---|---|
-| THEME DRONE | the key theme's binaural drone: a close pitch in each ear, heard as a slow beat inside the head (theta for MU/TH/UR, alpha for the NOSTROMOs) |
+| THEME DRONE | the key theme's binaural drone: a close pitch in each ear, heard as a slow beat inside the head (theta for MU/TH/UR and with the keys off, alpha for the NOSTROMOs) |
 | VESSEL | inside the ship: air handling, a deep rumble, the hull ticking or something clanking far off now and then — no pitch to fix on |
 | HULL RAIN | rain on the hull: a fine hiss overhead, a muffled roar, drops all around, a leak to the left |
 | SOFT RAIN | rain heard through thick plating: a muffled wash swelling in slow gusts, the odd heavy drop — nothing high |
@@ -298,8 +300,8 @@ The ambience, chosen separately:
 | LIFE SUPPORT | ventilation breathing in and out on a slow cycle, a console chirping now and then |
 
 Space, Enter and Backspace have their own sounds; modifiers are silent.
-VOLUME sets the whole thing, AMBIENCE LEVEL the ambience alone (0 for
-keys only).
+The keys' VOLUME and the ambience's LEVEL are separate. A continuous
+ambience doesn't need the input service below, only the player.
 
 Two pieces, both from `dotfiles/keysound/`:
 
@@ -310,8 +312,8 @@ Two pieces, both from `dotfiles/keysound/`:
   right) over `/run/muthur-keysound/events.sock`. The keycode is dropped on
   the spot, so no user process gets keyboard access and nothing that leaves
   the service can be turned back into text.
-- **`muthur-keysound`**, the player the shell starts while a theme is
-  picked: one persistent PipeWire stream at ~5 ms latency, about 1% of a
+- **`muthur-keysound`**, the player the shell starts while keys or an
+  ambience are on: one persistent PipeWire stream at ~5 ms latency, about 1% of a
   core while sounding and close to nothing when quiet.
 
 ### Install
@@ -326,7 +328,7 @@ dotfiles/keysound/install-keysound.sh --status   # check
 
 Then pick a theme in `[SYS] > [KEYBOARD]`; `TEST` plays a sweep across the
 keyboard. The panel says what's missing if either piece isn't there.
-Rerun the installer after changing the player or the service.
+Rerun the installer after changing the player or the service; it restarts a running player on the new build.
 
 ### Revert
 

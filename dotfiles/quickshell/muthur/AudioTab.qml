@@ -159,6 +159,89 @@ Item {
                     }
                 }
             }
+
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: theme.colorDim
+            }
+
+            // The ambient sound, played by the typing-sound player
+            // (Keyboard.qml) but independent of the keys: either can be off.
+            Text {
+                text: "AMBIENT SOUND"
+                color: theme.colorDim
+                font.family: theme.fontFamily
+                font.pixelSize: theme.px(11)
+                font.letterSpacing: theme.letterSpacing
+            }
+
+            Flow {
+                width: parent.width
+                spacing: theme.gridUnit * 2
+
+                Repeater {
+                    model: Keyboard.soundAmbiences
+
+                    TerminalButton {
+                        required property var modelData
+                        label: modelData.label
+                        selected: Keyboard.soundAmbienceType === modelData.key
+                        onClicked: Keyboard.setSoundAmbienceType(modelData.key)
+                    }
+                }
+            }
+
+            component Note: Text {
+                width: parent.width
+                wrapMode: Text.WordWrap
+                color: theme.colorFg
+                font.family: theme.fontFamily
+                font.pixelSize: theme.px(11)
+                font.letterSpacing: theme.letterSpacing
+            }
+
+            Note {
+                visible: text.length > 0
+                text: (Keyboard.soundAmbiences.find(a => a.key === Keyboard.soundAmbienceType) || {}).about || ""
+            }
+
+            // All along, or swelling while you type and ebbing away a few
+            // seconds after the last key.
+            Row {
+                visible: Keyboard.soundAmbienceType !== "off"
+                spacing: theme.gridUnit * 2
+
+                TerminalButton {
+                    label: "CONTINUOUS"
+                    selected: !Keyboard.soundAmbienceFollow
+                    onClicked: Keyboard.setSoundAmbienceFollow(false)
+                }
+                TerminalButton {
+                    label: "FOLLOWS TYPING"
+                    selected: Keyboard.soundAmbienceFollow
+                    onClicked: Keyboard.setSoundAmbienceFollow(true)
+                }
+            }
+
+            VolumeSlider {
+                visible: Keyboard.soundAmbienceType !== "off"
+                width: parent.width
+                label: "LEVEL"
+                value: Keyboard.soundAmbience / 100
+                onMoved: v => Keyboard.setSoundAmbience(v * 100)
+            }
+
+            // Only what stops it from playing: no player, or no keypresses
+            // for an ambience that follows them.
+            Note {
+                visible: Keyboard.soundAmbienceType !== "off" && text.length > 0
+                text: Keyboard.soundStatus === "missing" ? "PLAYER NOT INSTALLED. RUN dotfiles/keysound/install-keysound.sh"
+                    : Keyboard.soundStatus === "waiting" && Keyboard.soundAmbienceFollow
+                        ? "NO INPUT LINK: IT CAN'T FOLLOW TYPING. RUN dotfiles/keysound/install-keysound.sh, OR PICK CONTINUOUS."
+                    : ""
+                color: theme.colorYellow
+            }
         }
     }
 

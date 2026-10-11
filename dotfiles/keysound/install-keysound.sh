@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Installs the typing sounds (GitHub issue #21): the keypress feed as a
-# system service and the player, which the shell starts when a sound
-# theme is picked in [SYS] > KEYBOARD. Opt-in, not run by install.sh: it
+# system service and the player, which the shell starts when key sounds
+# ([SYS] > KEYBOARD) or an ambient sound ([SYS] > AUDIO) are picked. Opt-in, not run by install.sh: it
 # needs root (a system service, and /usr/local).
 #
 #   install-keysound.sh            build the player, install and start the feed
@@ -42,12 +42,15 @@ case "${1:-}" in
     # shellcheck disable=SC2046
     gcc -O2 -Wall -o "$PLAYER" "$SRC/muthur-keysound.c" \
       $(pkg-config --cflags --libs libpipewire-0.3) -lm
+    # A running player keeps the old binary: stop it, the shell starts the
+    # new one a moment later.
+    pkill -x muthur-keysound || true
     install -Dm755 "$SRC/keysound-input.py" "$FEED"
     install -Dm644 "$SRC/muthur-keysound-input.service" "$UNIT"
     systemctl daemon-reload
     systemctl enable --now muthur-keysound-input.service
     systemctl restart muthur-keysound-input.service
-    echo "Installed. Pick a sound theme in [SYS] > KEYBOARD."
+    echo "Installed. Pick key sounds in [SYS] > KEYBOARD, an ambience in [SYS] > AUDIO."
     status
     ;;
   *)

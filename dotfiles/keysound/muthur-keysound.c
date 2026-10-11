@@ -8,20 +8,24 @@
  * It's built to be heard on headphones. Each key sound is placed where
  * the key is: the far ear hears it a fraction of a millisecond later and
  * a little quieter, the cues the brain uses to place a sound, so typing
- * sweeps from ear to ear. Under it, while typing, an ambience swells and
- * ebbs away a few seconds after the last key: the theme's binaural drone
- * (each ear gets a slightly different pitch, heard as a slow beat inside
- * the head), or a non-tonal one — the inside of a vessel, rain on its
- * hull (bright or muffled), the machinery below deck, the bridge's
- * consoles, life support breathing.
+ * sweeps from ear to ear. Independently of the keys (either can be off),
+ * an ambience plays: the theme's binaural drone (each ear gets a slightly
+ * different pitch, heard as a slow beat inside the head; MU/TH/UR's when
+ * the keys are off), or a non-tonal one — the inside of a vessel, rain on
+ * its hull (bright or muffled), the machinery below deck, the bridge's
+ * consoles, life support breathing. It plays all along, or follows
+ * typing: swells in as keys come and ebbs away a few seconds after the
+ * last one.
  *
  * Driven by the shell over stdin, one command per line:
- *   theme muthur|nostromo|thocc
- *   ambience drone|vessel|rain|softrain|lowerdeck|bridge|lifesupport
+ *   theme off|muthur|nostromo|thocc
+ *   ambience off|drone|vessel|rain|softrain|lowerdeck|bridge|lifesupport
+ *   follow 0|1    (the ambience follows typing, or plays all along)
  *   volume 0..1   drone 0..1
  *   test
- * ("drone" is the ambience's level) and reports "input connected" /
- * "input waiting" on stdout. Exits when stdin closes (the shell went away).
+ * ("volume" is the keys', "drone" the ambience's level) and reports
+ * "input connected" / "input waiting" on stdout. Exits when stdin closes
+ * (the shell went away).
  *
  *   muthur-keysound --render FILE SECONDS THEME [AMBIENCE|none]   writes
  *   simulated typing as raw f32 stereo 48 kHz, for testing without the
@@ -71,6 +75,7 @@ static const struct drone drones[THEMES] = {
 
 struct voice {
     int active, type;
+    int ambient;               /* the ambience's, at its level, not the keys' */
     long wait;                 /* samples before it starts */
     long n, length;            /* samples played, total */
     double freq, freq_end, freq2, amp, pan, decay, decay2, decay3;
@@ -95,6 +100,8 @@ struct pink { double b0, b1, b2; };
 
 struct state {
     int theme, ambience;
+    int keys, ambience_on, follow;
+    int in_ambience;           /* voices spawned now are the ambience's */
     double volume, drone_level;
     struct voice voices[MAX_VOICES];
     double activity;           /* 0..1, follows typing */
@@ -149,6 +156,7 @@ static struct voice *spawn(struct state *s, int type, double pan, double amp, do
     }
     memset(v, 0, sizeof *v);
     v->active = 1;
+    v->ambient = s->in_ambience;
     v->type = type;
     v->pan = fmax(-1.0, fmin(1.0, pan));
     v->amp = amp;
@@ -181,6 +189,8 @@ static void trigger(struct state *s, int kind, int pos)
     double pan = (pos - 3) / 3.0, r = frand(s);
     struct voice *v;
     s->since_key = 0;
+    if (!s->keys)              /* keys off: only the ambience hears typing */
+        return;
 
     switch (s->theme) {
     case MUTHUR:   /* 1979 terminal: short soft blips, pitched by kind */
@@ -492,10 +502,20 @@ static void life_support(struct state *s, double level, double *l, double *r)
     }
 }
 
+/* Where the ambience is headed: up while it plays (all along, or while
+ * keys keep coming), down otherwise. */
+static double ambience_target(struct state *s)
+{
+    if (!s->ambience_on)
+        return 0.0;
+    return !s->follow || s->since_key < 4 * RATE ? 1.0 : 0.0;
+}
+
+/* The keys at their volume, the ambience at its level, mixed. */
 static void render(struct state *s, float *out, unsigned frames)
 {
     /* Silent between bursts of typing: skip the synthesis. */
-    int busy = s->activity > 0.0005 || s->since_key < 4 * RATE;
+    int busy = s->activity > 0.0005 || ambience_target(s) > 0.0;
     for (int k = 0; !busy && k < MAX_VOICES; k++)
         busy = s->voices[k].active;
     if (!busy) {
@@ -505,22 +525,30 @@ static void render(struct state *s, float *out, unsigned frames)
     }
 
     for (unsigned i = 0; i < frames; i++) {
-        double l = 0.0, r = 0.0;
+        double kl = 0.0, kr = 0.0, l = 0.0, r = 0.0;
 
         for (int k = 0; k < MAX_VOICES; k++)
-            if (s->voices[k].active)
-                voice_mix(s, &s->voices[k], &l, &r);
+            if (s->voices[k].active) {
+                struct voice *v = &s->voices[k];
+                if (v->ambient)
+                    voice_mix(s, v, &l, &r);
+                else
+                    voice_mix(s, v, &kl, &kr);
+            }
 
-        /* The ambience follows typing: swells in within about a second,
-         * holds while keys keep coming, ebbs away over ~5 s once they
-         * stop. */
-        double target = s->since_key < 4 * RATE ? 1.0 : 0.0;
+        /* The ambience swells in within about a second and ebbs away
+         * over ~5 s: when it's switched on or off, and when following
+         * typing, as keys come and stop. */
+        double target = ambience_target(s);
         double tau = target > s->activity ? 0.4 : 1.5;   /* one-pole, seconds */
         s->activity += (target - s->activity) / (tau * RATE);
         s->since_key++;
 
-        double level = s->activity * s->drone_level;
+        /* Half: an ambience at full level sits where it did under keys at
+         * half volume, back when the keys' volume scaled it too. */
+        double level = s->activity * s->drone_level * 0.5;
         if (level > 0.0005) {
+            s->in_ambience = 1;
             s->lfo += TAU * 0.07 / RATE;              /* slow breathing */
             if (s->lfo > TAU) s->lfo -= TAU;
             s->clock += 1.0 / RATE;
@@ -533,10 +561,11 @@ static void render(struct state *s, float *out, unsigned frames)
             case AMB_BRIDGE:      bridge(s, level, &l, &r); break;
             case AMB_LIFESUPPORT: life_support(s, level, &l, &r); break;
             }
+            s->in_ambience = 0;
         }
 
-        out[2 * i] = (float)tanh(l * s->volume * 1.5);
-        out[2 * i + 1] = (float)tanh(r * s->volume * 1.5);
+        out[2 * i] = (float)tanh((kl * s->volume + l) * 1.5);
+        out[2 * i + 1] = (float)tanh((kr * s->volume + r) * 1.5);
     }
 }
 
@@ -547,14 +576,23 @@ static void command(struct state *s, char *line)
     char word[32];
     double value;
     if (sscanf(line, "theme %31s", word) == 1) {
+        /* Off keeps MU/TH/UR's drone for the ambience. */
+        s->keys = 0;
+        s->theme = MUTHUR;
         for (int i = 0; i < THEMES; i++)
-            if (!strcmp(word, theme_names[i])) s->theme = i;
+            if (!strcmp(word, theme_names[i])) {
+                s->theme = i;
+                s->keys = 1;
+            }
     } else if (sscanf(line, "ambience %31s", word) == 1) {
+        s->ambience_on = strcmp(word, "off") != 0;
         for (int i = 0; i < AMBIENCES; i++)
             if (!strcmp(word, ambience_names[i]) && s->ambience != i) {
                 s->ambience = i;
                 s->next_event = RATE;
             }
+    } else if (sscanf(line, "follow %lf", &value) == 1) {
+        s->follow = value != 0.0;
     } else if (sscanf(line, "volume %lf", &value) == 1) {
         s->volume = fmax(0.0, fmin(1.0, value));
     } else if (sscanf(line, "drone %lf", &value) == 1) {
@@ -569,14 +607,13 @@ static void command(struct state *s, char *line)
 
 static int render_file(const char *path, double seconds, const char *theme, const char *ambience)
 {
-    struct state s = { .volume = 0.8, .drone_level = 0.6, .rng = 0x9e3779b9u };
+    struct state s = { .volume = 0.8, .drone_level = 0.96, .follow = 1, .rng = 0x9e3779b9u };
     char line[64];
     snprintf(line, sizeof line, "theme %s", theme);
     command(&s, line);
-    snprintf(line, sizeof line, "ambience %s", ambience);
+    /* "none" (or "off"): the keys alone. */
+    snprintf(line, sizeof line, "ambience %s", strcmp(ambience, "none") ? ambience : "off");
     command(&s, line);
-    if (!strcmp(ambience, "none"))     /* the keys alone */
-        s.drone_level = 0.0;
     FILE *f = fopen(path, "wb");
     if (!f) { perror(path); return 1; }
     float buf[256 * CHANNELS];
@@ -710,7 +747,9 @@ int main(int argc, char *argv[])
     if ((argc == 5 || argc == 6) && !strcmp(argv[1], "--render"))
         return render_file(argv[2], atof(argv[3]), argv[4], argc == 6 ? argv[5] : "drone");
 
-    struct app a = { .s = { .volume = 0.5, .drone_level = 0.5, .rng = 0x9e3779b9u }, .sock = -1 };
+    /* since_key starts long ago: no typing yet for the ambience to follow. */
+    struct app a = { .s = { .volume = 0.5, .drone_level = 0.5, .follow = 1, .since_key = 4 * RATE,
+                            .rng = 0x9e3779b9u }, .sock = -1 };
     a.s.rng ^= (unsigned)getpid();
 
     pw_init(&argc, &argv);
@@ -724,7 +763,7 @@ int main(int argc, char *argv[])
             PW_KEY_MEDIA_ROLE, "Game",
             PW_KEY_APP_NAME, "muthur-keysound",
             PW_KEY_NODE_NAME, "muthur-keysound",
-            PW_KEY_MEDIA_NAME, "Typing ambience",
+            PW_KEY_MEDIA_NAME, "Typing sounds and ambience",
             PW_KEY_NODE_LATENCY, "256/48000",
             NULL),
         &stream_events, &a);

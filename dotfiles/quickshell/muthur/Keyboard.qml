@@ -27,10 +27,12 @@ Singleton {
         property string layouts: ""
         property int active: 0
 
-        // Typing sounds: the key theme ("off" = no player), the ambience
-        // under the keys, and volume and ambience level in percent.
+        // Typing sounds: the key theme and the ambience, each can be "off"
+        // (both off = no player); whether the ambience follows typing (1)
+        // or plays all along (0); key volume and ambience level in percent.
         property string soundTheme: "off"
         property string soundAmbienceType: "drone"
+        property int soundAmbienceFollow: 1
         property int soundVolume: 50
         property int soundAmbience: 50
     }
@@ -207,9 +209,10 @@ Singleton {
     // muthur-keysound plays them: a PipeWire player that takes key
     // presses from the muthur-keysound-input system service (keycodes
     // never reach it, only what kind of key and roughly where) and
-    // synthesizes the theme's sounds, placed left to right like the keys,
-    // over a binaural drone that swells while typing. It runs only while
-    // a theme is picked, and takes its settings over stdin.
+    // synthesizes the theme's sounds, placed left to right like the keys.
+    // It also plays the ambient sound ([SYS] > AUDIO), independently of
+    // the keys: all along, or swelling while typing. It runs while either
+    // is on, and takes its settings over stdin.
     // Both are installed by dotfiles/keysound/install-keysound.sh.
 
     readonly property var soundThemes: [
@@ -219,7 +222,8 @@ Singleton {
         { key: "thocc", label: "NOSTROMO THOCC", about: "DEEP AND CREAMY, ALL BODY AND NO CLICK: A LUBED BOARD ON A HEAVY CASE." }
     ]
     readonly property var soundAmbiences: [
-        { key: "drone", label: "THEME DRONE", about: "THE KEY THEME'S BINAURAL DRONE: A CLOSE PITCH IN EACH EAR, HEARD AS A SLOW BEAT." },
+        { key: "off", label: "OFF", about: "" },
+        { key: "drone", label: "THEME DRONE", about: "THE KEY THEME'S BINAURAL DRONE (MU/TH/UR'S WITH THE KEYS OFF): A CLOSE PITCH IN EACH EAR, HEARD AS A SLOW BEAT." },
         { key: "vessel", label: "VESSEL", about: "INSIDE THE SHIP: AIR HANDLING, A DEEP RUMBLE, THE HULL TICKING NOW AND THEN. NO PITCH." },
         { key: "rain", label: "HULL RAIN", about: "RAIN ON THE HULL: A FINE HISS OVERHEAD, A MUFFLED ROAR, DROPS ALL AROUND, A LEAK TO THE LEFT." },
         { key: "softrain", label: "SOFT RAIN", about: "RAIN HEARD THROUGH THICK PLATING: A MUFFLED WASH SWELLING IN SLOW GUSTS, THE ODD HEAVY DROP. NOTHING HIGH." },
@@ -229,6 +233,8 @@ Singleton {
     ]
     readonly property string soundTheme: soundThemes.some(t => t.key === store.soundTheme) ? store.soundTheme : "off"
     readonly property string soundAmbienceType: soundAmbiences.some(a => a.key === store.soundAmbienceType) ? store.soundAmbienceType : "drone"
+    readonly property bool soundAmbienceFollow: store.soundAmbienceFollow !== 0
+    readonly property bool soundWanted: soundTheme !== "off" || soundAmbienceType !== "off"
     readonly property int soundVolume: Math.max(0, Math.min(100, store.soundVolume))
     readonly property int soundAmbience: Math.max(0, Math.min(100, store.soundAmbience))
 
@@ -248,6 +254,12 @@ Singleton {
         if (!root.soundAmbiences.some(a => a.key === key))
             return;
         root.store.soundAmbienceType = key;
+        root.syncPlayer();
+        root.sendSound();
+    }
+
+    function setSoundAmbienceFollow(follow) {
+        root.store.soundAmbienceFollow = follow ? 1 : 0;
         root.sendSound();
     }
 
@@ -268,16 +280,17 @@ Singleton {
     }
 
     function sendSound() {
-        if (root.player.running && root.soundTheme !== "off")
+        if (root.player.running)
             root.player.write("theme " + root.soundTheme + "\nambience " + root.soundAmbienceType
+                + "\nfollow " + (root.soundAmbienceFollow ? 1 : 0)
                 + "\nvolume " + root.soundVolume / 100
                 + "\ndrone " + root.soundAmbience / 100 + "\n");
     }
 
     // Started and stopped by hand rather than bound: a player that dies
-    // while a theme is on gets restarted (see onExited).
+    // while keys or ambience are on gets restarted (see onExited).
     function syncPlayer() {
-        const wanted = root.soundTheme !== "off";
+        const wanted = root.soundWanted;
         if (wanted && !root.player.running) {
             root.soundStatus = "starting";
             root.player.running = true;
@@ -299,7 +312,7 @@ Singleton {
                 }
             }
         }
-        onExited: if (root.soundTheme !== "off" && root.soundStatus !== "missing") restartPlayer.restart()
+        onExited: if (root.soundWanted && root.soundStatus !== "missing") restartPlayer.restart()
     }
 
     // The player says "input waiting" as soon as it runs; silence means

@@ -241,7 +241,7 @@ Item {
             SectionHeader { text: "TYPING SOUND" }
 
             Hint {
-                text: "AN AMBIENCE WHILE YOU TYPE: EACH KEY SOUNDS WHERE IT IS, LEFT TO RIGHT, OVER AN AMBIENCE THAT SWELLS AS YOU GO. BEST ON HEADPHONES."
+                text: "EACH KEY SOUNDS WHERE IT IS, LEFT TO RIGHT. BEST ON HEADPHONES. THE AMBIENT SOUND IS IN [AUDIO]."
             }
 
             Flow {
@@ -266,52 +266,12 @@ Item {
                 text: (Keyboard.soundThemes.find(t => t.key === Keyboard.soundTheme) || {}).about || ""
             }
 
-            Text {
-                visible: Keyboard.soundTheme !== "off"
-                text: "AMBIENCE"
-                color: theme.colorDim
-                font.family: theme.fontFamily
-                font.pixelSize: theme.px(11)
-                font.letterSpacing: theme.letterSpacing
-            }
-
-            Flow {
-                visible: Keyboard.soundTheme !== "off"
-                width: parent.width
-                spacing: theme.gridUnit * 2
-
-                Repeater {
-                    model: Keyboard.soundAmbiences
-
-                    TerminalButton {
-                        required property var modelData
-                        label: modelData.label
-                        selected: Keyboard.soundAmbienceType === modelData.key
-                        onClicked: Keyboard.setSoundAmbienceType(modelData.key)
-                    }
-                }
-            }
-
-            Hint {
-                visible: Keyboard.soundTheme !== "off"
-                color: theme.colorFg
-                text: (Keyboard.soundAmbiences.find(a => a.key === Keyboard.soundAmbienceType) || {}).about || ""
-            }
-
             VolumeSlider {
                 visible: Keyboard.soundTheme !== "off"
                 width: parent.width
                 label: "VOLUME"
                 value: Keyboard.soundVolume / 100
                 onMoved: v => Keyboard.setSoundVolume(v * 100)
-            }
-
-            VolumeSlider {
-                visible: Keyboard.soundTheme !== "off"
-                width: parent.width
-                label: "AMBIENCE LEVEL"
-                value: Keyboard.soundAmbience / 100
-                onMoved: v => Keyboard.setSoundAmbience(v * 100)
             }
 
             // Whether the player and the keypress feed are there.
