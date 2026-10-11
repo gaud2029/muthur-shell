@@ -98,13 +98,26 @@ scratchpad; recreate them, don't assume they exist.
 
 ## Visual verification
 
-`grim` and `magick` are installed. Capture a single output —
-`grim -o eDP-1 file.png` — rather than a combined shot: outputs have
-different scales (eDP-1 at 1.25) and a combined image is rendered at the
-highest one, so logical coordinates don't map 1:1. Outputs come and go
-(the external DP-1 may be unplugged; `grim -o DP-1` then errors) — plain
-`grim file.png` captures whatever is there. eDP-1 physical size is
-1920x1080 for 1536x864 logical.
+`grim` and `magick` are installed. **Capture the output the popup is
+on**, not a fixed one: `muthur ui open` opens it on the main screen
+(`display.main`) unless `--screen NAME` is given, and the main screen
+depends on what's plugged in (eDP-1 alone, DP-4 when docked — eDP-1 is
+then usually empty, no bar):
+
+```sh
+out=$(muthur get display.main)        # or the NAME passed to --screen
+muthur ui open ai:claude; sleep 1.5
+grim -o "$out" "$S/shot.png"; muthur ui close
+magick identify "$S/shot.png"         # its size, before computing crops
+```
+
+Popups sit by their bar button (the AI/SYS panels at the right end of
+the bar), so crop from the image's own size. Capture a single output
+rather than a combined shot: outputs have different scales (eDP-1 at
+1.25) and a combined image is rendered at the highest one, so logical
+coordinates don't map 1:1. eDP-1 is 1920x1080 physical for 1536x864
+logical; DP-4 is 3440x1440. A temporary hook gated on a screen name
+captures that name.
 
 Crop before reading: `magick in.png -crop WxH+X+Y +repage out.png` (add
 `+repage`, and compute offsets explicitly from the image size — ImageMagick's
