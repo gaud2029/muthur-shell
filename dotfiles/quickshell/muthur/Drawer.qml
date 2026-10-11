@@ -5,8 +5,9 @@ import Quickshell.Wayland
 import Quickshell.Services.SystemTray
 import Quickshell.Services.Mpris
 
-// Ribbon opened by the [+]/[-] button — system tray (issue #7) and MPRIS
-// "now playing" (issue #8). Deliberately independent of the SYS/AI
+// Ribbon opened by the [+]/[-] button — system tray (issue #7), MPRIS
+// "now playing" (issue #8) and the notification history (issue #25),
+// with do-not-disturb. Deliberately independent of the SYS/AI
 // popup-panel exclusion group, and not built on PopupPanel: it has no
 // tabs and a very different shape.
 PanelWindow {
@@ -29,10 +30,14 @@ PanelWindow {
     }
 
     implicitWidth: theme.gridUnit * 88
-    implicitHeight: theme.gridUnit * 84
+    // Clamped to the screen so a large size multiplier can't push it off.
+    implicitHeight: Math.min(theme.gridUnit * 150, (screen ? screen.height : 0) - theme.barThickness - placement.y)
     color: theme.colorBg
     visible: false
-    onVisibleChanged: if (visible) escapeCatcher.forceActiveFocus()
+    onVisibleChanged: if (visible) {
+        escapeCatcher.forceActiveFocus();
+        Notifications.unread = 0;
+    }
 
     exclusiveZone: 0
     aboveWindows: true
@@ -248,6 +253,87 @@ PanelWindow {
                     visible: !!root.activePlayer && root.activePlayer.canGoNext
                     onClicked: root.activePlayer.next()
                 }
+            }
+        }
+
+        Rectangle {
+            width: parent.width
+            height: 1
+            color: theme.colorDim
+        }
+
+        // NOTIFICATIONS 3                          [DND] [CLEAR]
+        Item {
+            width: parent.width
+            height: theme.buttonSize
+
+            Text {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                text: "NOTIFICATIONS" + (Notifications.history.length > 0 ? " " + Notifications.history.length : "")
+                color: theme.colorFg
+                font.family: theme.fontFamily
+                font.pixelSize: theme.fontSize
+                font.letterSpacing: theme.letterSpacing
+            }
+
+            Row {
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: theme.gridUnit * 2
+
+                TerminalButton {
+                    label: "DND"
+                    selected: Notifications.dnd
+                    onClicked: Notifications.dnd = !Notifications.dnd
+                }
+                TerminalButton {
+                    label: "CLEAR"
+                    visible: Notifications.history.length > 0
+                    onClicked: Notifications.clear()
+                }
+            }
+        }
+
+        Text {
+            visible: Notifications.history.length === 0 || Notifications.muted
+            text: Notifications.history.length === 0 ? "[ NO NOTIFICATIONS ]"
+                : Notifications.dnd ? "[ DO NOT DISTURB — ONLY CRITICAL POPS UP ]"
+                : "[ FOCUS MODE — ONLY CRITICAL POPS UP ]"
+            color: theme.colorDim
+            font.family: theme.fontFamily
+            font.pixelSize: theme.px(11)
+            font.letterSpacing: theme.letterSpacing
+        }
+
+        Item {
+            width: parent.width
+            // Whatever the sections above leave.
+            height: Math.max(0, parent.height - y)
+            visible: Notifications.history.length > 0
+
+            ListView {
+                id: historyList
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: parent.width - (historyScroll.needed ? theme.scrollBarWidth + theme.gridUnit : 0)
+                clip: true
+                spacing: theme.gridUnit * 2
+                boundsBehavior: Flickable.StopAtBounds
+                model: ScriptModel { values: Notifications.history }
+
+                delegate: NotificationCard {
+                    required property var modelData
+                    notification: modelData
+                    width: historyList.width
+                    bodyLines: 2
+                }
+            }
+
+            TerminalScrollBar {
+                id: historyScroll
+                flickable: historyList
             }
         }
     }

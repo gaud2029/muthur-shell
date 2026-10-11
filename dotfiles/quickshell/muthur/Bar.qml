@@ -210,6 +210,17 @@ PanelWindow {
                     drawer.placement = root.popupPlacement(plusButton);
                     drawer.visible = !drawer.visible;
                 }
+
+                // Notifications arrived since the drawer was last open.
+                Rectangle {
+                    visible: Notifications.unread > 0 && !drawer.visible
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: theme.px(3)
+                    width: theme.px(5)
+                    height: width
+                    color: theme.colorFocus
+                }
             }
         }
     }

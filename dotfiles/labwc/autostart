@@ -25,10 +25,8 @@ kanshi >/dev/null 2>&1 &
 # To delay the launch of a particular client it is suggested that the following
 # syntax is used: ( sleep X ; foo ) &
 
-# Enable notifications. Typically GNOME/KDE application notifications go
-# through the org.freedesktop.Notifications D-Bus API and require a client such
-# as mako to function correctly. Thunderbird is an example of this.
-mako >/dev/null 2>&1 &
+# Notifications (the org.freedesktop.Notifications D-Bus API) are served by
+# the shell itself, so no mako: only one server can own the name.
 
 # Turn off displays after 10 minutes idle, lock after 2 hours (and
 # before suspend).

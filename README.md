@@ -38,7 +38,7 @@ quickshell -c muthur   # launch (labwc's autostart does this for you)
 asks for confirmation before changing anything (`--yes` skips the
 prompt). It first installs everything the configs rely on with
 `sudo pacman -S --needed` — labwc, quickshell, fuzzel, alacritty, starship,
-yazi, btop, swaybg/kanshi/mako/swayidle/wlopm for the labwc autostart (and
+yazi, btop, swaybg/kanshi/swayidle/wlopm for the labwc autostart (and
 swaylock, the fallback locker),
 grim/slurp/wl-clipboard for the screenshot keys, Neovim,
 Noto fonts, and the NetworkManager/BlueZ/PipeWire/UPower services the
@@ -147,7 +147,8 @@ From the end of the bar:
   `[POW]`.
 - **`[SYS]`** — the system panel (below).
 - **`[+]`** — the drawer: system tray, MPRIS "now playing" with
-  previous / play-pause / next, and along its bottom edge the session
+  previous / play-pause / next, the notification history (below), and
+  along its bottom edge the session
   controls — `LOCK` (the lock screen below), `LOGOUT` (`labwc --exit`), `SUSPEND` and
   `POWER OFF` (`systemctl`). The last three arm on a first click and run
   on a second within four seconds, so a stray click can't put the session
@@ -161,6 +162,26 @@ Only one of the `[SYS]` / `[AI]` / clock / `[POW]` panels is open at a
 time; the drawer is independent and can sit alongside one. Every popup
 closes on <kbd>Escape</kbd>, and they overlay windows rather than
 reserving space, so the window layout never shifts.
+
+## Notifications
+
+The shell is the notification server (no mako). Notifications pop up as
+terminal boxes in the corner where the bar's end group sits, newest
+nearest the bar, up to four at a time; each closes after six seconds (or
+whatever the sender asks), paused while the pointer is over it. The header
+reads `INCOMING // APP`, or `LOG // APP` dimmed for low urgency and
+`PRIORITY ONE // APP` in red for critical, which stays until dismissed.
+Click one to open its sender (its default action, else its window, else
+its app), right-click or `[X]` to dismiss; the sender's actions show as
+buttons underneath, and `REPLY` opens a reply line when it supports
+inline replies.
+
+Every notification is kept in the drawer's history until dismissed
+(`CLEAR` dismisses them all); a dot on `[+]` marks ones that arrived
+since it was last opened. `DND` there stops the popups, and so does focus
+mode; critical notifications pop up regardless. Also from a script or
+keybind: `quickshell ipc -c muthur call notifications toggleDnd` (or
+`clear`).
 
 ## `[SYS]` — network, bluetooth, audio, display, keyboard, look
 

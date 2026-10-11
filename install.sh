@@ -66,7 +66,6 @@ PACKAGES=(
   swaybg         # wallpaper (labwc autostart)
   kanshi         # output profiles (labwc autostart)
   wdisplays      # output layout GUI ([SYS] > DISPLAY > ARRANGE)
-  mako           # notifications (labwc autostart)
   swayidle       # idle timer (labwc autostart)
   swaylock       # fallback locker when the shell isn't running (scripts/lock.sh)
   wlopm          # screen power on idle (labwc autostart)
