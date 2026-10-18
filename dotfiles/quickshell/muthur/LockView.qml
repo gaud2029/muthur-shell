@@ -116,14 +116,19 @@ Item {
         focus: true
         Keys.onPressed: event => {
             const ctrl = event.modifiers & Qt.ControlModifier;
-            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
+            LockScreen.readCapsLock();
+            if (event.key === Qt.Key_Tab) {
+                // The next layout, for an ident typed in the wrong one.
+                LockScreen.poke();
+                Keyboard.next();
+            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
                 LockScreen.submit();
             else if (event.key === Qt.Key_Backspace)
                 ctrl ? LockScreen.clear() : LockScreen.backspace();
             else if (event.key === Qt.Key_Escape || (ctrl && event.key === Qt.Key_U))
                 LockScreen.clear();
             else if (!ctrl && event.text.length > 0 && event.text.charCodeAt(0) >= 32)
-                LockScreen.type(event.text);
+                LockScreen.type(event.text, (event.modifiers & Qt.ShiftModifier) !== 0);
             else
                 LockScreen.poke();
             event.accepted = true;
@@ -356,6 +361,13 @@ Item {
                                    : root.cursorOn ? "█" : " ") : ""
                         }
                         Line {
+                            visible: LockScreen.capsLock && root.phase !== "granted"
+                            // Retyped each time it comes back on.
+                            fullText: LockScreen.capsLock ? "> CAPS LOCK IS ON." : ""
+                            interval: 12
+                            color: theme.colorYellow
+                        }
+                        Line {
                             visible: root.phase === "verifying"
                             fullText: "> VERIFYING IDENT "
                             suffix: done ? "[" + Array.from({ length: 12 }, (_, i) =>
@@ -391,9 +403,13 @@ Item {
                         text: root.dataStream
                         color: theme.colorDim
                     }
+                    // The active layout, so an ident isn't typed in the
+                    // wrong one; Tab cycles them when there are several.
                     Status {
                         anchors.right: parent.right
-                        text: "UPTIME " + root.uptime
+                        text: "KBD " + Keyboard.shortLabel(Keyboard.current)
+                            + (Keyboard.layouts.length > 1 ? " [TAB]" : "")
+                            + "  ·  UPTIME " + root.uptime
                     }
                 }
             }

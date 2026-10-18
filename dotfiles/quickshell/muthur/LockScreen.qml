@@ -33,6 +33,12 @@ Singleton {
     // clock to spare the panel.
     property bool idle: false
     property real lastInput: 0
+    // Caps Lock, shown under the prompt (GitHub issue #29): an ident typed
+    // in capitals fails like any other, and faillock counts it.
+    property bool capsLock: false
+    // Whether any keyboard has a Caps Lock LED to read it from; without
+    // one, it's guessed from the letters typed (see type()).
+    property bool capsLed: false
 
     // Typing (and submitting) works except while PAM decides or the
     // screens power off.
@@ -59,6 +65,7 @@ Singleton {
         root.answer = "";
         root.answerIsError = false;
         root.poke();
+        root.readCapsLock();
         sessionLock.locked = true;
         root.locked = true;
         bootTimer.restart();
@@ -69,8 +76,19 @@ Singleton {
         root.idle = false;
     }
 
-    function type(text) {
+    // Only a key press can change Caps Lock, and the lock gets them all:
+    // read when the lock engages and shortly after every key (the LED
+    // follows the key).
+    function readCapsLock() {
+        capsDelay.restart();
+    }
+
+    // `shifted`: Shift was held. A letter whose case disagrees with Shift
+    // gives Caps Lock away when there's no LED to read.
+    function type(text, shifted) {
         root.poke();
+        if (!root.capsLed && text.toUpperCase() !== text.toLowerCase())
+            root.capsLock = (text === text.toUpperCase()) !== shifted;
         if (root.editable)
             root.password += text;
     }
@@ -179,6 +197,27 @@ Singleton {
         }
 
         onError: error => root.fail("INTERFACE FAULT. " + PamError.toString(error).toUpperCase() + ".")
+    }
+
+    Timer {
+        id: capsDelay
+        interval: 60
+        onTriggered: capsReader.running = true
+    }
+
+    // One LED per keyboard; any one lit means Caps Lock is on (labwc sets
+    // them all alike).
+    Process {
+        id: capsReader
+        command: ["sh", "-c", "cat /sys/class/leds/*::capslock/brightness 2>/dev/null"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const levels = text.split("\n").filter(l => l.trim() !== "");
+                root.capsLed = levels.length > 0;
+                if (root.capsLed)
+                    root.capsLock = levels.some(l => Number(l) > 0);
+            }
+        }
     }
 
     // Long enough for the power-on and the greeting; typing is accepted
