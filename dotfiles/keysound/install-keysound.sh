@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # Installs the typing sounds (GitHub issue #21): the keypress feed as a
 # system service and the player, which the shell starts when key sounds
-# ([SYS] > KEYBOARD) or an ambient sound ([SYS] > AUDIO) are picked. Opt-in, not run by install.sh: it
+# ([SYS] > KEYBOARD) or an ambient sound ([SYS] > AUDIO) are picked. Opt-in (install.sh offers it): it
 # needs root (a system service, and /usr/local).
 #
 #   install-keysound.sh            build the player, install and start the feed
 #   install-keysound.sh --status   is it all there and running?
 #   install-keysound.sh --revert   stop and remove everything
 #
-# Building needs gcc and PipeWire's headers (both on CachyOS by default).
+# Building needs gcc and PipeWire's headers (install.sh --extras keysound
+# installs gcc, pkgconf and pipewire).
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Installs the MU/TH/UR Plymouth boot screen (GitHub issue #24). Opt-in,
-# not run by install.sh: it needs root and rebuilds the initramfs.
+# Installs the MU/TH/UR Plymouth boot screen (GitHub issue #24). Opt-in
+# (install.sh offers it): it needs root and rebuilds the initramfs.
 #
 #   install-plymouth.sh            install, make it the default theme and
 #                                  rebuild the initramfs (next boot shows it)
@@ -8,7 +8,7 @@
 #   install-plymouth.sh --preview  install the files and play the boot and
 #                                  shutdown screens in a window (x11
 #                                  renderer, needs $DISPLAY), no reboot
-#   install-plymouth.sh --revert   back to the cachyos theme, rebuilt
+#   install-plymouth.sh --revert   back to the theme it replaced, rebuilt
 #
 # The files are copied, not symlinked: the theme is read from the
 # initramfs, where /home (encrypted) doesn't exist.
@@ -16,7 +16,9 @@ set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/muthur"
 DEST=/usr/share/plymouth/themes/muthur
-FALLBACK_THEME=cachyos
+# The default theme before muthur's, for --revert. Outside $DEST, which
+# a plymouth package update could clear.
+PREVIOUS=/var/lib/muthur/plymouth-previous-theme
 
 if [[ $EUID -ne 0 ]]; then
   if [[ ${1:-} == --preview ]]; then
@@ -86,10 +88,25 @@ case "${1:-}" in
     echo "Logs: /tmp/muthur-plymouth-boot.log /tmp/muthur-plymouth-shutdown.log"
     ;;
   --revert)
-    plymouth-set-default-theme -R "$FALLBACK_THEME"
+    theme=$(cat "$PREVIOUS" 2>/dev/null || true)
+    if [[ -z $theme || ! -d /usr/share/plymouth/themes/$theme ]]; then
+      # Installed before the previous theme was kept: CachyOS's, or
+      # Arch's default.
+      for theme in cachyos bgrt spinner text; do
+        [[ -d /usr/share/plymouth/themes/$theme ]] && break
+      done
+    fi
+    plymouth-set-default-theme -R "$theme"
+    rm -f "$PREVIOUS"
+    echo "Default theme: $theme."
     ;;
   "")
     install_files
+    current=$(plymouth-set-default-theme 2>/dev/null || true)
+    if [[ -n $current && $current != muthur ]]; then
+      install -Dm644 /dev/null "$PREVIOUS"
+      echo "$current" > "$PREVIOUS"
+    fi
     plymouth-set-default-theme -R muthur
     echo "Default theme: $(plymouth-set-default-theme). Reboot to see it."
     ;;

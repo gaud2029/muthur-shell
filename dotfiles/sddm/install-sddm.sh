@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Installs the MU/TH/UR SDDM login theme (GitHub issue #24). Opt-in, not
-# run by install.sh: it writes to /usr/share and /etc.
+# Installs the MU/TH/UR SDDM login theme (GitHub issue #24). Opt-in
+# (install.sh offers it): it writes to /usr/share and /etc.
 #
 #   install-sddm.sh            install and make it SDDM's theme
 #                              (next login screen shows it)
