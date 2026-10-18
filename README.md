@@ -26,7 +26,8 @@ launcher, the window decorations. See "Beyond the shell" below.
 ## Setup
 
 ```sh
-./install.sh          # installs packages (pacman), symlinks dotfiles/ into ~/.config/
+./install.sh          # installs packages (pacman), symlinks dotfiles/ into ~/.config/,
+                      # then offers the optional extras one by one
 quickshell -c muthur   # launch (labwc's autostart does this for you)
 ```
 
@@ -34,16 +35,19 @@ quickshell -c muthur   # launch (labwc's autostart does this for you)
 > configuration: existing configs are moved aside and replaced, and
 > generated files are rewritten on every theme switch.
 
-`install.sh` only runs on **CachyOS** (it exits on anything else) and
-asks for confirmation before changing anything (`--yes` skips the
-prompt). It first installs everything the configs rely on with
-`sudo pacman -S --needed` — labwc, quickshell, fuzzel, alacritty, starship,
-yazi, btop, swaybg/kanshi/swayidle/wlopm for the labwc autostart (and
-swaylock, the fallback locker), wlsunset for the night light,
-grim/slurp/wl-clipboard for the screenshot keys, Neovim,
-Noto fonts, and the NetworkManager/BlueZ/PipeWire/UPower services the
-panels talk to (`--no-packages` skips this; herdr isn't packaged and is
-installed separately). It then backs up anything already at the
+`install.sh` runs on **Arch Linux** and **CachyOS** (it exits on
+anything else) and asks for confirmation before changing anything
+(`--yes` skips the prompt). It first installs everything the configs rely
+on with `sudo pacman -S --needed` — labwc, quickshell, fuzzel, alacritty,
+starship, yazi, btop, swaybg/kanshi/swayidle/wlopm for the labwc autostart
+(and swaylock, the fallback locker), wlsunset for the night light,
+grim/slurp/wl-clipboard for the screenshot keys, Neovim (and git, for
+LazyVim's plugins), Noto fonts, Python and ImageMagick for the helper
+scripts, and the NetworkManager/BlueZ/PipeWire/UPower services the panels
+talk to — and enables NetworkManager and Bluetooth if they aren't yet, as
+on a fresh Arch install (unless another network manager such as iwd is
+running: it then says how to switch). `--no-packages` skips all this;
+herdr isn't packaged and is installed separately. It then backs up anything already at the
 destination instead of overwriting it, and symlinks every config this repo
 manages: the shell itself, plus fuzzel, labwc, alacritty, herdr, Neovim,
 yazi, btop, `~/.bashrc` and the starship prompt, and makes yazi the
@@ -54,8 +58,22 @@ changes to the QML don't need a restart.
 ### Optional: the MU/TH/UR boot chain
 
 The lock screen comes with the shell. The boot menu, boot screen, login
-screen and typing sounds are opt-in, each with its own installer (they need root, so
-run them from a terminal: sudo asks for your password) and a `--revert`:
+screen, typing sounds and themed wallpapers are opt-in. At the end,
+`install.sh` describes each one and what it changes, and asks (wallpapers
+yes by default, the rest no); it installs the packages each needs
+(`sddm`, `plymouth`, `gcc`…), skips what can't work here (no Limine, no
+Plymouth hook in mkinitcpio, see [below](#the-boot-screen--plymouth)),
+and ends with a summary of what it installed and how to revert each.
+Pick them up front instead with `--extras`:
+
+```sh
+./install.sh --extras all                    # everything that can work here
+./install.sh --extras wallpapers,sddm        # only these
+./install.sh --extras none                   # no extras (with --yes alone: wallpapers only)
+```
+
+Each is also its own installer, run from a terminal (the root ones ask
+sudo for your password), with a `--revert`:
 
 | Screen | Install | Revert | Details |
 |---|---|---|---|
@@ -63,6 +81,7 @@ run them from a terminal: sudo asks for your password) and a `--revert`:
 | Boot screen (Plymouth) | `dotfiles/plymouth/install-plymouth.sh` | `… --revert` | [below](#the-boot-screen--plymouth) |
 | Login screen (SDDM) | `dotfiles/sddm/install-sddm.sh` | `… --revert` | [below](#the-login-screen--sddm) |
 | Typing sounds | `dotfiles/keysound/install-keysound.sh` | `… --revert` | [below](#typing-sounds-and-ambient-sound) |
+| Themed wallpapers | `wallpapers/themed.py` | `rm -rf ~/.local/share/muthur-shell/wallpapers` | |
 | Lock screen | `./install.sh` | swaylock, see [below](#the-lock-screen--muthur-6000) | |
 
 ### Optional: snap-to-grid and angled corners on labwc
@@ -320,8 +339,8 @@ Two pieces, both from `dotfiles/keysound/`:
 
 ### Install
 
-From a terminal (sudo asks for your password; needs gcc and PipeWire's
-headers, both there on CachyOS):
+From a terminal (sudo asks for your password; needs gcc, pkgconf and
+PipeWire's headers, which `install.sh --extras keysound` installs):
 
 ```sh
 dotfiles/keysound/install-keysound.sh            # build the player into /usr/local/bin, install and start the service
@@ -465,8 +484,8 @@ preset: the theme lives in the initramfs.
 
 ### Install
 
-It isn't installed by `install.sh`: it needs root and rebuilds the
-initramfs. From a terminal (sudo asks for your password):
+`install.sh` offers it, or from a terminal (sudo asks for your password;
+it needs root and rebuilds the initramfs):
 
 ```sh
 dotfiles/plymouth/install-plymouth.sh --preview   # optional: play it in a window first, no reboot
@@ -480,10 +499,16 @@ revokes it). Kernel upgrades keep the theme: mkinitcpio rebuilds the
 initramfs with the configured default. Rerun the installer after changing
 the theme.
 
+CachyOS boots with Plymouth already set up. On plain Arch, set it up
+first: add `plymouth` to `HOOKS` in `/etc/mkinitcpio.conf` (after
+`systemd` or `udev`, before `sd-encrypt` or `encrypt`), and `splash` (with
+`quiet`) to the kernel command line in your boot loader's entries.
+`install.sh` skips the boot screen until the hook is there.
+
 ### Revert
 
 ```sh
-dotfiles/plymouth/install-plymouth.sh --revert    # back to the cachyos theme, initramfs rebuilt
+dotfiles/plymouth/install-plymouth.sh --revert    # back to the theme it replaced, initramfs rebuilt
 ```
 
 If the theme ever misbehaves at boot, <kbd>Esc</kbd> switches Plymouth to
@@ -498,10 +523,12 @@ wireframe descent under scanlines (`dotfiles/limine/muthur/wallpaper.png`,
 drawn by `make-wallpaper.sh`), the entries in phosphor green, and
 `MU/TH/UR 6000 // SELECT BOOT SEQUENCE` as the branding line.
 
-`limine.conf` is CachyOS's: limine-entry-tool rewrites its boot entries on
-every kernel or snapshot update but keeps the global options at the top,
-so the theme lives there as one marked block. The theme options CachyOS
-ships are commented out with a `#muthur# ` prefix rather than deleted,
+On CachyOS `limine.conf` belongs to limine-entry-tool, which rewrites its
+boot entries on every kernel or snapshot update but keeps the global
+options at the top, so the theme lives there as one marked block (on
+plain Arch the file is yours; it's looked for on `/boot`, `/efi` or
+`/boot/efi`). Theme options already there (CachyOS ships some) are
+commented out with a `#muthur# ` prefix rather than deleted,
 and the config's checksum is re-enrolled when that protection is enabled.
 
 ### Install
@@ -522,7 +549,7 @@ instead of adding a second one; kernel updates keep it.
 
 ```sh
 dotfiles/limine/install-limine.sh --revert  # remove the block and /boot/muthur/,
-                                            # re-enable the CachyOS theme options
+                                            # re-enable the theme options it disabled
 ```
 
 A theme option Limine doesn't like never stops it from booting: at worst

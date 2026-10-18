@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 # Themes the Limine boot menu as MU/TH/UR 6000 (GitHub issue #24): the
 # wallpaper from make-wallpaper.sh, the menu in phosphor green, the
-# branding line. Opt-in, not run by install.sh: it writes to the ESP.
+# branding line. Opt-in (install.sh offers it): it writes to the ESP.
 #
 #   install-limine.sh            install (or update) the theme
 #   install-limine.sh --show     print the theme options limine.conf has now
 #   install-limine.sh --revert   remove it, restoring any options it disabled
 #
-# limine.conf belongs to CachyOS's limine-entry-tool, which rewrites the
+# On CachyOS limine.conf belongs to limine-entry-tool, which rewrites the
 # boot entries on every kernel or snapshot update but keeps the global
-# options at the top. The theme goes in there as one marked block; any
-# other theme option (CachyOS ships its own) is commented out with a
-# "#muthur# " prefix rather than deleted, since for most options the first
-# one wins and several wallpapers would be picked from at random.
+# options at the top (on plain Arch it's only yours). The theme goes in
+# there as one marked block; any other theme option (CachyOS ships its
+# own) is commented out with a "#muthur# " prefix rather than deleted,
+# since for most options the first one wins and several wallpapers would
+# be picked from at random.
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/muthur"
@@ -23,13 +24,18 @@ THEME_KEYS='wallpaper|wallpaper_style|backdrop|interface_branding|interface_bran
 
 [[ $EUID -eq 0 ]] || exec sudo "$0" "$@"
 
+# CachyOS names the ESP in /etc/default/limine; a plain Arch install
+# mounts it at one of the usual places.
 ESP=$(sed -n 's/^ESP_PATH="\?\([^"]*\)"\?$/\1/p' /etc/default/limine 2>/dev/null | tail -1)
-ESP=${ESP:-/boot}
 CONF=""
-for c in "$ESP/limine.conf" "$ESP/limine/limine.conf" "$ESP/EFI/BOOT/limine.conf" "$ESP/EFI/limine/limine.conf"; do
-  [[ -f $c ]] && { CONF=$c; break; }
+for e in ${ESP:-/boot /efi /boot/efi}; do
+  for c in "$e/limine.conf" "$e/limine/limine.conf" "$e/EFI/BOOT/limine.conf" "$e/EFI/limine/limine.conf"; do
+    [[ -f $c ]] && { CONF=$c; break 2; }
+  done
 done
-[[ -n $CONF ]] || { echo "No limine.conf found under $ESP" >&2; exit 1; }
+[[ -n $CONF ]] || { echo "No limine.conf found under ${ESP:-/boot, /efi or /boot/efi}" >&2; exit 1; }
+# boot():/ is the root of the partition limine.conf is on.
+ESP=$(findmnt -no TARGET -T "$CONF")
 
 # Drops the block and re-enables what installing disabled.
 strip() {
