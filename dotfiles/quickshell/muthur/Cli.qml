@@ -243,7 +243,10 @@ Singleton {
             v => { Notifications.dnd = v; return ""; }),
         boolEntry("focus", "focus mode: the bar folds away",
             () => Focus.active,
-            v => { Focus.active = v; return ""; })
+            v => { Focus.active = v; return ""; }),
+        boolEntry("caffeine", "caffeine mode: no idle screen-off or lock",
+            () => Caffeine.active,
+            v => { Caffeine.active = v; return ""; })
     ]
 
     function find(key) {

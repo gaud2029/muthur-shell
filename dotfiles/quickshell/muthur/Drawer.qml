@@ -115,8 +115,8 @@ PanelWindow {
         clip: true
         spacing: theme.gridUnit * 3
 
-        // Quick toggles: night light (set up in [SYS] > DISPLAY) and
-        // do-not-disturb.
+        // Quick toggles: night light (set up in [SYS] > DISPLAY),
+        // do-not-disturb and caffeine mode (Caffeine.qml).
         Row {
             spacing: theme.gridUnit * 2
 
@@ -129,6 +129,11 @@ PanelWindow {
                 label: "DND"
                 selected: Notifications.dnd
                 onClicked: Notifications.dnd = !Notifications.dnd
+            }
+            TerminalButton {
+                label: "AWAKE"
+                selected: Caffeine.active
+                onClicked: Caffeine.toggle()
             }
         }
 
