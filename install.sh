@@ -131,6 +131,8 @@ PACKAGES=(
   python         # the muthur command and the shell's helper scripts
   imagemagick    # the palette drawn from a wallpaper ([SYS] > [LOOK])
   git            # LazyVim fetches its plugins with it on Neovim's first start
+  github-cli     # gh
+  firefox        # browser (themed: scripts/firefox-theme.py)
 )
 
 install_packages() {

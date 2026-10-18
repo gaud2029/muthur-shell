@@ -42,8 +42,9 @@ on with `sudo pacman -S --needed` — labwc, quickshell, fuzzel, alacritty,
 starship, yazi, btop, swaybg/kanshi/swayidle/wlopm for the labwc autostart
 (and swaylock, the fallback locker), wlsunset for the night light,
 grim/slurp/wl-clipboard for the screenshot keys, Neovim (and git, for
-LazyVim's plugins), Noto fonts, Python and ImageMagick for the helper
-scripts, and the NetworkManager/BlueZ/PipeWire/UPower services the panels
+LazyVim's plugins), Firefox (themed) and the GitHub CLI, Noto fonts,
+Python and ImageMagick for the helper scripts, and the
+NetworkManager/BlueZ/PipeWire/UPower services the panels
 talk to — and enables NetworkManager and Bluetooth if they aren't yet, as
 on a fresh Arch install (unless another network manager such as iwd is
 running: it then says how to switch). `--no-packages` skips all this;
