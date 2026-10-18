@@ -184,7 +184,9 @@ From the end of the bar:
   while paused) with `|<` / `||` / `>|` buttons; hidden while nothing is
   playing or paused. A vertical bar has no room for the title and keeps
   only the buttons. The drawer below shows the same player.
-- **Keyboard layout** — the active layout's code (`US`, `CA`, ...). Click
+- **Keyboard layout** — the active layout's code (`US`, `CA`, ...), shown
+  only when more than one layout is configured (add some in
+  `[SYS] > [KEYBOARD]`). Click
   to switch to the next configured layout, right-click to open
   `[SYS] > [KEYBOARD]`. Also from a script or keybind:
   `quickshell ipc -c muthur call keyboard next`.

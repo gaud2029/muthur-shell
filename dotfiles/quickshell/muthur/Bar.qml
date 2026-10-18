@@ -175,7 +175,9 @@ PanelWindow {
 
             // The active keyboard layout; a click switches to the next
             // one, a right click opens [SYS] KEYBOARD to add or remove some.
+            // Hidden with a single layout: nothing to switch to.
             TerminalButton {
+                visible: Keyboard.layouts.length > 1
                 label: Keyboard.shortLabel(Keyboard.current)
                 square: true
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
