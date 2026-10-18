@@ -7,13 +7,14 @@ import Quickshell
 ShellRoot {
     // Singletons load on first use; touch the ones with IPC targets now
     // ("quickshell ipc -c muthur call lock lock", "... call focus toggle",
-    // "... call nightlight toggle", and Cli's "muthur" for the muthur
+    // "... call nightlight toggle", "... call caffeine toggle", and Cli's "muthur" for the muthur
     // command) so they exist from the start — and NightLight starts
     // wlsunset. NotificationPopups and OsdWindow below
     // start the notification server and the "osd" target.
     Component.onCompleted: {
         LockScreen.locked;
         Focus.active;
+        Caffeine.active;
         NightLight.enabled;
         Cli.entries;
     }

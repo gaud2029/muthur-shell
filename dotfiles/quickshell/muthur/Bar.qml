@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Wayland
 
 PanelWindow {
     id: root
@@ -61,6 +62,13 @@ PanelWindow {
     color: theme.colorBg
 
     Theme { id: theme }
+
+    // Caffeine mode: the bar is always mapped, even folded, so it carries
+    // the inhibitor (one per screen; any one is enough).
+    IdleInhibitor {
+        window: root
+        enabled: Caffeine.active
+    }
 
     // Scanline texture — cheap CRT flavor, static so it's painted once.
     Canvas {

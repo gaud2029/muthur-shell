@@ -66,6 +66,8 @@ Singleton {
         root.answerIsError = false;
         root.poke();
         root.readCapsLock();
+        // Locking means leaving: the screens may idle off again.
+        Caffeine.active = false;
         sessionLock.locked = true;
         root.locked = true;
         bootTimer.restart();

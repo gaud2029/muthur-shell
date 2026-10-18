@@ -198,8 +198,11 @@ From the end of the bar:
   chosen, its 5-hour session quota shows as a bar under the label, like
   `[POW]`.
 - **`[SYS]`** — the system panel (below).
-- **`[+]`** — the drawer: quick `NIGHT` (night light) and `DND`
-  (do-not-disturb) toggles, system tray, MPRIS "now playing" with
+- **`[+]`** — the drawer: quick `NIGHT` (night light), `DND`
+  (do-not-disturb) and `AWAKE` (caffeine mode: no idle screen-off or
+  lock until it's turned off, the session is locked or the shell
+  restarts; also `muthur toggle caffeine` or
+  `quickshell ipc -c muthur call caffeine toggle`) toggles, system tray, MPRIS "now playing" with
   previous / play-pause / next, the notification history (below), and
   along its bottom edge the session
   controls — `LOCK` (the lock screen below), `LOGOUT` (`labwc --exit`), `SUSPEND` and
