@@ -55,20 +55,46 @@ default handler for opening folders. A `gtk-3.0`/`gtk-4.0` `gtk.css`
 the shell didn't write is backed up too, since the shell regenerates it. Quickshell hot-reloads on file save, so once it's running most
 changes to the QML don't need a restart.
 
+### On a new machine: Arch with archinstall
+
+`archinstall/muthur.json` is an [archinstall](https://wiki.archlinux.org/title/Archinstall)
+config for a minimal Arch that `install.sh` then turns into the full
+desktop: Limine as the boot loader (so the themed boot menu works),
+NetworkManager, PipeWire, Bluetooth, power-profiles-daemon, zram swap,
+git. From the Arch ISO (on Wi-Fi, connect first with `iwctl`):
+
+```sh
+archinstall --config-url https://raw.githubusercontent.com/gaud2029/muthur-shell/master/archinstall/muthur.json
+```
+
+It opens archinstall's menu with all that filled in. Set the **disk**
+(*Disk configuration › Partitioning › Use a best-effort default
+partition layout*), an **account** with sudo (*Authentication*), and
+check the keyboard layout, locale and time zone (US English,
+America/Toronto), then *Install*. Old ThinkPads boot it in legacy BIOS
+mode as well as UEFI. Reboot, log in on the console, then:
+
+```sh
+git clone https://github.com/gaud2029/muthur-shell && cd muthur-shell
+./install.sh --extras all     # or without --extras, to be asked one by one
+sudo reboot
+```
+
 ### Optional: the MU/TH/UR boot chain
 
 The lock screen comes with the shell. The boot menu, boot screen, login
-screen, typing sounds and themed wallpapers are opt-in. At the end,
-`install.sh` describes each one and what it changes, and asks (wallpapers
-yes by default, the rest no); it installs the packages each needs
-(`sddm`, `plymouth`, `gcc`…), skips what can't work here (no Limine, no
-Plymouth hook in mkinitcpio, see [below](#the-boot-screen--plymouth)),
-and ends with a summary of what it installed and how to revert each.
+screen, typing sounds, themed wallpapers and the patched labwc are
+opt-in. At the end, `install.sh` describes each one and what it
+changes, and asks (wallpapers yes by default, the rest no); it installs
+the packages each needs (`sddm`, `plymouth`, `gcc`…), skips what can't
+work here (the boot menu without Limine), and ends with a summary of
+what it installed and how to revert each.
 Pick them up front instead with `--extras`:
 
 ```sh
 ./install.sh --extras all                    # everything that can work here
-./install.sh --extras wallpapers,sddm        # only these
+./install.sh --extras wallpapers,sddm        # only these (wallpapers, labwc, keysound,
+                                             # sddm, plymouth, limine)
 ./install.sh --extras none                   # no extras (with --yes alone: wallpapers only)
 ```
 
@@ -82,6 +108,7 @@ sudo for your password), with a `--revert`:
 | Login screen (SDDM) | `dotfiles/sddm/install-sddm.sh` | `… --revert` | [below](#the-login-screen--sddm) |
 | Typing sounds | `dotfiles/keysound/install-keysound.sh` | `… --revert` | [below](#typing-sounds-and-ambient-sound) |
 | Themed wallpapers | `wallpapers/themed.py` | `rm -rf ~/.local/share/muthur-shell/wallpapers` | |
+| Patched labwc | `./install.sh --extras labwc` | `sudo pacman -S labwc`, then `dotfiles/labwc/make-menu.sh` | [below](#optional-snap-to-grid-and-angled-corners-on-labwc) |
 | Lock screen | `./install.sh` | swaylock, see [below](#the-lock-screen--muthur-6000) | |
 
 ### Optional: snap-to-grid and angled corners on labwc
@@ -101,16 +128,21 @@ branched from the 0.20.2 release (the `angled-corner` branch has both,
 `snap-to-grid` only the grid). The `vertical-titlebar` branch adds, on
 top of both, a **Titlebar ▸ Top / Left / Right** entry to the window
 menu (right-click a titlebar) that moves that window's titlebar to a
-side, its title written along it. Stock labwc logs an error for that
-entry and it does nothing. To get all three:
+side, its title written along it. To get all three:
 
 ```sh
-git clone -b vertical-titlebar https://github.com/gaud2029/labwc.git
-cd labwc/dev/pkg && makepkg -si   # builds labwc-snapgrid, replaces labwc
+./install.sh --extras labwc   # clones the branch, builds labwc-snapgrid, replaces labwc
 ```
 
 Log out and back in to run the new binary. `sudo pacman -S labwc` goes
 back to the stock package.
+
+The window menu comes from `dotfiles/labwc/menu.xml.in`:
+`dotfiles/labwc/make-menu.sh` (run by `install.sh` and the labwc extra)
+writes `menu.xml` from it, with the Titlebar entry only when the
+installed labwc has it (stock labwc would show a red "Config errors
+detected" bar for it). Edit `menu.xml.in`, and rerun `make-menu.sh`
+after it or after switching labwc builds by hand.
 
 ## The bar
 
@@ -499,16 +531,19 @@ revokes it). Kernel upgrades keep the theme: mkinitcpio rebuilds the
 initramfs with the configured default. Rerun the installer after changing
 the theme.
 
-CachyOS boots with Plymouth already set up. On plain Arch, set it up
-first: add `plymouth` to `HOOKS` in `/etc/mkinitcpio.conf` (after
-`systemd` or `udev`, before `sd-encrypt` or `encrypt`), and `splash` (with
-`quiet`) to the kernel command line in your boot loader's entries.
-`install.sh` skips the boot screen until the hook is there.
+CachyOS boots with Plymouth already set up. On plain Arch, the installer
+sets it up the first time: it adds `plymouth` to `HOOKS` in
+`/etc/mkinitcpio.conf` (right after `systemd` or `udev`, so before
+`sd-encrypt` or `encrypt`: the disk passphrase is asked by the theme),
+and `quiet splash` to the kernel command line, in `/etc/default/grub`
+(then regenerated), `limine.conf` or systemd-boot's entries. Each file is
+backed up first as `*.muthur-bak`.
 
 ### Revert
 
 ```sh
-dotfiles/plymouth/install-plymouth.sh --revert    # back to the theme it replaced, initramfs rebuilt
+dotfiles/plymouth/install-plymouth.sh --revert    # back to the theme it replaced, initramfs rebuilt;
+                                                  # takes out the hook and quiet splash if it added them
 ```
 
 If the theme ever misbehaves at boot, <kbd>Esc</kbd> switches Plymouth to
@@ -715,7 +750,8 @@ dotfiles/
   quickshell/muthur/  the shell (QML) — ThemeStore.qml is the theme hub;
                       scripts/ holds the palette and usage-stats helpers
   fuzzel/             launcher config, themed to match the shell
-  labwc/              window-manager config: themed, 4 workspaces, keybinds, autostart, 10px grid, angled corners
+  labwc/              window-manager config: themed, 4 workspaces, keybinds, autostart, 10px grid, angled corners;
+                      menu.xml is written from menu.xml.in by make-menu.sh
   keysound/           typing sounds: keypress feed service, PipeWire player (C) and their installer
   limine/             MU/TH/UR boot menu theme (wallpaper + limine.conf block) and its installer
   plymouth/           MU/TH/UR boot screen (Plymouth script theme) and its installer
@@ -730,8 +766,16 @@ dotfiles/
 docs/screenshots/    the captures above
 wallpapers/
 ci/                  lint.sh and load-test.sh (headless load of the shell), hooks/pre-push
+archinstall/         muthur.json, the archinstall config for a new machine
+vm/                  muthur-vm: a plain Arch VM (QEMU) to test install.sh and the extras in
 install.sh
 ```
+
+`vm/muthur-vm` tests the install on a plain Arch, in a VM like the
+ThinkPad T420 this is meant to run on (legacy BIOS, 1600x900): one from
+Arch's cloud image (`setup`), one installed from the ISO with
+`archinstall/muthur.json` (`archinstall`). No root needed on the host,
+only `qemu-desktop`; `vm/muthur-vm` with no argument lists its commands.
 
 The checks run locally before every push once the hook is enabled in a
 clone: `git config core.hooksPath ci/hooks` (`git push --no-verify`
@@ -739,7 +783,7 @@ skips them once). GitHub Actions runs the same scripts on pull requests,
 or by hand with `gh workflow run CI`.
 
 Generated, gitignored files (`theme.ini`, `keyboard.ini`, `colors.ini`,
-`themerc-override`, `environment.d/muthur-keyboard.env`,
+`themerc-override`, labwc's `menu.xml`, `environment.d/muthur-keyboard.env`,
 `theme/muthur.toml`, `colors/muthur.lua`, `themes/muthur.theme`) live alongside their tracked static
 config — see `.gitignore`. `nvim/` is symlinked as a whole directory like
 the others; `herdr/config.toml` is symlinked individually since the rest of

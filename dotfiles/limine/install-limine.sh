@@ -26,7 +26,7 @@ THEME_KEYS='wallpaper|wallpaper_style|backdrop|interface_branding|interface_bran
 
 # CachyOS names the ESP in /etc/default/limine; a plain Arch install
 # mounts it at one of the usual places.
-ESP=$(sed -n 's/^ESP_PATH="\?\([^"]*\)"\?$/\1/p' /etc/default/limine 2>/dev/null | tail -1)
+ESP=$(sed -n 's/^ESP_PATH="\?\([^"]*\)"\?$/\1/p' /etc/default/limine 2>/dev/null | tail -1 || true)
 CONF=""
 for e in ${ESP:-/boot /efi /boot/efi}; do
   for c in "$e/limine.conf" "$e/limine/limine.conf" "$e/EFI/BOOT/limine.conf" "$e/EFI/limine/limine.conf"; do
