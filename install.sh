@@ -279,7 +279,8 @@ extra_title() {
 extra_about() {
   case "$1" in
   wallpapers) echo "Draws four wallpapers per color preset, offered in [SYS] > [LOOK].
-Writes ~/.local/share/muthur-shell/wallpapers. No root, a minute or more." ;;
+Writes ~/.local/share/muthur-shell/wallpapers; a first install starts on
+the NEO IN THE MATRIX horizon. No root, a minute or more." ;;
   labwc) echo "Builds labwc from gaud2029/labwc: snap-to-grid, angled titlebar corners,
 and a Titlebar > Top/Left/Right entry in the window menu. Replaces the
 labwc package (as labwc-snapgrid). Builds for a few minutes; log out and
@@ -359,10 +360,26 @@ build_labwc() {
   "$DOTFILES_DIR/labwc/make-menu.sh"
 }
 
+# The default theme's horizon as the first wallpaper, only while no
+# wallpaper was ever set (an existing choice, or CLEAR, stays).
+DEFAULT_WALLPAPER=neoInTheMatrix/3-horizon.png
+default_wallpaper() {
+  local ini="$DOTFILES_DIR/quickshell/muthur/theme.ini"
+  local img="$HOME/.local/share/muthur-shell/wallpapers/$DEFAULT_WALLPAPER"
+  [ -f "$img" ] || return 0
+  grep -q '^wallpaper=' "$ini" 2>/dev/null && return 0
+  if grep -q '^\[theme\]' "$ini" 2>/dev/null; then
+    sed -i "/^\[theme\]/a wallpaper=$img" "$ini"
+  else
+    printf '[theme]\nwallpaper=%s\n' "$img" >>"$ini"
+  fi
+  echo "Wallpaper: $DEFAULT_WALLPAPER (change it in [SYS] > [LOOK])."
+}
+
 # Called in an `if`, where set -e is off: each step checks for itself.
 extra_run() {
   case "$1" in
-  wallpapers) python3 "$REPO_DIR/wallpapers/themed.py" ;;
+  wallpapers) python3 "$REPO_DIR/wallpapers/themed.py" && default_wallpaper ;;
   labwc) build_labwc ;;
   keysound) "$DOTFILES_DIR/keysound/install-keysound.sh" ;;
   sddm)

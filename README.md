@@ -656,7 +656,9 @@ wallpapers/themed.py tron corpoCarbon  # only these
 ```
 
 A preset without drawn wallpapers simply shows no sketches; new ones
-appear the next time the tab opens.
+appear the next time the tab opens. When `install.sh` draws them and no
+wallpaper was set yet, it starts the shell on NEO IN THE MATRIX's
+horizon.
 
 ### A set of nine
 
