@@ -1,0 +1,33 @@
+{
+  "version": "4.5",
+  "script": "guided",
+  "archinstall-language": "English",
+  "hostname": "muthur",
+  "kernels": ["linux"],
+  "bootloader_config": {
+    "bootloader": "Limine",
+    "uki": false,
+    "removable": false
+  },
+  "profile_config": {
+    "profile": {"main": "Minimal"},
+    "gfx_driver": null,
+    "greeter": null
+  },
+  "network_config": {"type": "nm"},
+  "app_config": {
+    "audio_config": {"audio": "pipewire"},
+    "bluetooth_config": {"enabled": true},
+    "power_management_config": {"power_management": "power-profiles-daemon"}
+  },
+  "locale_config": {
+    "kb_layout": "us",
+    "sys_enc": "UTF-8",
+    "sys_lang": "en_US.UTF-8"
+  },
+  "timezone": "America/Toronto",
+  "ntp": true,
+  "swap": {"enabled": true, "algorithm": "zstd"},
+  "packages": ["git"],
+  "pacman_config": {"color": true, "parallel_downloads": 5}
+}

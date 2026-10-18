@@ -7,15 +7,15 @@
 #
 # Then come the optional extras (GitHub issue #32), each one also its own
 # installer with a --revert: asked one by one, or picked up front with
-# --extras all|none|NAME,NAME (wallpapers, keysound, sddm, plymouth,
-# limine). With --yes and no --extras, only the wallpapers are made.
+# --extras all|none|NAME,NAME (wallpapers, labwc, keysound, sddm,
+# plymouth, limine). With --yes and no --extras, only the wallpapers are made.
 set -euo pipefail
 
 NO_PACKAGES=0
 ASSUME_YES=0
 EXTRAS_ARG=""
 usage() {
-  echo "usage: $0 [--no-packages] [--yes] [--extras all|none|wallpapers,keysound,sddm,plymouth,limine]" >&2
+  echo "usage: $0 [--no-packages] [--yes] [--extras all|none|wallpapers,labwc,keysound,sddm,plymouth,limine]" >&2
   exit 2
 }
 while [ $# -gt 0 ]; do
@@ -45,7 +45,7 @@ case " $OS_ID $OS_LIKE " in
   ;;
 esac
 
-EXTRAS=(wallpapers keysound sddm plymouth limine)
+EXTRAS=(wallpapers labwc keysound sddm plymouth limine)
 if [ -n "$EXTRAS_ARG" ]; then
   case "$EXTRAS_ARG" in
   all | none) ;;
@@ -75,7 +75,7 @@ muthur-shell replaces your desktop configuration.
 
   NetworkManager and Bluetooth are enabled if they aren't yet. The
   optional extras (boot menu, boot screen, login screen, typing sounds,
-  themed wallpapers) are offered one by one at the end.
+  themed wallpapers, patched labwc) are offered one by one at the end.
 
 EOF
 if [ "$ASSUME_YES" -ne 1 ]; then
@@ -99,6 +99,7 @@ CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 # installed separately.
 PACKAGES=(
   labwc          # compositor (dotfiles/labwc)
+  xorg-xwayland  # X11 apps under labwc
   quickshell     # the shell itself
   fuzzel         # launcher ([>_], Super+Space)
   alacritty      # terminal (themed; Super+Return and the labwc menu)
@@ -123,6 +124,7 @@ PACKAGES=(
   pipewire       # [SYS] > AUDIO
   wireplumber
   upower # [POW]
+  power-profiles-daemon # [POW]'s power profiles
   polkit # lets systemctl suspend/poweroff run without root
   xdg-desktop-portal-gtk # serves the light/dark color-scheme to apps
   xdg-utils      # xdg-mime, to make yazi the folder handler (below)
@@ -133,7 +135,10 @@ PACKAGES=(
 
 install_packages() {
   echo "Installing packages (sudo pacman -S --needed)..."
-  sudo pacman -S --needed "$@"
+  # --yes covers pacman's own question too.
+  local confirm=()
+  [ "$ASSUME_YES" -eq 1 ] && confirm=(--noconfirm)
+  sudo pacman -S --needed "${confirm[@]}" "$@"
   echo
 }
 
@@ -220,6 +225,9 @@ for pair in "${LINKS[@]}"; do
   link_one "${pair%%:*}" "${pair#*:}"
 done
 
+# The window menu's Titlebar entry only works on the patched labwc.
+"$DOTFILES_DIR/labwc/make-menu.sh"
+
 # The shell writes GTK's user gtk.css on every theme switch; keep a copy of
 # one it didn't write itself before that happens.
 for gtk_css in "$CONFIG_HOME/gtk-3.0/gtk.css" "$CONFIG_HOME/gtk-4.0/gtk.css"; do
@@ -260,6 +268,7 @@ fi
 extra_title() {
   case "$1" in
   wallpapers) echo "Themed wallpapers" ;;
+  labwc) echo "Patched labwc" ;;
   keysound) echo "Typing sounds" ;;
   sddm) echo "Login screen (SDDM)" ;;
   plymouth) echo "Boot screen (Plymouth)" ;;
@@ -271,6 +280,10 @@ extra_about() {
   case "$1" in
   wallpapers) echo "Draws four wallpapers per color preset, offered in [SYS] > [LOOK].
 Writes ~/.local/share/muthur-shell/wallpapers. No root, a minute or more." ;;
+  labwc) echo "Builds labwc from gaud2029/labwc: snap-to-grid, angled titlebar corners,
+and a Titlebar > Top/Left/Right entry in the window menu. Replaces the
+labwc package (as labwc-snapgrid). Builds for a few minutes; log out and
+back in after." ;;
   keysound) echo "Keypress sounds and ambient sound, picked in [SYS] > KEYBOARD and AUDIO.
 Root: builds a player into /usr/local/bin, adds a system service that
 reads the keyboards (only \"a key was pressed\" leaves it)." ;;
@@ -279,7 +292,9 @@ Root: /usr/share/sddm/themes/muthur and /etc/sddm.conf.d/muthur.conf.
 Installs SDDM and enables it at boot if no display manager is." ;;
   plymouth) echo "The MU/TH/UR boot and shutdown screen (and disk passphrase prompt).
 Root: /usr/share/plymouth/themes/muthur, sets it as default and
-rebuilds the initramfs." ;;
+rebuilds the initramfs. If Plymouth isn't set up yet, also adds its
+mkinitcpio hook and \"quiet splash\" to the kernel command line
+(backups: *.muthur-bak)." ;;
   limine) echo "The MU/TH/UR Limine boot menu.
 Root: writes to the boot partition (a wallpaper, a block in limine.conf,
 backed up first)." ;;
@@ -289,6 +304,7 @@ backed up first)." ;;
 extra_revert() {
   case "$1" in
   wallpapers) echo "rm -rf ~/.local/share/muthur-shell/wallpapers" ;;
+  labwc) echo "sudo pacman -S labwc && dotfiles/labwc/make-menu.sh" ;;
   keysound) echo "dotfiles/keysound/install-keysound.sh --revert" ;;
   sddm) echo "dotfiles/sddm/install-sddm.sh --revert" ;;
   plymouth) echo "dotfiles/plymouth/install-plymouth.sh --revert" ;;
@@ -300,13 +316,10 @@ extra_revert() {
 extra_unavailable() {
   case "$1" in
   plymouth)
-    # Plymouth runs from the initramfs: mkinitcpio needs its hook, and
-    # the kernel needs `splash` to show it. CachyOS sets both up.
-    if command -v mkinitcpio >/dev/null && ! command -v dracut >/dev/null &&
-      ! grep -hsE '^[[:space:]]*HOOKS=' /etc/mkinitcpio.conf /etc/mkinitcpio.conf.d/*.conf | grep -qw plymouth; then
-      echo "mkinitcpio has no plymouth hook. Add plymouth to HOOKS in /etc/mkinitcpio.conf
-(after systemd or udev, before sd-encrypt or encrypt) and splash to the kernel
-command line, then rerun with --extras plymouth."
+    # The installer sets Plymouth up through mkinitcpio only.
+    if ! command -v mkinitcpio >/dev/null; then
+      echo "The initramfs isn't built by mkinitcpio: set Plymouth up for it yourself,
+then rerun with --extras plymouth."
     fi
     ;;
   limine)
@@ -320,16 +333,37 @@ command line, then rerun with --extras plymouth."
 extra_packages() {
   case "$1" in
   wallpapers) echo "python librsvg" ;;
+  labwc) echo "base-devel git meson ninja scdoc wayland-protocols" ;;
   keysound) echo "gcc pkgconf pipewire python" ;;
   sddm) echo "sddm" ;;
   plymouth) echo "plymouth" ;;
   esac
 }
 
+LABWC_REPO=https://github.com/gaud2029/labwc.git
+LABWC_BRANCH=vertical-titlebar
+
+# makepkg runs as the user; pacman then swaps the package (--ask 4: yes,
+# remove the conflicting stock labwc).
+build_labwc() {
+  local src="${XDG_CACHE_HOME:-$HOME/.cache}/muthur-shell/labwc"
+  if [ -d "$src/.git" ]; then
+    git -C "$src" fetch --depth 1 origin "$LABWC_BRANCH" &&
+      git -C "$src" reset --hard FETCH_HEAD || return
+  else
+    rm -rf "$src"
+    git clone --depth 1 -b "$LABWC_BRANCH" "$LABWC_REPO" "$src" || return
+  fi
+  (cd "$src/dev/pkg" && rm -f ./*.pkg.tar.* && makepkg -sf --noconfirm) || return
+  sudo pacman -U --noconfirm --ask 4 "$src"/dev/pkg/labwc-snapgrid-*.pkg.tar.* || return
+  "$DOTFILES_DIR/labwc/make-menu.sh"
+}
+
 # Called in an `if`, where set -e is off: each step checks for itself.
 extra_run() {
   case "$1" in
   wallpapers) python3 "$REPO_DIR/wallpapers/themed.py" ;;
+  labwc) build_labwc ;;
   keysound) "$DOTFILES_DIR/keysound/install-keysound.sh" ;;
   sddm)
     "$DOTFILES_DIR/sddm/install-sddm.sh" || return
@@ -344,8 +378,6 @@ extra_run() {
     ;;
   plymouth)
     "$DOTFILES_DIR/plymouth/install-plymouth.sh" || return
-    grep -qw splash /proc/cmdline ||
-      echo "note: the kernel command line has no splash: add it in your boot loader's entries to see the theme."
     ;;
   limine) "$DOTFILES_DIR/limine/install-limine.sh" ;;
   esac

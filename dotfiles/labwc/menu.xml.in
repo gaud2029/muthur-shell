@@ -1,3 +1,7 @@
+<!--
+  menu.xml is written from menu.xml.in by make-menu.sh (install.sh runs
+  it): edit menu.xml.in, then rerun make-menu.sh.
+-->
 <openbox_menu>
 <!-- Note: for localization support of menu items "client-menu" has to be removed here -->
 <menu id="client-menu">
@@ -21,9 +25,10 @@
   </item>
   <!--
     Titlebar on the top, left or right of this window. Needs the labwc
-    fork's vertical-titlebar branch; stock labwc logs an error for
-    SetTitlebarPosition and the items do nothing.
+    fork's vertical-titlebar branch: make-menu.sh drops this block for
+    stock labwc, which would report SetTitlebarPosition as a config error.
   -->
+  <!-- muthur:titlebar -->
   <menu id="client-titlebar-menu" label="Titlebar">
     <item label="Top">
       <action name="SetTitlebarPosition" position="top" />
@@ -35,6 +40,7 @@
       <action name="SetTitlebarPosition" position="right" />
     </item>
   </menu>
+  <!-- /muthur:titlebar -->
   <!--
     Any menu with the id "workspaces" will be hidden
     if there is only a single workspace available.
