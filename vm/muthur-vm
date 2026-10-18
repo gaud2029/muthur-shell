@@ -1,0 +1,388 @@
+#!/usr/bin/env bash
+# A throwaway Arch VM to test install.sh on a minimal, plain Arch install
+# (QEMU/KVM, no root needed on the host).
+#
+#   muthur-vm setup           download the Arch cloud image, first boot with
+#                             cloud-init (user muthur, password muthur,
+#                             passwordless sudo, SSH key), update, save it
+#                             as the "fresh" snapshot
+#   muthur-vm start [--headless]
+#                             boot it (a window unless --headless); SSH on
+#                             localhost:2222. MUTHUR_VM_GL=1: virgl (faster,
+#                             but no `shot`)
+#   muthur-vm ssh [CMD...]    a shell, or run CMD, in the VM
+#   muthur-vm push            copy this working tree to ~/muthur-shell in it
+#   muthur-vm shot FILE.png   screenshot the VM's screen (works at any
+#                             stage: boot menu, Plymouth, login, desktop)
+#   muthur-vm keys KEY...     press keys, QEMU names (ret, tab, ctrl-alt-f2)
+#   muthur-vm type TEXT       type TEXT (letters, digits, space, -._/)
+#   muthur-vm stop            power off (forced after 60 s)
+#   muthur-vm reset [SNAP]    stop and roll back to SNAP (default: fresh)
+#   muthur-vm snapshot NAME   stop and save the disk as NAME
+#   muthur-vm snapshots       list them
+#   muthur-vm status          running or not
+#   muthur-vm archinstall     build the other VM, "t420", the way the T420
+#                             gets installed: Arch ISO, then archinstall with
+#                             archinstall/muthur.json (Limine, MBR, NM)
+#
+# Two VMs, picked with MUTHUR_VM (every command above works on either):
+#   cloud  (default) Arch's cloud image: GRUB, systemd-networkd. SSH :2222.
+#   t420   made by `archinstall`: Limine, NetworkManager. SSH :2223.
+# Both boot with SeaBIOS, as the T420 in legacy mode does, on a 1600x900
+# screen like its HD+ panel. State lives in $MUTHUR_VM_DIR
+# (~/.cache/muthur-vm).
+set -euo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DIR="${MUTHUR_VM_DIR:-$HOME/.cache/muthur-vm}"
+IMAGE_URL=https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2
+ISO_URL=https://geo.mirror.pkgbuild.com/iso/latest
+KEY="$DIR/id_ed25519"
+SSH_USER=muthur
+# Which VM; `archinstall` always works on t420.
+[[ ${1:-} == archinstall ]] && MUTHUR_VM=t420
+case "${MUTHUR_VM:-cloud}" in
+cloud)
+  DISK="$DIR/disk.qcow2" QMP="$DIR/qmp.sock" PIDFILE="$DIR/qemu.pid"
+  SSH_PORT="${MUTHUR_VM_SSH_PORT:-2222}"
+  ;;
+t420)
+  DISK="$DIR/t420.qcow2" QMP="$DIR/t420.qmp" PIDFILE="$DIR/t420.pid"
+  SSH_PORT="${MUTHUR_VM_SSH_PORT:-2223}"
+  ;;
+*)
+  echo "MUTHUR_VM: cloud or t420" >&2
+  exit 2
+  ;;
+esac
+MEM="${MUTHUR_VM_MEM:-4G}"
+CPUS="${MUTHUR_VM_CPUS:-4}"
+
+SSH_OPTS=(-i "$KEY" -p "$SSH_PORT" -o StrictHostKeyChecking=no
+  -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=5)
+
+running() { [[ -f $PIDFILE ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; }
+
+vm_ssh() { ssh "${SSH_OPTS[@]}" "$SSH_USER@localhost" "$@"; }
+
+wait_ssh() {
+  local i
+  for ((i = 0; i < ${1:-180}; i++)); do
+    vm_ssh true 2>/dev/null && return 0
+    running || { echo "QEMU exited" >&2; return 1; }
+    sleep 2
+  done
+  echo "no SSH after $((${1:-180} * 2)) s" >&2
+  return 1
+}
+
+# One QMP command (JSON), its reply on stdout.
+qmp() {
+  python3 - "$QMP" "$1" <<'PY'
+import json, socket, sys
+s = socket.socket(socket.AF_UNIX)
+s.connect(sys.argv[1])
+f = s.makefile("rw")
+f.readline()  # greeting
+for cmd in ('{"execute": "qmp_capabilities"}', sys.argv[2]):
+    f.write(cmd + "\n"); f.flush()
+    while True:
+        r = json.loads(f.readline())
+        if "event" not in r:
+            break
+if "error" in r:
+    sys.exit("QMP: " + r["error"]["desc"])
+print(json.dumps(r.get("return", {})))
+PY
+}
+
+# Boots the disk; extra QEMU arguments after the display mode.
+launch() {
+  local display=$1
+  shift
+  # No GL by default: the guest renders with llvmpipe, and `shot` works
+  # (QEMU can't screendump a virgl scanout). MUTHUR_VM_GL=1 for virgl.
+  # 1600x900, the T420 HD+ panel.
+  # The plain VGA card (bochs-drm) keeps its EDID mode whatever the
+  # window's size; virtio-vga would take the window's size as its mode.
+  local gpu=VGA,edid=on,xres=1600,yres=900 view=none
+  [[ $display == window ]] && view=gtk,zoom-to-fit=off
+  if [[ $display == window && ${MUTHUR_VM_GL:-0} == 1 ]]; then
+    gpu=virtio-vga-gl,xres=1600,yres=900 view=gtk,gl=on,zoom-to-fit=off
+  fi
+  local disp=(-display "$view" -device "$gpu")
+  rm -f "$QMP"
+  qemu-system-x86_64 \
+    -name "muthur-vm-${MUTHUR_VM:-cloud}" -enable-kvm -machine q35 -cpu host -smp "$CPUS" -m "$MEM" \
+    -drive file="$DISK",if=virtio,discard=unmap \
+    -nic user,model=virtio-net-pci,hostfwd=tcp:127.0.0.1:"$SSH_PORT"-:22 \
+    "${disp[@]}" \
+    -device virtio-tablet-pci -device virtio-keyboard-pci \
+    -audiodev none,id=snd -device intel-hda -device hda-duplex,audiodev=snd \
+    -qmp unix:"$QMP",server=on,wait=off \
+    -pidfile "$PIDFILE" -daemonize "$@"
+}
+
+stop_vm() {
+  running || return 0
+  vm_ssh sudo systemctl poweroff 2>/dev/null || qmp '{"execute": "system_powerdown"}' >/dev/null || true
+  local i
+  for ((i = 0; i < 60; i++)); do
+    running || { rm -f "$PIDFILE"; return 0; }
+    sleep 1
+  done
+  echo "still up after 60 s: killing QEMU"
+  kill "$(cat "$PIDFILE")"
+  sleep 1
+  rm -f "$PIDFILE"
+}
+
+# The cloud image's console=ttyS0 comes last on the kernel command line,
+# making the serial console the primary one: Plymouth then shows text
+# instead of its theme. A laptop has none.
+no_serial_console() {
+  vm_ssh 'sudo sed -i "/^GRUB_CMDLINE_LINUX_DEFAULT=/ s/ console=ttyS0[^ \"]*//" /etc/default/grub &&
+    sudo grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1'
+}
+
+setup() {
+  mkdir -p "$DIR"
+  if running; then echo "the VM is running: muthur-vm stop first" >&2; exit 1; fi
+  [[ -f $KEY ]] || ssh-keygen -q -t ed25519 -N "" -C muthur-vm -f "$KEY"
+
+  echo "Downloading the Arch cloud image..."
+  curl -fL --progress-bar -o "$DIR/cloudimg.qcow2" "$IMAGE_URL"
+  curl -fsSL -o "$DIR/cloudimg.qcow2.SHA256" "$IMAGE_URL.SHA256"
+  (cd "$DIR" && sed 's/ .*/  cloudimg.qcow2/' cloudimg.qcow2.SHA256 | sha256sum -c --quiet)
+
+  # A full copy rather than an overlay: snapshots live in the one file.
+  rm -f "$DISK"
+  qemu-img convert -O qcow2 "$DIR/cloudimg.qcow2" "$DISK"
+  qemu-img resize -q "$DISK" 40G
+
+  # cloud-init's NoCloud seed, served over HTTP to the first boot.
+  local seed="$DIR/seed"
+  mkdir -p "$seed"
+  printf 'instance-id: muthur-vm\nlocal-hostname: muthur-vm\n' > "$seed/meta-data"
+  : > "$seed/vendor-data"
+  cat > "$seed/user-data" <<EOF
+#cloud-config
+users:
+  - name: muthur
+    groups: [wheel]
+    shell: /bin/bash
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    lock_passwd: false
+    ssh_authorized_keys:
+      - $(cat "$KEY.pub")
+chpasswd:
+  expire: false
+  users:
+    - {name: muthur, password: muthur, type: text}
+ssh_pwauth: false
+EOF
+  serve_seed "$seed"
+  echo "First boot (cloud-init)..."
+  launch headless -smbios "$SEED_ARG"
+  wait_ssh
+  kill "$SEED_HTTP" 2>/dev/null || true
+  trap - EXIT
+
+  echo "Updating, then turning cloud-init off (a plain install has none)..."
+  vm_ssh 'sudo cloud-init status --wait >/dev/null; sudo pacman -Syu --noconfirm && sudo touch /etc/cloud/cloud-init.disabled'
+  no_serial_console
+  stop_vm
+  qemu-img snapshot -d fresh "$DISK" 2>/dev/null || true
+  qemu-img snapshot -c fresh "$DISK"
+  echo "Ready: snapshot \"fresh\". muthur-vm start"
+}
+
+# Serves the cloud-init NoCloud seed in $1 over HTTP for one boot;
+# prints the -smbios argument that points the guest at it.
+SEED_HTTP=""
+serve_seed() {
+  local port
+  port=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1])')
+  python3 -m http.server --bind 127.0.0.1 --directory "$1" "$port" >/dev/null 2>&1 &
+  SEED_HTTP=$!
+  trap 'kill $SEED_HTTP 2>/dev/null || true' EXIT
+  SEED_ARG="type=1,serial=ds=nocloud;s=http://10.0.2.2:$port/"
+}
+
+fetch_iso() {
+  [[ -f $DIR/archlinux.iso ]] && return 0
+  echo "Downloading the Arch ISO..."
+  local name
+  curl -fsSL -o "$DIR/iso.sha256" "$ISO_URL/sha256sums.txt"
+  name=$(grep -o 'archlinux-[0-9.]*-x86_64.iso' "$DIR/iso.sha256" | head -1)
+  curl -fL --progress-bar -o "$DIR/archlinux.iso.part" "$ISO_URL/$name"
+  (cd "$DIR" && grep " $name\$" iso.sha256 | sed "s/$name/archlinux.iso.part/" | sha256sum -c --quiet)
+  mv "$DIR/archlinux.iso.part" "$DIR/archlinux.iso"
+}
+
+# What the T420 install does, minus the questions: the ISO, archinstall
+# with the repo's config, plus what only the VM needs (the disk, the user
+# and password a person would type, SSH and passwordless sudo for these
+# scripts).
+archinstall_vm() {
+  mkdir -p "$DIR"
+  if running; then echo "the t420 VM is running: MUTHUR_VM=t420 muthur-vm stop first" >&2; exit 1; fi
+  [[ -f $KEY ]] || ssh-keygen -q -t ed25519 -N "" -C muthur-vm -f "$KEY"
+  fetch_iso
+
+  rm -f "$DISK"
+  qemu-img create -q -f qcow2 "$DISK" 40G
+
+  local seed="$DIR/seed-iso"
+  mkdir -p "$seed"
+  printf 'instance-id: muthur-iso\n' > "$seed/meta-data"
+  : > "$seed/vendor-data"
+  cat > "$seed/user-data" <<EOF
+#cloud-config
+write_files:
+  - path: /root/.ssh/authorized_keys
+    permissions: "0600"
+    content: |
+      $(cat "$KEY.pub")
+EOF
+  serve_seed "$seed"
+  echo "Booting the Arch ISO..."
+  launch headless -cdrom "$DIR/archlinux.iso" -boot d -smbios "$SEED_ARG"
+  SSH_USER=root
+  wait_ssh 240
+  kill "$SEED_HTTP" 2>/dev/null || true
+  trap - EXIT
+
+  python3 - "$REPO/archinstall/muthur.json" "$(cat "$KEY.pub")" > "$DIR/archinstall-vm.json" <<'PY'
+import json, sys
+cfg = json.load(open(sys.argv[1]))
+key = sys.argv[2]
+mib = lambda v, u="MiB": {"sector_size": {"unit": "B", "value": 512}, "unit": u, "value": v}
+part = lambda oid, fs, start, size, mnt, flags: {
+    "obj_id": oid, "status": "create", "type": "primary", "fs_type": fs,
+    "start": start, "size": size, "mountpoint": mnt, "flags": flags,
+    "mount_options": [], "dev_path": None, "btrfs": []}
+cfg["disk_config"] = {"config_type": "default_layout", "device_modifications": [{
+    "device": "/dev/vda", "wipe": True, "partitions": [
+        part("boot", "fat32", mib(1), mib(1024), "/boot", ["boot"]),
+        part("root", "ext4", mib(1025), mib(38, "GiB"), "/", []),
+    ]}]}
+cfg["packages"] = cfg.get("packages", []) + ["openssh"]
+cfg["services"] = cfg.get("services", []) + ["sshd"]
+cfg["custom_commands"] = cfg.get("custom_commands", []) + [
+    "install -d -m700 -o muthur -g muthur /home/muthur/.ssh",
+    f"echo '{key}' > /home/muthur/.ssh/authorized_keys",
+    "chown muthur:muthur /home/muthur/.ssh/authorized_keys && chmod 600 /home/muthur/.ssh/authorized_keys",
+    "echo 'muthur ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/99-muthur-vm",
+]
+print(json.dumps(cfg, indent=2))
+PY
+  printf '{"users": [{"username": "muthur", "!password": "muthur", "sudo": true}]}\n' > "$DIR/archinstall-creds.json"
+  vm_ssh 'cat > /root/config.json' < "$DIR/archinstall-vm.json"
+  vm_ssh 'cat > /root/creds.json' < "$DIR/archinstall-creds.json"
+
+  echo "Running archinstall (log: $DIR/archinstall.log)..."
+  if ! vm_ssh 'archinstall --config /root/config.json --creds /root/creds.json --silent' > "$DIR/archinstall.log" 2>&1; then
+    tail -30 "$DIR/archinstall.log"
+    echo "archinstall failed; the ISO is still up: MUTHUR_VM=t420 muthur-vm ssh (as root)" >&2
+    exit 1
+  fi
+  vm_ssh poweroff || true
+  local i
+  for ((i = 0; i < 60; i++)); do running || break; sleep 1; done
+  running && kill "$(cat "$PIDFILE")"
+  rm -f "$PIDFILE"
+
+  echo "First boot from the disk..."
+  SSH_USER=muthur
+  launch headless
+  wait_ssh
+  stop_vm
+  qemu-img snapshot -d fresh "$DISK" 2>/dev/null || true
+  qemu-img snapshot -c fresh "$DISK"
+  echo "Ready: snapshot \"fresh\". MUTHUR_VM=t420 muthur-vm start"
+}
+
+push() {
+  # The working tree as it is, uncommitted changes included, minus what
+  # git ignores.
+  (cd "$REPO" && git ls-files -co --exclude-standard -z | tar --null -T - -czf -) |
+    vm_ssh 'rm -rf ~/muthur-shell && mkdir ~/muthur-shell && tar -xzf - -C ~/muthur-shell'
+  echo "Pushed $REPO to ~/muthur-shell"
+}
+
+# QEMU key names for one character, for `type`.
+char_key() {
+  case "$1" in
+  [a-z0-9]) echo "$1" ;;
+  [A-Z]) echo "shift-${1,,}" ;;
+  " ") echo spc ;;
+  -) echo minus ;;
+  .) echo dot ;;
+  _) echo shift-minus ;;
+  /) echo slash ;;
+  *) echo "can't type '$1'" >&2; return 1 ;;
+  esac
+}
+
+send_key() {
+  local keys="" k
+  IFS=- read -ra parts <<<"$1"
+  for k in "${parts[@]}"; do
+    keys+="${keys:+, }{\"type\": \"qcode\", \"data\": \"$k\"}"
+  done
+  qmp "{\"execute\": \"send-key\", \"arguments\": {\"keys\": [$keys]}}" >/dev/null
+}
+
+cmd="${1:-}"
+shift || true
+case "$cmd" in
+setup)
+  [[ ${MUTHUR_VM:-cloud} == cloud ]] || { echo "the t420 VM is made by: muthur-vm archinstall" >&2; exit 2; }
+  setup
+  ;;
+archinstall) archinstall_vm ;;
+start)
+  running && { echo "already running"; exit 0; }
+  [[ -f $DISK ]] || { echo "no VM yet: muthur-vm setup (or archinstall)" >&2; exit 1; }
+  if [[ ${1:-} == --headless ]]; then launch headless; else launch window; fi
+  wait_ssh && echo "Up: muthur-vm ssh"
+  ;;
+ssh) vm_ssh "$@" ;;
+push) push ;;
+shot)
+  [[ -n ${1:-} ]] || { echo "usage: muthur-vm shot FILE.png" >&2; exit 2; }
+  out=$(realpath -m "$1")
+  qmp "{\"execute\": \"screendump\", \"arguments\": {\"filename\": \"$out\", \"format\": \"png\"}}" >/dev/null
+  echo "$out"
+  ;;
+keys)
+  for k in "$@"; do send_key "$k"; sleep 0.1; done
+  ;;
+type)
+  text="$*"
+  for ((i = 0; i < ${#text}; i++)); do
+    send_key "$(char_key "${text:i:1}")"
+    sleep 0.05
+  done
+  ;;
+stop) stop_vm ;;
+reset)
+  stop_vm
+  qemu-img snapshot -a "${1:-fresh}" "$DISK"
+  echo "Disk back to \"${1:-fresh}\"."
+  ;;
+snapshot)
+  [[ -n ${1:-} ]] || { echo "usage: muthur-vm snapshot NAME" >&2; exit 2; }
+  stop_vm
+  qemu-img snapshot -d "$1" "$DISK" 2>/dev/null || true
+  qemu-img snapshot -c "$1" "$DISK"
+  echo "Saved \"$1\"."
+  ;;
+snapshots) qemu-img snapshot -l "$DISK" ;;
+status) running && echo "running (pid $(cat "$PIDFILE"), SSH localhost:$SSH_PORT)" || echo "stopped" ;;
+*)
+  sed -n '2,35p' "$0"
+  exit 1
+  ;;
+esac
