@@ -24,6 +24,9 @@
   muthur snapshot restore NAME       put them all back
   muthur snapshot list | delete NAME
 
+  muthur doctor [--json]             check the install: packages, services,
+                                     links, the shell, labwc; how to fix each
+
 Exit codes: 0 ok, 1 bad command, key or value, 2 the shell isn't running.
 
 Tab completion covers commands, settings and their values.
@@ -35,7 +38,9 @@ Tab completion covers commands, settings and their values.
 
 import json
 import os
+import re
 import shlex
+import shutil
 import subprocess
 import sys
 import time
@@ -47,7 +52,7 @@ CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "muthur
 SNAPSHOTS = STATE / "snapshots"
 
 COMMANDS = ["get", "set", "toggle", "list", "lock", "focus", "keyboard",
-            "notifications", "osd", "updates", "ui", "snapshot", "help"]
+            "notifications", "osd", "updates", "ui", "snapshot", "doctor", "help"]
 OSD = {"volume-up": "volumeUp", "volume-down": "volumeDown", "mute": "mute",
        "mic-mute": "micMute", "brightness-up": "brightnessUp", "brightness-down": "brightnessDown"}
 
@@ -227,6 +232,299 @@ def cmd_snapshot(args):
         path.unlink()
 
 
+# --- Doctor -------------------------------------------------------------
+#
+# `muthur doctor` (GitHub issue #47): what the shell relies on, each
+# problem with the command that fixes it. The packages and links come
+# from install.sh itself, so a package or config added there is checked
+# here with no change. Works with the shell down: that's when it's most
+# needed.
+
+def repo_dir():
+    """The muthur-shell checkout: this script lives in its dotfiles/bin
+    (through the ~/.local/bin link); else wherever quickshell/muthur
+    points."""
+    for candidate in (Path(__file__).resolve().parents[2],
+                      (CONFIG_HOME / "quickshell/muthur").resolve().parents[2]):
+        if (candidate / "install.sh").is_file() and (candidate / "dotfiles").is_dir():
+            return candidate
+    return None
+
+
+CONFIG_HOME = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+
+# Same as ci/load-test.sh: errors, not the warnings about a missing
+# service.
+QML_ERRORS = re.compile(r"Failed to load configuration|TypeError|ReferenceError|SyntaxError|is not a type"
+                        r"|is not defined|Cannot assign|Unable to assign|Cannot read property|not a function"
+                        r"|Type error|Binding loop")
+
+
+def install_array(text, name):
+    """The entries of a bash array in install.sh, comments dropped."""
+    m = re.search(r"^" + name + r"=\(\n(.*?)^\)", text, re.S | re.M)
+    if not m:
+        return []
+    items = []
+    for line in m.group(1).splitlines():
+        line = line.split("#", 1)[0].strip()
+        if line:
+            items.extend(shlex.split(line))
+    return items
+
+
+def run(cmd):
+    """(exit code, stdout) of a command; 127 when it isn't installed."""
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        return p.returncode, p.stdout.strip()
+    except FileNotFoundError:
+        return 127, ""
+    except subprocess.TimeoutExpired:
+        return 124, ""
+
+
+def unit_state(unit, user=False):
+    """(enabled, active) of a systemd unit."""
+    base = ["systemctl"] + (["--user"] if user else [])
+    return (run(base + ["is-enabled", "--quiet", unit])[0] == 0,
+            run(base + ["is-active", "--quiet", unit])[0] == 0)
+
+
+class Doctor:
+    def __init__(self):
+        self.results = []
+        self.section = ""
+
+    def add(self, level, message, fix=""):
+        self.results.append({"section": self.section, "level": level, "message": message, "fix": fix})
+
+    def ok(self, message):
+        self.add("ok", message)
+
+    def warn(self, message, fix=""):
+        self.add("warn", message, fix)
+
+    def fail(self, message, fix=""):
+        self.add("fail", message, fix)
+
+    def info(self, message, fix=""):
+        self.add("info", message, fix)
+
+    # --- the checks, one section each
+
+    def packages(self, repo):
+        self.section = "packages"
+        wanted = install_array((repo / "install.sh").read_text(), "PACKAGES")
+        if not wanted:
+            self.fail("couldn't read PACKAGES from install.sh")
+            return
+        # -T honors provides: labwc-snapgrid counts as labwc.
+        code, out = run(["pacman", "-T", *wanted])
+        if code == 127 and not out:
+            self.fail("pacman not found: install.sh and doctor are for Arch and CachyOS")
+            return
+        missing = out.split()
+        # Installed some other way (a binary in /usr/local/bin...): works,
+        # but pacman won't update it.
+        elsewhere = [p for p in missing if shutil.which(p)]
+        missing = [p for p in missing if p not in elsewhere]
+        for p in elsewhere:
+            self.warn(f"{p} isn't from pacman ({shutil.which(p)}): it won't be updated with the system",
+                      f"sudo pacman -S {p}  (then remove {shutil.which(p)})")
+        if missing:
+            self.fail("missing: " + " ".join(missing), "sudo pacman -S --needed " + " ".join(missing))
+        elif not elsewhere:
+            self.ok(f"the {len(wanted)} packages install.sh lists are installed")
+        else:
+            self.ok(f"the other {len(wanted) - len(elsewhere)} packages install.sh lists are installed")
+
+    def services(self):
+        self.section = "services"
+        system = [("NetworkManager.service", "[SYS] > NETWORK"), ("bluetooth.service", "[SYS] > BT"),
+                  ("upower.service", "[POW]"), ("power-profiles-daemon.service", "[POW]'s profiles")]
+        for unit, what in system:
+            enabled, active = unit_state(unit)
+            if active:
+                self.ok(f"{unit} running")
+            elif unit == "upower.service" or unit == "power-profiles-daemon.service":
+                # D-Bus activated: running on demand is enough.
+                self.warn(f"{unit} not running ({what})", f"sudo systemctl start {unit}")
+            else:
+                self.fail(f"{unit} not running ({what})", f"sudo systemctl enable --now {unit}")
+        others = [u for u in ("iwd", "systemd-networkd", "dhcpcd", "netctl", "connman")
+                  if unit_state(u + ".service")[1]]
+        if others and unit_state("NetworkManager.service")[1]:
+            self.warn("NetworkManager runs alongside " + ", ".join(others) + ": they fight over the interfaces",
+                      "sudo systemctl disable --now " + " ".join(u + ".service" for u in others))
+        for unit in ("pipewire.service", "wireplumber.service", "pipewire-pulse.service"):
+            if unit_state(unit, user=True)[1]:
+                self.ok(f"{unit} running (user)")
+            else:
+                self.fail(f"{unit} not running ([SYS] > AUDIO)", f"systemctl --user enable --now {unit}")
+
+    def links(self, repo):
+        self.section = "links"
+        dotfiles = repo / "dotfiles"
+        pairs = install_array((repo / "install.sh").read_text(), "LINKS")
+        if not pairs:
+            self.fail("couldn't read LINKS from install.sh")
+            return
+        bad = 0
+        for pair in pairs:
+            src, dest = pair.split(":", 1)
+            dest = Path.home() / dest[2:] if dest.startswith("~/") else CONFIG_HOME / dest
+            shown = str(dest).replace(str(Path.home()), "~", 1)
+            if not dest.is_symlink():
+                bad += 1
+                if dest.exists():
+                    self.fail(f"{shown} is a plain {'directory' if dest.is_dir() else 'file'}, not the repo's",
+                              f"{repo}/install.sh --no-packages  (backs it up first)")
+                else:
+                    self.fail(f"{shown} is missing", f"{repo}/install.sh --no-packages")
+            elif not dest.exists():
+                bad += 1
+                self.fail(f"{shown} is a broken link", f"{repo}/install.sh --no-packages")
+            elif dest.resolve() != (dotfiles / src).resolve():
+                bad += 1
+                self.warn(f"{shown} points at {dest.resolve()}, not this checkout",
+                          f"{repo}/install.sh --no-packages")
+        if not bad:
+            self.ok(f"the {len(pairs)} configs install.sh links point into {repo}")
+        bindir = str(Path.home() / ".local/bin")
+        if bindir not in os.environ.get("PATH", "").split(":"):
+            self.warn("~/.local/bin isn't on PATH: the muthur command only runs by its full path",
+                      "add it in ~/.bashrc (the repo's bashrc does)")
+        for gtk in ("gtk-3.0", "gtk-4.0"):
+            css = CONFIG_HOME / gtk / "gtk.css"
+            if css.is_file() and "Generated by ThemeStore.qml" not in css.read_text(errors="replace"):
+                self.warn(f"~/.config/{gtk}/gtk.css wasn't written by the shell: it will be replaced on the next theme switch",
+                          f"{repo}/install.sh --no-packages  (backs it up first)")
+
+    def shell(self):
+        self.section = "shell"
+        if run(["pgrep", "-x", "quickshell"])[0] != 0:
+            self.fail("quickshell isn't running", "quickshell -c muthur  (labwc's autostart starts it)")
+            return
+        try:
+            ipc("muthur", "list")
+            self.ok("quickshell running, answering over IPC")
+        except NotRunning as e:
+            self.fail(f"quickshell runs but doesn't answer: {e}", "pkill -x quickshell; quickshell -c muthur &")
+            return
+        code, log = run(["quickshell", "log", "-c", "muthur", "-t", "2000"])
+        if code != 0:
+            self.info("couldn't read the shell's log")
+            return
+        # Only since the last (re)load: earlier errors may be fixed.
+        lines = log.splitlines()
+        last = max((i for i, l in enumerate(lines) if "Configuration Loaded" in l), default=0)
+        errors = [l for l in lines[last:] if QML_ERRORS.search(l)]
+        if errors:
+            self.fail(f"{len(errors)} QML error(s) since the last load, e.g. "
+                      + re.sub(r"\x1b\[[0-9;]*m", "", errors[0]).strip(),
+                      "quickshell log -c muthur")
+        else:
+            self.ok("no QML errors since the last load")
+
+    def labwc(self, repo):
+        self.section = "labwc"
+        labwc = shutil.which("labwc")
+        if not labwc:
+            self.fail("labwc isn't installed", "sudo pacman -S labwc")
+            return
+        patched = run(["pacman", "-Qq", "labwc-snapgrid"])[0] == 0
+        self.ok("patched labwc (labwc-snapgrid): grid, angled corners" if patched
+                else "stock labwc (the patched one is optional: ./install.sh --extras labwc)")
+        has_titlebar = b"SetTitlebarPosition" in Path(labwc).read_bytes()
+        menu = repo / "dotfiles/labwc/menu.xml"
+        if not menu.is_file():
+            self.warn("labwc/menu.xml is missing: labwc falls back to its default window menu",
+                      f"{repo}/dotfiles/labwc/make-menu.sh")
+        elif ("SetTitlebarPosition" in menu.read_text()) != has_titlebar:
+            self.warn("menu.xml doesn't match this labwc build (the Titlebar entry)",
+                      f"{repo}/dotfiles/labwc/make-menu.sh")
+        else:
+            self.ok("menu.xml matches this labwc build")
+        rc = repo / "dotfiles/labwc/rc.xml"
+        if rc.is_file() and "call launcher toggle" not in rc.read_text():
+            self.warn("Super+Space doesn't open the shell's launcher in rc.xml")
+
+    def generated(self, repo):
+        self.section = "generated"
+        files = ["alacritty/theme/muthur.toml", "nvim/colors/muthur.lua", "fuzzel/colors.ini",
+                 "labwc/themerc-override", "btop/themes/muthur.theme"]
+        missing = [f for f in files if not (repo / "dotfiles" / f).is_file()]
+        if missing:
+            self.warn("not generated yet: " + ", ".join(missing),
+                      "start the shell, or pick a preset: muthur set look.preset \"$(muthur get look.preset)\"")
+        else:
+            self.ok("theme files generated for alacritty, Neovim, fuzzel, labwc and btop")
+
+    def extras(self):
+        self.section = "extras"
+        wallpapers = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "muthur-shell/wallpapers"
+        self.info("themed wallpapers: " + ("installed" if wallpapers.is_dir() else "not installed (--extras wallpapers)"))
+        if Path("/usr/local/bin/muthur-keysound").exists():
+            enabled, active = unit_state("muthur-keysound-input.service")
+            if active:
+                self.info("typing sounds: installed, feed service running")
+            else:
+                self.warn("typing sounds installed but muthur-keysound-input.service isn't running",
+                          "sudo systemctl enable --now muthur-keysound-input.service")
+        else:
+            self.info("typing sounds: not installed (--extras keysound)")
+        if Path("/usr/share/sddm/themes/muthur").is_dir():
+            self.info("login screen: installed" + ("" if unit_state("sddm.service")[0] else " (SDDM not enabled)"))
+        else:
+            self.info("login screen: not installed (--extras sddm)")
+        code, theme = run(["plymouth-set-default-theme"])
+        self.info("boot screen: " + ("installed" if code == 0 and theme == "muthur"
+                                     else "not installed (--extras plymouth)"))
+        # limine.conf is on the root-only ESP.
+        if run(["pacman", "-Qq", "limine"])[0] == 0:
+            self.info("boot menu: Limine installed (the theme needs root to check: --extras limine)")
+
+    def run_all(self):
+        repo = repo_dir()
+        self.section = "repo"
+        if not repo:
+            self.fail("couldn't find the muthur-shell checkout (from ~/.local/bin/muthur or ~/.config/quickshell/muthur)",
+                      "git clone https://github.com/gaud2029/muthur-shell && muthur-shell/install.sh")
+            return
+        self.ok(str(repo))
+        self.packages(repo)
+        self.services()
+        self.links(repo)
+        self.shell()
+        self.labwc(repo)
+        self.generated(repo)
+        self.extras()
+
+
+def cmd_doctor(args):
+    if args not in ([], ["--json"]):
+        fail("usage: muthur doctor [--json]")
+    doctor = Doctor()
+    doctor.run_all()
+    failed = any(r["level"] == "fail" for r in doctor.results)
+    if args:
+        print(json.dumps(doctor.results, indent=2))
+    else:
+        section = None
+        for r in doctor.results:
+            if r["section"] != section:
+                section = r["section"]
+                print(("\n" if r is not doctor.results[0] else "") + section.upper())
+            print(f"  {r['level']:<5} {r['message']}")
+            if r["fix"]:
+                print(f"        fix: {r['fix']}")
+        counts = {lvl: sum(r["level"] == lvl for r in doctor.results) for lvl in ("fail", "warn")}
+        print(f"\n{counts['fail']} to fix, {counts['warn']} warning(s)" if failed or counts["warn"]
+              else "\nall good")
+    sys.exit(1 if failed else 0)
+
+
 def main(argv):
     if not argv or argv[0] in ("help", "-h", "--help"):
         print(__doc__.strip())
@@ -252,7 +550,7 @@ def main(argv):
         if len(args) != 1 or args[0] not in OSD:
             fail("usage: muthur osd " + "|".join(OSD))
         call("osd", OSD[args[0]])
-    elif cmd in ("get", "set", "toggle", "list", "focus", "ui", "snapshot"):
+    elif cmd in ("get", "set", "toggle", "list", "focus", "ui", "snapshot", "doctor"):
         globals()["cmd_" + cmd](args)
     else:
         fail(f"{' '.join(argv)}: unknown command (muthur help)")
