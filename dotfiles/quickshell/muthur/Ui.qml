@@ -7,10 +7,10 @@ import Quickshell
 Singleton {
     id: root
 
-    // drawer, sys:<tab>, ai:<tab>, calendar, battery, updates, launcher
+    // drawer, sys:<tab>, ai:<tab>, calendar, battery, updates, monitor, launcher
     readonly property var sysTabs: ({ network: "wifi", bt: "bluetooth", audio: "audio", display: "display", keyboard: "keyboard", look: "look" })
     readonly property var aiTabs: ["claude", "codex"]
-    readonly property var targets: ["drawer", "calendar", "battery", "updates", "launcher"]
+    readonly property var targets: ["drawer", "calendar", "battery", "updates", "monitor", "launcher"]
         .concat(Object.keys(sysTabs).map(t => "sys:" + t))
         .concat(aiTabs.map(t => "ai:" + t))
 

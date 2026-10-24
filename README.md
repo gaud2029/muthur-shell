@@ -205,6 +205,15 @@ From the end of the bar:
   the list (important ones first, marked `!`), `RECHECK`, and `UPGRADE`:
   `sudo pacman -Syu` in a terminal of its own, which asks the shell to
   check again when it's done. Nothing is installed without that click.
+- **`[MON]`** — CPU load as a bar under the label, green to red as it
+  climbs; over 80°C the label alternates with the hottest temperature,
+  in red. Opens the system monitor: CPU (total, frequency, load average,
+  a bar per core), memory, cache and swap, the temperature of each sensor
+  (the hottest reading of each hwmon device: CPU, GPU, NVMe...), disks
+  (one line per device, so btrfs subvolumes count once), the busiest
+  processes by CPU and by memory, and `BTOP` for the full picture. Read
+  from `/proc` and `/sys`: every 2 s while the panel is open, every 5 s
+  for the button alone. `muthur set monitor.button off` hides it.
 - **Clock** — opens a month calendar with today highlighted.
 - **`[AI]`** — Claude Code / Codex usage (below). With a default agent
   chosen, its 5-hour session quota shows as a bar under the label, like
@@ -472,7 +481,7 @@ muthur lock | focus [on|off] | keyboard next | notifications clear
 muthur osd volume-up                # what the media keys call
 muthur updates                      # pending updates; updates check | upgrade
 
-muthur ui open sys:look             # open a popup (drawer, sys:<tab>, ai:<tab>, calendar, battery, updates, launcher)
+muthur ui open sys:look             # open a popup (drawer, sys:<tab>, ai:<tab>, calendar, battery, updates, monitor, launcher)
 muthur ui close
 
 muthur snapshot save mine           # keep every setting...
