@@ -195,6 +195,16 @@ From the end of the bar:
   the percentage once charge drops under 80% and the bar blinks under 50%.
   Opens the power panel: charge state, battery size, cycle count, time to
   empty/full and power-profile switching.
+- **`[UPD]`** — pending package updates, the count under the label;
+  hidden when there are none. In the focus color when a kernel, systemd,
+  mesa, pipewire, Qt, labwc, quickshell, Limine, Plymouth or SDDM update
+  is among them, or when a new kernel waits for a reboot (`RBT`). Checked
+  with `checkupdates` (pacman-contrib), which syncs a temporary copy of
+  the databases: no root, and the real ones are never left half-synced.
+  A minute after login, then hourly, after a resume, and on demand. Opens
+  the list (important ones first, marked `!`), `RECHECK`, and `UPGRADE`:
+  `sudo pacman -Syu` in a terminal of its own, which asks the shell to
+  check again when it's done. Nothing is installed without that click.
 - **Clock** — opens a month calendar with today highlighted.
 - **`[AI]`** — Claude Code / Codex usage (below). With a default agent
   chosen, its 5-hour session quota shows as a bar under the label, like
@@ -254,8 +264,9 @@ prompt's corner lists them:
   (`:display.nightlight `) or, for an on/off one, toggles it; then the
   values are listed (`:look.preset tr` → `tron`...), and Enter sets the
   selected one. A refused value shows in the status line.
-- **`!`** for the session: `LOCK`, `LOGOUT`, `SUSPEND`, `REBOOT`,
-  `POWER OFF` (`!sus`...). As in the drawer, everything but LOCK asks
+- **`!`** for the session: `UPDATE` (as `[UPD]`'s `UPGRADE`), `LOCK`,
+  `LOGOUT`, `SUSPEND`, `REBOOT`, `POWER OFF` (`!sus`...). As in the
+  drawer, everything but UPDATE (pacman asks itself) and LOCK asks
   `CONFIRM …?` first: a second Enter within 4 seconds does it.
 
 Applications with `Terminal=true` (yazi, btop...) open in alacritty.
@@ -459,8 +470,9 @@ muthur toggle notifications.dnd
 
 muthur lock | focus [on|off] | keyboard next | notifications clear
 muthur osd volume-up                # what the media keys call
+muthur updates                      # pending updates; updates check | upgrade
 
-muthur ui open sys:look             # open a popup (drawer, sys:<tab>, ai:<tab>, calendar, battery)
+muthur ui open sys:look             # open a popup (drawer, sys:<tab>, ai:<tab>, calendar, battery, updates, launcher)
 muthur ui close
 
 muthur snapshot save mine           # keep every setting...

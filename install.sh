@@ -116,6 +116,7 @@ PACKAGES=(
   grim           # screenshots (Super+Shift+3/4)
   slurp          # region picker for the Super+Shift+4 screenshots
   wl-clipboard   # wl-copy, for Ctrl+Super+Shift+4 to the clipboard
+  pacman-contrib # checkupdates, for [UPD] (pending updates, no root needed)
   neovim         # dotfiles/nvim (LazyVim) + the generated colorscheme
   noto-fonts     # Noto Sans Mono, the shell's face
   networkmanager # [SYS] > NETWORK

@@ -13,6 +13,9 @@
   muthur osd ACTION                  what the media keys call: volume-up,
                                      volume-down, mute, mic-mute,
                                      brightness-up, brightness-down
+  muthur updates [list]              pending package updates, as checkupdates
+  muthur updates check               check again (in the background)
+  muthur updates upgrade             sudo pacman -Syu in a terminal
 
   muthur ui open TARGET [--screen NAME]   open a popup (drawer, sys:look, ...)
   muthur ui close                         close every popup
@@ -44,7 +47,7 @@ CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "muthur
 SNAPSHOTS = STATE / "snapshots"
 
 COMMANDS = ["get", "set", "toggle", "list", "lock", "focus", "keyboard",
-            "notifications", "osd", "ui", "snapshot", "help"]
+            "notifications", "osd", "updates", "ui", "snapshot", "help"]
 OSD = {"volume-up": "volumeUp", "volume-down": "volumeDown", "mute": "mute",
        "mic-mute": "micMute", "brightness-up": "brightnessUp", "brightness-down": "brightnessDown"}
 
@@ -236,9 +239,15 @@ def main(argv):
         ("lock",): ("lock", "lock"),
         ("keyboard", "next"): ("keyboard", "next"),
         ("notifications", "clear"): ("notifications", "clear"),
+        ("updates", "check"): ("updates", "check"),
+        ("updates", "upgrade"): ("updates", "upgrade"),
     }
     if tuple(argv) in simple:
         call(*simple[tuple(argv)])
+    elif cmd == "updates" and args in ([], ["list"]):
+        out = call("updates", "list")
+        if out:
+            print(out)
     elif cmd == "osd":
         if len(args) != 1 or args[0] not in OSD:
             fail("usage: muthur osd " + "|".join(OSD))
@@ -298,6 +307,7 @@ def candidates(words):
         return []
     if n == 1:
         return {"focus": ["on", "off", "toggle"], "keyboard": ["next"], "notifications": ["clear"],
+                "updates": ["list", "check", "upgrade"],
                 "osd": list(OSD), "ui": ["open", "close"],
                 "snapshot": ["save", "restore", "list", "delete"]}.get(cmd, [])
     if cmd == "ui" and words[1] == "open":
