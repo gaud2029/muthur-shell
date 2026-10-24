@@ -208,7 +208,7 @@ PanelWindow {
                     model: [
                         { prefix: "=", title: "CALCULATE", lines: ["= 2^10 / 3      = sqrt(2) * pi      = ln(10)", "+ - * / % ^ ( )  sqrt abs round floor ceil sin cos tan log ln exp min max pi e", "ENTER COPIES THE RESULT"] },
                         { prefix: ":", title: "SETTINGS", lines: [":night            lists the keys and their value", ":look.preset tron   sets one (the muthur set settings)", "ENTER COMPLETES A KEY, OR TOGGLES AN ON/OFF ONE"] },
-                        { prefix: "!", title: "SESSION", lines: ["!lock   !logout   !suspend   !reboot   !power", "ENTER TWICE TO CONFIRM (BUT LOCK)"] }
+                        { prefix: "!", title: "SESSION", lines: ["!update   !lock   !logout   !suspend   !reboot   !power", "ENTER TWICE TO CONFIRM (BUT UPDATE AND LOCK)"] }
                     ]
 
                     Item {

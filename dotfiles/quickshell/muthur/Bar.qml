@@ -5,7 +5,7 @@ import Quickshell.Wayland
 PanelWindow {
     id: root
 
-    property var popupPanels: [controlPanel, aiPanel, calendarPanel, batteryPanel]
+    property var popupPanels: [controlPanel, aiPanel, calendarPanel, batteryPanel, updatesPanel]
 
     readonly property string position: theme.barPosition
     readonly property bool vertical: theme.vertical
@@ -189,6 +189,12 @@ PanelWindow {
                 }
             }
 
+            // Pending package updates; hidden when there are none.
+            UpdatesButton {
+                selected: updatesPanel.visible
+                onClicked: root.togglePanel(updatesPanel)
+            }
+
             BatteryButton {
                 selected: batteryPanel.visible
                 onClicked: root.togglePanel(batteryPanel)
@@ -255,6 +261,11 @@ PanelWindow {
         screen: root.screen
     }
 
+    UpdatesPanel {
+        id: updatesPanel
+        screen: root.screen
+    }
+
     Drawer {
         id: drawer
         screen: root.screen
@@ -273,7 +284,7 @@ PanelWindow {
                 return;
             }
             const [panel, tab] = target.split(":");
-            const popup = { sys: controlPanel, ai: aiPanel, calendar: calendarPanel, battery: batteryPanel }[panel];
+            const popup = { sys: controlPanel, ai: aiPanel, calendar: calendarPanel, battery: batteryPanel, updates: updatesPanel }[panel];
             if (tab)
                 popup.currentTab = panel === "sys" ? Ui.sysTabs[tab] : tab;
             if (!popup.visible)

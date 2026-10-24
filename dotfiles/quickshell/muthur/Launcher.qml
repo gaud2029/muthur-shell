@@ -10,7 +10,8 @@ import Quickshell.Wayland
 // was typed as a shell command when nothing else is wanted — Enter on
 // `echo test > test.txt` runs it, with bash in $HOME. A prefix switches
 // mode: `=` calculates, `:` changes a setting (the `muthur` command's,
-// Cli.qml), `!` locks, logs out, suspends, reboots or powers off.
+// Cli.qml), `!` updates the system, locks, logs out, suspends, reboots
+// or powers off.
 // Opened from labwc
 // with
 //   quickshell ipc -c muthur call launcher toggle
@@ -208,10 +209,14 @@ Singleton {
 
     // --- `!` session --------------------------------------------------
     //
-    // As in the drawer: lock at once, the rest only on a second Enter
-    // within a few seconds, so a stray keystroke can't power off.
+    // As in the drawer: lock (and update, which pacman confirms itself)
+    // at once, the rest only on a second Enter within a few seconds, so a
+    // stray keystroke can't power off.
 
     readonly property var sessionActions: [
+        { name: "UPDATE", detail: Updates.packages.length > 0
+            ? Updates.packages.length + " pending — sudo pacman -Syu in a terminal"
+            : "sudo pacman -Syu in a terminal", update: true },
         { name: "LOCK", detail: "lock the screen" },
         { name: "LOGOUT", detail: "leave labwc", command: ["labwc", "--exit"] },
         { name: "SUSPEND", detail: "suspend to RAM", command: ["systemctl", "suspend"] },
@@ -249,6 +254,8 @@ Singleton {
         root.armed = "";
         if (action.command)
             Quickshell.execDetached(action.command);
+        else if (action.update)
+            Updates.upgrade();
         else
             LockScreen.lock();
         return true;

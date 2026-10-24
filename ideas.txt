@@ -1,0 +1,36 @@
+muthur-shell — ideas
+====================
+
+Ideas, and what's left of the ones started. One section each; move it
+to an issue or a branch when work begins.
+
+
+UPDATES: what's left after [UPD]
+--------------------------------
+
+Done: Updates.qml (checkupdates at login + 1 min, hourly, after a
+resume, on demand; retry 5 min after a failure), the [UPD] button and
+panel (important packages first, REBOOT REQUIRED), UPGRADE = `sudo
+pacman -Syu` in a detached terminal that asks the shell to recheck,
+`!update` in the launcher, `muthur updates [list|check|upgrade]`,
+pacman-contrib in install.sh.
+
+Dropped: topgrade. It can't list what it would update (the count
+stays pacman-only), its Neovim step rewrites the tracked
+dotfiles/nvim/lazy-lock.json on every run, and here it would only add
+npm and tldr. UPGRADE stays `sudo pacman -Syu`.
+
+Still to do:
+  - Arch news in the panel: the archlinux.org/feeds/news RSS feed; flag
+    any item newer than the last time the panel was opened (some
+    updates need a manual step). A link opens it in Firefox.
+  - flatpak, if installed: `flatpak remote-ls --updates` in the count.
+  - AUR, once a helper is installed: `paru -Qua`.
+  - Settings (Cli.qml registry + a panel): updates.check (on/off),
+    updates.interval (minutes), updates.flatpak (on/off).
+  - An optional notification when the count first rises above 0 (off
+    by default).
+  - The patched labwc (labwc-snapgrid) isn't tracked by pacman: compare
+    its version with `pacman -Si labwc` and show "labwc 0.x available:
+    ./install.sh --extras labwc".
+  - Try the whole flow on a plain Arch in the test VMs (vm/muthur-vm).
