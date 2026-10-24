@@ -8,5 +8,6 @@ __pycache__/
 dotfiles/quickshell/muthur/keyboard.ini
 dotfiles/quickshell/muthur/nightlight.ini
 dotfiles/quickshell/muthur/launcher.ini
+dotfiles/quickshell/muthur/monitor.ini
 dotfiles/labwc/environment.d/
 dotfiles/labwc/menu.xml

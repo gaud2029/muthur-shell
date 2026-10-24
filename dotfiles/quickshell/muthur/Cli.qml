@@ -246,7 +246,10 @@ Singleton {
             v => { Focus.active = v; return ""; }),
         boolEntry("caffeine", "caffeine mode: no idle screen-off or lock",
             () => Caffeine.active,
-            v => { Caffeine.active = v; return ""; })
+            v => { Caffeine.active = v; return ""; }),
+        boolEntry("monitor.button", "the [MON] button (CPU load) in the bar",
+            () => SysMon.store.button,
+            v => { SysMon.setButton(v); return ""; })
     ]
 
     function find(key) {

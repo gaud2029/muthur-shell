@@ -5,7 +5,7 @@ import Quickshell.Wayland
 PanelWindow {
     id: root
 
-    property var popupPanels: [controlPanel, aiPanel, calendarPanel, batteryPanel, updatesPanel]
+    property var popupPanels: [controlPanel, aiPanel, calendarPanel, batteryPanel, updatesPanel, monitorPanel]
 
     readonly property string position: theme.barPosition
     readonly property bool vertical: theme.vertical
@@ -200,6 +200,12 @@ PanelWindow {
                 onClicked: root.togglePanel(batteryPanel)
             }
 
+            // CPU load; the panel has the rest (memory, temperatures...).
+            MonitorButton {
+                selected: monitorPanel.visible
+                onClicked: root.togglePanel(monitorPanel)
+            }
+
             Clock {
                 active: calendarPanel.visible
                 onClicked: root.togglePanel(calendarPanel)
@@ -256,6 +262,11 @@ PanelWindow {
         screen: root.screen
     }
 
+    MonitorPanel {
+        id: monitorPanel
+        screen: root.screen
+    }
+
     BatteryPanel {
         id: batteryPanel
         screen: root.screen
@@ -284,7 +295,7 @@ PanelWindow {
                 return;
             }
             const [panel, tab] = target.split(":");
-            const popup = { sys: controlPanel, ai: aiPanel, calendar: calendarPanel, battery: batteryPanel, updates: updatesPanel }[panel];
+            const popup = { sys: controlPanel, ai: aiPanel, calendar: calendarPanel, battery: batteryPanel, updates: updatesPanel, monitor: monitorPanel }[panel];
             if (tab)
                 popup.currentTab = panel === "sys" ? Ui.sysTabs[tab] : tab;
             if (!popup.visible)
