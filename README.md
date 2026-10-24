@@ -160,8 +160,8 @@ From the start of the bar:
   it and the whole bar folds away on every screen, leaving only that
   cursor in the corner; click again to bring it back. Its space stays
   reserved, so windows don't move or resize. Open popups close on the way
-  out. Also `quickshell ipc -c muthur call focus toggle`. (The launcher,
-  `fuzzel`, is on `Super+Space`.)
+  out. Also `quickshell ipc -c muthur call focus toggle`. (The launcher
+  is on `Super+Space`, see below.)
 - **Workspaces** — one tile per workspace, read from labwc through
   `ext-workspace-v1`. Click to switch; urgent ones are highlighted. The
   labwc config defines four (`Super+1..4` to go, `Super+Alt+1..4` to
@@ -220,6 +220,31 @@ Only one of the `[SYS]` / `[AI]` / clock / `[POW]` panels is open at a
 time; the drawer is independent and can sit alongside one. Every popup
 closes on <kbd>Escape</kbd>, and they overlay windows rather than
 reserving space, so the window layout never shifts.
+
+## The launcher
+
+`Super+Space` opens a `>_` prompt in the bar's start corner, by the
+focus-mode cursor. Type to filter, in order: the applications whose name
+matches, the commands you ran from it before, the applications that only
+match by description, executable or keyword — and last, always, what you
+typed, as a shell command. So when nothing installed is called that,
+Enter just runs it: `echo test > test.txt` writes `~/test.txt`
+(through `bash -c`, in your home directory, output discarded).
+
+| Key | |
+|---|---|
+| `Enter` | launch the selected line |
+| `Shift+Enter` | the same in a terminal that stays open (`alacritty --hold`), to see a command's output |
+| `Ctrl+Enter` | run the typed text as a command, whatever is selected |
+| `Up`/`Down`, `Ctrl+P`/`Ctrl+N`, `Tab` | move |
+| `Escape`, or a click outside | close |
+
+Applications with `Terminal=true` (yazi, btop...) open in alacritty.
+How often each application is launched raises it in the list; that and
+the last 30 commands are kept in `launcher.ini` next to the QML. Also
+`quickshell ipc -c muthur call launcher toggle` or `muthur ui open
+launcher`. When the shell isn't running, `Super+Space` opens fuzzel
+instead, still themed by the last preset.
 
 ## Notifications
 

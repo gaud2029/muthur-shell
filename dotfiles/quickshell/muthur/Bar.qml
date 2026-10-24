@@ -132,8 +132,8 @@ PanelWindow {
             // themselves 1-unit apart, so their sections need clearer gaps.
             spacing: theme.gridUnit * 4
 
-            // Folds the bar away into focus mode and back (fuzzel is on
-            // Super+Space).
+            // Folds the bar away into focus mode and back (the launcher is
+            // on Super+Space).
             TerminalButton {
                 id: launcher
                 square: true

@@ -1,0 +1,180 @@
+pragma Singleton
+import QtQuick
+import Quickshell
+import Quickshell.Io
+
+// The launcher (Super+Space, LauncherPanel.qml), in place of fuzzel: the
+// installed applications, the commands run from it before, and whatever
+// was typed as a shell command when nothing else is wanted — Enter on
+// `echo test > test.txt` runs it, with bash in $HOME. Opened from labwc
+// with
+//   quickshell ipc -c muthur call launcher toggle
+// or `muthur ui open launcher`.
+Singleton {
+    id: root
+
+    property bool visible: false
+    // The output it opens on ("" = the main screen).
+    property string screenName: ""
+    property string query: ""
+
+    // How many times each application was launched, by desktop id, and
+    // the commands run, most recent first.
+    readonly property IniSettings store: IniSettings {
+        location: "file://" + Quickshell.shellDir + "/launcher.ini"
+        category: "launcher"
+
+        property string usage: "{}"
+        property string history: "[]"
+    }
+
+    readonly property int historyLimit: 30
+
+    function parse(text, fallback) {
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            return fallback;
+        }
+    }
+
+    readonly property var usage: parse(store.usage, {})
+    readonly property var history: parse(store.history, [])
+
+    readonly property var apps: DesktopEntries.applications.values.filter(e => !e.noDisplay)
+
+    function open(screen) {
+        root.screenName = screen || "";
+        root.query = "";
+        root.visible = true;
+    }
+
+    function close() {
+        root.visible = false;
+    }
+
+    function toggle() {
+        if (root.visible)
+            root.close();
+        else
+            root.open("");
+    }
+
+    // --- Matching ----------------------------------------------------
+    //
+    // Prefixes and substrings only, no scattered-letter fuzzy matching:
+    // a command typed out ("ls -la") shouldn't find some application
+    // whose name happens to hold those letters in order.
+
+    // 2: the text starts with q, 1: one of its words does.
+    function textScore(text, q) {
+        const t = (text || "").toLowerCase();
+        if (t.startsWith(q))
+            return 2;
+        return t.split(/[\s\-_.]+/).some(w => w.startsWith(q)) ? 1 : 0;
+    }
+
+    // Strong (>= 10): the name matches. Weak: only the generic name, the
+    // executable or a keyword does — those come after the commands run
+    // before, so "ec" finds `echo ...` ahead of some app tagged "record".
+    function appScore(entry, q) {
+        const exec = (entry.command && entry.command.length > 0 ? entry.command[0] : "").split("/").pop();
+        const name = textScore(entry.name, q);
+        if (name > 0)
+            return 10 * name;
+        return Math.max(textScore(exec, q) * 2, textScore(entry.genericName, q),
+            ...(entry.keywords || []).map(k => textScore(k, q)));
+    }
+
+    // [{ kind: "app" | "cmd" | "run", label, detail, entry?, command? }],
+    // best first: applications by name, commands run before, other
+    // applications, then the typed text itself.
+    readonly property var results: {
+        const q = root.query.trim().toLowerCase();
+        const raw = root.query.trim();
+        const used = id => Math.min(root.usage[id] || 0, 9);
+
+        const apps = root.apps
+            .map(e => ({ entry: e, score: q ? appScore(e, q) : 10 }))
+            .filter(r => r.score > 0)
+            .sort((a, b) => (b.score + used(b.entry.id) / 10) - (a.score + used(a.entry.id) / 10)
+                || a.entry.name.localeCompare(b.entry.name))
+            .map(r => ({ kind: "app", strong: r.score >= 10, label: r.entry.name,
+                detail: r.entry.genericName || r.entry.comment, entry: r.entry }));
+
+        if (!raw)
+            return apps;
+
+        const cmds = root.history
+            .filter(c => c.toLowerCase().startsWith(q) && c !== raw)
+            .map(c => ({ kind: "cmd", label: c, detail: "", command: c }));
+
+        return apps.filter(r => r.strong).concat(cmds, apps.filter(r => !r.strong),
+            [{ kind: "run", label: raw, detail: "", command: raw }]);
+    }
+
+    // --- Launching ---------------------------------------------------
+
+    readonly property string home: Quickshell.env("HOME")
+
+    function launch(result, inTerminal) {
+        if (!result)
+            return;
+        if (result.kind === "app")
+            launchApp(result.entry, inTerminal);
+        else
+            runCommand(result.command, inTerminal);
+        root.close();
+    }
+
+    function launchApp(entry, inTerminal) {
+        const counts = Object.assign({}, root.usage);
+        counts[entry.id] = (counts[entry.id] || 0) + 1;
+        store.usage = JSON.stringify(counts);
+
+        // Terminal=true entries (yazi, btop...) run in alacritty, as
+        // fuzzel's `terminal=alacritty -e` did.
+        if (entry.runInTerminal || inTerminal)
+            Quickshell.execDetached({
+                command: ["alacritty", "-e"].concat(entry.command),
+                workingDirectory: entry.workingDirectory || root.home
+            });
+        else
+            entry.execute();
+    }
+
+    // Detached, through bash in $HOME, its output thrown away — or in an
+    // alacritty that stays open to show it.
+    function runCommand(command, inTerminal) {
+        store.history = JSON.stringify([command].concat(root.history.filter(c => c !== command)).slice(0, root.historyLimit));
+        Quickshell.execDetached({
+            command: inTerminal ? ["alacritty", "--hold", "-e", "bash", "-c", command] : ["bash", "-c", command],
+            workingDirectory: root.home
+        });
+    }
+
+    // Typed: the typed text as a command, whatever matched.
+    function runQuery(inTerminal) {
+        const raw = root.query.trim();
+        if (!raw)
+            return;
+        runCommand(raw, inTerminal);
+        root.close();
+    }
+
+    IpcHandler {
+        target: "launcher"
+
+        function toggle(): void {
+            root.toggle();
+        }
+
+        function open(): void {
+            root.open("");
+        }
+
+        function close(): void {
+            root.close();
+        }
+    }
+}
