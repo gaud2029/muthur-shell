@@ -169,7 +169,7 @@ PanelWindow {
                         x: theme.gridUnit * 3
                         width: theme.gridUnit * 12
                         anchors.verticalCenter: parent.verticalCenter
-                        text: ({ app: "APP", cmd: "CMD", run: "RUN" })[row.modelData.kind]
+                        text: row.modelData.tag
                         color: row.current ? theme.colorBg : theme.colorDim
                         font.family: theme.fontFamily
                         font.pixelSize: theme.px(11)
@@ -182,7 +182,7 @@ PanelWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         width: Math.min(implicitWidth, row.width - tag.x - tag.width - theme.gridUnit * 3)
                         elide: Text.ElideRight
-                        text: row.modelData.kind === "app" ? row.modelData.label.toUpperCase() : row.modelData.label
+                        text: row.modelData.label
                         color: row.current ? theme.colorBg : theme.colorFg
                         font.family: theme.fontFamily
                         font.pixelSize: theme.px(12)

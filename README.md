@@ -224,10 +224,13 @@ reserving space, so the window layout never shifts.
 ## The launcher
 
 `Super+Space` opens a `>_` prompt in the bar's start corner, by the
-focus-mode cursor. Type to filter, in order: the applications whose name
-matches, the commands you ran from it before, the applications that only
-match by description, executable or keyword — and last, always, what you
-typed, as a shell command. So when nothing installed is called that,
+focus-mode cursor. Type to filter, in order: the open windows (`WIN`,
+by app id or title) and the applications whose name matches, the
+commands you ran from it before, the windows and applications that only
+match by a word of their title, description, executable or keyword —
+and last, always, what you typed, as a shell command. Enter on a window
+brings it to the front; with nothing typed, the list is every open
+window, then every application. So when nothing installed is called that,
 Enter just runs it: `echo test > test.txt` writes `~/test.txt`
 (through `bash -c`, in your home directory, output discarded).
 

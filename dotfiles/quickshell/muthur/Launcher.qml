@@ -2,9 +2,11 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Wayland
 
 // The launcher (Super+Space, LauncherPanel.qml), in place of fuzzel: the
-// installed applications, the commands run from it before, and whatever
+// open windows, the installed applications, the commands run from it
+// before, and whatever
 // was typed as a shell command when nothing else is wanted — Enter on
 // `echo test > test.txt` runs it, with bash in $HOME. Opened from labwc
 // with
@@ -42,6 +44,7 @@ Singleton {
     readonly property var history: parse(store.history, [])
 
     readonly property var apps: DesktopEntries.applications.values.filter(e => !e.noDisplay)
+    readonly property var windows: ToplevelManager.toplevels.values
 
     function open(screen) {
         root.screenName = screen || "";
@@ -86,31 +89,46 @@ Singleton {
             ...(entry.keywords || []).map(k => textScore(k, q)));
     }
 
-    // [{ kind: "app" | "cmd" | "run", label, detail, entry?, command? }],
-    // best first: applications by name, commands run before, other
-    // applications, then the typed text itself.
+    // A window by its app id or title: strong when either starts with q,
+    // weak when only a word of the title does.
+    function windowScore(toplevel, q) {
+        const best = Math.max(textScore(toplevel.appId, q), textScore(toplevel.title, q));
+        return best === 2 ? 20 : best;
+    }
+
+    // [{ kind, tag, label, detail, ... }], best first: windows and
+    // applications by name, commands run before, the other windows and
+    // applications, then the typed text itself. kind is "win" (with
+    // `toplevel`), "app" (`entry`), "cmd" or "run" (`command`).
     readonly property var results: {
         const q = root.query.trim().toLowerCase();
         const raw = root.query.trim();
         const used = id => Math.min(root.usage[id] || 0, 9);
+
+        const windows = root.windows
+            .map(t => ({ toplevel: t, score: q ? windowScore(t, q) : 20 }))
+            .filter(r => r.score > 0)
+            .map(r => ({ kind: "win", tag: "WIN", strong: r.score >= 10, label: r.toplevel.title || r.toplevel.appId,
+                detail: r.toplevel.appId, toplevel: r.toplevel }));
 
         const apps = root.apps
             .map(e => ({ entry: e, score: q ? appScore(e, q) : 10 }))
             .filter(r => r.score > 0)
             .sort((a, b) => (b.score + used(b.entry.id) / 10) - (a.score + used(a.entry.id) / 10)
                 || a.entry.name.localeCompare(b.entry.name))
-            .map(r => ({ kind: "app", strong: r.score >= 10, label: r.entry.name,
+            .map(r => ({ kind: "app", tag: "APP", strong: r.score >= 10, label: r.entry.name.toUpperCase(),
                 detail: r.entry.genericName || r.entry.comment, entry: r.entry }));
 
+        const strong = windows.filter(r => r.strong).concat(apps.filter(r => r.strong));
+        const weak = windows.filter(r => !r.strong).concat(apps.filter(r => !r.strong));
         if (!raw)
-            return apps;
+            return strong;
 
         const cmds = root.history
             .filter(c => c.toLowerCase().startsWith(q) && c !== raw)
-            .map(c => ({ kind: "cmd", label: c, detail: "", command: c }));
+            .map(c => ({ kind: "cmd", tag: "CMD", label: c, detail: "", command: c }));
 
-        return apps.filter(r => r.strong).concat(cmds, apps.filter(r => !r.strong),
-            [{ kind: "run", label: raw, detail: "", command: raw }]);
+        return strong.concat(cmds, weak, [{ kind: "run", tag: "RUN", label: raw, detail: "", command: raw }]);
     }
 
     // --- Launching ---------------------------------------------------
@@ -120,7 +138,9 @@ Singleton {
     function launch(result, inTerminal) {
         if (!result)
             return;
-        if (result.kind === "app")
+        if (result.kind === "win")
+            result.toplevel.activate();
+        else if (result.kind === "app")
             launchApp(result.entry, inTerminal);
         else
             runCommand(result.command, inTerminal);
