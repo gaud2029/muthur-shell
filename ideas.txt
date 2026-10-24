@@ -5,8 +5,8 @@ Ideas, and what's left of the ones started. One section each; move it
 to an issue or a branch when work begins.
 
 
-UPDATES: what's left after [UPD] (pacman -Syu only for now)
------------------------------------------------------------
+UPDATES: what's left after [UPD]
+--------------------------------
 
 Done: Updates.qml (checkupdates at login + 1 min, hourly, after a
 resume, on demand; retry 5 min after a failure), the [UPD] button and
@@ -15,15 +15,12 @@ pacman -Syu` in a detached terminal that asks the shell to recheck,
 `!update` in the launcher, `muthur updates [list|check|upgrade]`,
 pacman-contrib in install.sh.
 
+Dropped: topgrade. It can't list what it would update (the count
+stays pacman-only), its Neovim step rewrites the tracked
+dotfiles/nvim/lazy-lock.json on every run, and here it would only add
+npm and tldr. UPGRADE stays `sudo pacman -Syu`.
+
 Still to do:
-  - topgrade: run it instead of pacman -Syu when installed.
-    - Not in the Arch/CachyOS repos: an install.sh extra that builds
-      `topgrade-bin` from the AUR with makepkg (no helper needed), or
-      `cargo install topgrade`.
-    - dotfiles/topgrade/topgrade.toml, symlinked to ~/.config:
-        [linux] arch_package_manager = "autodetect"
-        [misc]  disable = [...] (firmware, git_repos... to decide)
-    - Don't run alongside CachyOS's own updater (cachyos-update).
   - Arch news in the panel: the archlinux.org/feeds/news RSS feed; flag
     any item newer than the last time the panel was opened (some
     updates need a manual step). A link opens it in Firefox.
