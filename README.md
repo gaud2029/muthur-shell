@@ -242,7 +242,8 @@ Enter just runs it: `echo test > test.txt` writes `~/test.txt`
 | `Up`/`Down`, `Ctrl+P`/`Ctrl+N`, `Tab` | move |
 | `Escape`, or a click outside | close |
 
-A prefix switches the launcher to another mode:
+A prefix switches the launcher to another mode — the `[?]` in the
+prompt's corner lists them:
 
 - **`=`** calculates as you type: `= 2^10 / 3`, `= sqrt(2) * pi`,
   `= ln(10)`. Numbers, `+ - * / % ^`, parentheses, `sqrt abs round floor

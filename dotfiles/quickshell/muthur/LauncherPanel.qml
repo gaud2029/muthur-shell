@@ -11,6 +11,8 @@ import Quickshell.Wayland
 //   Shift+Enter    the same, in a terminal that stays open
 //   Ctrl+Enter     run the typed text as a command, whatever matched
 //   Up/Down, Ctrl+P/N, Tab    move;  Escape  close
+//
+// The [?] in the prompt's corner lists the prefix modes (= : !).
 PanelWindow {
     id: root
 
@@ -32,6 +34,7 @@ PanelWindow {
     Theme { id: theme }
 
     property int selected: 0
+    property bool helpShown: false
     readonly property var results: Launcher.results
     readonly property int rows: 10
 
@@ -109,11 +112,32 @@ PanelWindow {
                     font.pixelSize: theme.px(13)
                 }
 
+                // The help, in the corner.
+                Text {
+                    id: helpButton
+                    anchors.right: parent.right
+                    anchors.rightMargin: theme.gridUnit * 3
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "[?]"
+                    color: root.helpShown || helpArea.containsMouse ? theme.colorFg : theme.colorDim
+                    font.family: theme.fontFamily
+                    font.pixelSize: theme.px(10)
+
+                    MouseArea {
+                        id: helpArea
+                        anchors.fill: parent
+                        anchors.margins: -theme.gridUnit
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.helpShown = !root.helpShown
+                    }
+                }
+
                 TextInput {
                     id: input
                     anchors.left: prompt.right
                     anchors.leftMargin: theme.gridUnit * 2
-                    anchors.right: parent.right
+                    anchors.right: helpButton.left
                     anchors.rightMargin: theme.gridUnit * 3
                     anchors.verticalCenter: parent.verticalCenter
                     clip: true
@@ -136,7 +160,12 @@ PanelWindow {
                         font.letterSpacing: theme.letterSpacing
                     }
 
-                    Keys.onEscapePressed: Launcher.close()
+                    Keys.onEscapePressed: {
+                        if (root.helpShown)
+                            root.helpShown = false;
+                        else
+                            Launcher.close();
+                    }
                     Keys.onUpPressed: root.move(-1)
                     Keys.onDownPressed: root.move(1)
                     Keys.onTabPressed: root.move(1)
@@ -167,8 +196,72 @@ PanelWindow {
                 color: theme.colorDim
             }
 
+            // The prefix modes, in place of the list while [?] is on.
+            Column {
+                visible: root.helpShown
+                width: parent.width
+                topPadding: theme.gridUnit * 3
+                bottomPadding: theme.gridUnit * 3
+                spacing: theme.gridUnit * 3
+
+                Repeater {
+                    model: [
+                        { prefix: "=", title: "CALCULATE", lines: ["= 2^10 / 3      = sqrt(2) * pi      = ln(10)", "+ - * / % ^ ( )  sqrt abs round floor ceil sin cos tan log ln exp min max pi e", "ENTER COPIES THE RESULT"] },
+                        { prefix: ":", title: "SETTINGS", lines: [":night            lists the keys and their value", ":look.preset tron   sets one (the muthur set settings)", "ENTER COMPLETES A KEY, OR TOGGLES AN ON/OFF ONE"] },
+                        { prefix: "!", title: "SESSION", lines: ["!lock   !logout   !suspend   !reboot   !power", "ENTER TWICE TO CONFIRM (BUT LOCK)"] }
+                    ]
+
+                    Item {
+                        id: mode
+
+                        required property var modelData
+
+                        width: parent.width
+                        height: lines.implicitHeight
+
+                        Text {
+                            x: theme.gridUnit * 3
+                            text: mode.modelData.prefix
+                            color: theme.colorFg
+                            font.family: theme.fontFamily
+                            font.pixelSize: theme.px(16)
+                        }
+
+                        Column {
+                            id: lines
+                            x: theme.gridUnit * 10
+                            width: parent.width - x - theme.gridUnit * 3
+                            spacing: theme.gridUnit
+
+                            Text {
+                                text: mode.modelData.title
+                                color: theme.colorFg
+                                font.family: theme.fontFamily
+                                font.pixelSize: theme.px(11)
+                                font.letterSpacing: theme.letterSpacing
+                            }
+
+                            Repeater {
+                                model: mode.modelData.lines
+
+                                Text {
+                                    required property string modelData
+                                    width: lines.width
+                                    wrapMode: Text.Wrap
+                                    text: modelData
+                                    color: theme.colorDim
+                                    font.family: theme.fontFamily
+                                    font.pixelSize: theme.px(11)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             ListView {
                 id: list
+                visible: !root.helpShown
                 width: parent.width
                 height: Math.min(root.results.length, root.rows) * theme.buttonSize
                 clip: true
@@ -237,7 +330,7 @@ PanelWindow {
                 width: parent.width
                 height: 1
                 color: theme.colorDim
-                visible: root.results.length > 0
+                visible: root.helpShown || root.results.length > 0
             }
 
             // Status line.
@@ -250,7 +343,9 @@ PanelWindow {
                     width: parent.width - theme.gridUnit * 6
                     anchors.verticalCenter: parent.verticalCenter
                     elide: Text.ElideRight
-                    text: Launcher.message
+                    text: root.helpShown
+                        ? "[?] OR ESC CLOSES THE HELP"
+                        : Launcher.message
                         ? "ERROR: " + Launcher.message
                         : root.results.length + (root.results.length === 1 ? " MATCH" : " MATCHES") + "   ENTER RUN · SHIFT TERM · CTRL AS CMD"
                     color: Launcher.message ? theme.colorRed : theme.colorDim
