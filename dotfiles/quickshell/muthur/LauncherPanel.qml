@@ -62,6 +62,15 @@ PanelWindow {
         onClicked: Launcher.close()
     }
 
+    Connections {
+        target: Launcher
+
+        function onCompleteRequested(text) {
+            input.text = text;
+            input.cursorPosition = text.length;
+        }
+    }
+
     Rectangle {
         id: box
 
@@ -241,8 +250,10 @@ PanelWindow {
                     width: parent.width - theme.gridUnit * 6
                     anchors.verticalCenter: parent.verticalCenter
                     elide: Text.ElideRight
-                    text: root.results.length + (root.results.length === 1 ? " MATCH" : " MATCHES") + "   ENTER RUN · SHIFT TERM · CTRL AS CMD"
-                    color: theme.colorDim
+                    text: Launcher.message
+                        ? "ERROR: " + Launcher.message
+                        : root.results.length + (root.results.length === 1 ? " MATCH" : " MATCHES") + "   ENTER RUN · SHIFT TERM · CTRL AS CMD"
+                    color: Launcher.message ? theme.colorRed : theme.colorDim
                     font.family: theme.fontFamily
                     font.pixelSize: theme.px(10)
                     font.letterSpacing: theme.letterSpacing

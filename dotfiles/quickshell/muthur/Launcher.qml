@@ -9,7 +9,8 @@ import Quickshell.Wayland
 // before, and whatever
 // was typed as a shell command when nothing else is wanted — Enter on
 // `echo test > test.txt` runs it, with bash in $HOME. A prefix switches
-// mode: `=` calculates. Opened from labwc
+// mode: `=` calculates, `:` changes a setting (the `muthur` command's,
+// Cli.qml). Opened from labwc
 // with
 //   quickshell ipc -c muthur call launcher toggle
 // or `muthur ui open launcher`.
@@ -20,6 +21,13 @@ Singleton {
     // The output it opens on ("" = the main screen).
     property string screenName: ""
     property string query: ""
+    // A setting that refused its value, shown in the status line until
+    // the next keystroke.
+    property string message: ""
+    onQueryChanged: message = ""
+
+    // Replace what's typed (completing a setting's key).
+    signal completeRequested(string text)
 
     // How many times each application was launched, by desktop id, and
     // the commands run, most recent first.
@@ -138,16 +146,74 @@ Singleton {
             : [{ kind: "calc", tag: "CALC", label: "= " + r.value, detail: expr + "   ENTER COPIES", value: r.value }];
     }
 
+    // --- `:` settings -------------------------------------------------
+    //
+    // `:key` lists the settings, `:key value` the values; the same
+    // registry and setters as `muthur set`.
+
+    function settingResults(text) {
+        const space = text.search(/\s/);
+        if (space < 0) {
+            const q = text.toLowerCase();
+            return Cli.entries
+                .map(e => ({ entry: e, score: !q ? 1 : e.key.startsWith(q) ? 3 : textScore(e.key, q) }))
+                .filter(r => r.score > 0)
+                .sort((a, b) => b.score - a.score || a.entry.key.length - b.entry.key.length)
+                .map(r => ({ kind: "set", tag: "SET", label: r.entry.key, entry: r.entry,
+                    detail: "= " + Cli.format(r.entry, r.entry.get()) + "   " + r.entry.help
+                        + (r.entry.type === "bool" ? "   ENTER TOGGLES" : "") }));
+        }
+
+        const key = text.substring(0, space);
+        const typed = text.substring(space).trim();
+        const e = Cli.find(key);
+        if (!e)
+            return [{ kind: "set", tag: "SET", label: key, detail: "unknown setting" }];
+        const current = Cli.format(e, e.get());
+        const row = v => ({ kind: "set", tag: "SET", label: key + " " + v, entry: e, value: v,
+            detail: v === current ? "current" : e.help });
+
+        const choices = e.type === "bool" ? ["on", "off"] : e.type === "enum" ? e.values() : null;
+        if (choices) {
+            const t = typed.toLowerCase();
+            const starts = choices.filter(v => v.toLowerCase().startsWith(t));
+            return starts.concat(choices.filter(v => !starts.includes(v) && v.toLowerCase().includes(t))).map(row);
+        }
+        if (!typed)
+            return [{ kind: "set", tag: "SET", label: key + " _", entry: e,
+                detail: "= " + current + "   " + e.help + (e.type === "int" ? " (" + e.min + ".." + e.max + ")" : "") }];
+        return [row(typed)];
+    }
+
+    // Enter on a setting: a key alone completes (a bool toggles), a value
+    // is set — an error keeps the launcher open to show it.
+    function applySetting(result) {
+        if (!result.entry)
+            return false;
+        if (result.value === undefined) {
+            if (result.entry.type !== "bool") {
+                root.completeRequested(":" + result.entry.key + " ");
+                return false;
+            }
+            result.value = result.entry.get() ? "off" : "on";
+        }
+        const err = Cli.setOne(result.entry.key, result.value);
+        root.message = err;
+        return !err;
+    }
+
     // [{ kind, tag, label, detail, ... }], best first: windows and
     // applications by name, commands run before, the other windows and
     // applications, then the typed text itself. kind is "win" (with
     // `toplevel`), "app" (`entry`), "cmd" or "run" (`command`), or
-    // "calc" (`value`) after a `=`.
+    // "calc" (`value`) after a `=`, "set" (`entry`, `value`) after a `:`.
     readonly property var results: {
         const q = root.query.trim().toLowerCase();
         const raw = root.query.trim();
         if (raw.startsWith("="))
             return calcResults(raw.substring(1).trim());
+        if (raw.startsWith(":"))
+            return settingResults(root.query.replace(/^\s*:\s*/, ""));
         const used = id => Math.min(root.usage[id] || 0, 9);
 
         const windows = root.windows
@@ -183,7 +249,10 @@ Singleton {
     function launch(result, inTerminal) {
         if (!result)
             return;
-        if (result.kind === "calc") {
+        if (result.kind === "set") {
+            if (!applySetting(result))
+                return;
+        } else if (result.kind === "calc") {
             // Nothing to copy yet: stay open.
             if (result.value === undefined)
                 return;
