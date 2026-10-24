@@ -2,11 +2,16 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Wayland
 
 // The launcher (Super+Space, LauncherPanel.qml), in place of fuzzel: the
-// installed applications, the commands run from it before, and whatever
+// open windows, the installed applications, the commands run from it
+// before, and whatever
 // was typed as a shell command when nothing else is wanted — Enter on
-// `echo test > test.txt` runs it, with bash in $HOME. Opened from labwc
+// `echo test > test.txt` runs it, with bash in $HOME. A prefix switches
+// mode: `=` calculates, `:` changes a setting (the `muthur` command's,
+// Cli.qml), `!` locks, logs out, suspends, reboots or powers off.
+// Opened from labwc
 // with
 //   quickshell ipc -c muthur call launcher toggle
 // or `muthur ui open launcher`.
@@ -17,6 +22,16 @@ Singleton {
     // The output it opens on ("" = the main screen).
     property string screenName: ""
     property string query: ""
+    // A setting that refused its value, shown in the status line until
+    // the next keystroke.
+    property string message: ""
+    onQueryChanged: {
+        message = "";
+        armed = "";
+    }
+
+    // Replace what's typed (completing a setting's key).
+    signal completeRequested(string text)
 
     // How many times each application was launched, by desktop id, and
     // the commands run, most recent first.
@@ -42,6 +57,7 @@ Singleton {
     readonly property var history: parse(store.history, [])
 
     readonly property var apps: DesktopEntries.applications.values.filter(e => !e.noDisplay)
+    readonly property var windows: ToplevelManager.toplevels.values
 
     function open(screen) {
         root.screenName = screen || "";
@@ -86,31 +102,199 @@ Singleton {
             ...(entry.keywords || []).map(k => textScore(k, q)));
     }
 
-    // [{ kind: "app" | "cmd" | "run", label, detail, entry?, command? }],
-    // best first: applications by name, commands run before, other
-    // applications, then the typed text itself.
+    // A window by its app id or title: strong when either starts with q,
+    // weak when only a word of the title does.
+    function windowScore(toplevel, q) {
+        const best = Math.max(textScore(toplevel.appId, q), textScore(toplevel.title, q));
+        return best === 2 ? 20 : best;
+    }
+
+    // --- `=` calculator ----------------------------------------------
+    //
+    // Numbers, + - * / % ^ and parentheses, and the functions and
+    // constants below; anything else is refused before it gets near the
+    // JavaScript engine.
+
+    readonly property var mathNames: ({
+        sqrt: Math.sqrt, abs: Math.abs, round: Math.round, floor: Math.floor, ceil: Math.ceil,
+        sin: Math.sin, cos: Math.cos, tan: Math.tan, asin: Math.asin, acos: Math.acos, atan: Math.atan,
+        log: Math.log10, ln: Math.log, exp: Math.exp, min: Math.min, max: Math.max,
+        pi: Math.PI, e: Math.E
+    })
+
+    // { value: "23" } or { error: "..." }.
+    function calculate(expr) {
+        if (!/^[0-9a-z\s+\-*\/%^().,]*$/i.test(expr))
+            return { error: "numbers, + - * / % ^ ( ) and sqrt, ln, log, sin, pi..." };
+        const unknown = (expr.match(/[a-z]+/gi) || []).find(n => !(n.toLowerCase() in root.mathNames));
+        if (unknown)
+            return { error: "unknown: " + unknown };
+        const js = expr.replace(/\^/g, "**").replace(/[a-z]+/gi, n => "M." + n.toLowerCase());
+        try {
+            const v = new Function("M", "return (" + js + ");")(root.mathNames);
+            if (typeof v !== "number" || !isFinite(v))
+                return { error: "no finite result" };
+            // 0.1 + 0.2 shows 0.3.
+            return { value: String(Number(v.toPrecision(12))) };
+        } catch (e) {
+            return { error: "incomplete expression" };
+        }
+    }
+
+    function calcResults(expr) {
+        if (!expr)
+            return [{ kind: "calc", tag: "CALC", label: "= _", detail: "type an expression: = 2^10 / 3" }];
+        const r = calculate(expr);
+        return r.error
+            ? [{ kind: "calc", tag: "CALC", label: "= ?", detail: r.error }]
+            : [{ kind: "calc", tag: "CALC", label: "= " + r.value, detail: expr + "   ENTER COPIES", value: r.value }];
+    }
+
+    // --- `:` settings -------------------------------------------------
+    //
+    // `:key` lists the settings, `:key value` the values; the same
+    // registry and setters as `muthur set`.
+
+    function settingResults(text) {
+        const space = text.search(/\s/);
+        if (space < 0) {
+            const q = text.toLowerCase();
+            return Cli.entries
+                .map(e => ({ entry: e, score: !q ? 1 : e.key.startsWith(q) ? 3 : textScore(e.key, q) }))
+                .filter(r => r.score > 0)
+                .sort((a, b) => b.score - a.score || a.entry.key.length - b.entry.key.length)
+                .map(r => ({ kind: "set", tag: "SET", label: r.entry.key, entry: r.entry,
+                    detail: "= " + Cli.format(r.entry, r.entry.get()) + "   " + r.entry.help
+                        + (r.entry.type === "bool" ? "   ENTER TOGGLES" : "") }));
+        }
+
+        const key = text.substring(0, space);
+        const typed = text.substring(space).trim();
+        const e = Cli.find(key);
+        if (!e)
+            return [{ kind: "set", tag: "SET", label: key, detail: "unknown setting" }];
+        const current = Cli.format(e, e.get());
+        const row = v => ({ kind: "set", tag: "SET", label: key + " " + v, entry: e, value: v,
+            detail: v === current ? "current" : e.help });
+
+        const choices = e.type === "bool" ? ["on", "off"] : e.type === "enum" ? e.values() : null;
+        if (choices) {
+            const t = typed.toLowerCase();
+            const starts = choices.filter(v => v.toLowerCase().startsWith(t));
+            return starts.concat(choices.filter(v => !starts.includes(v) && v.toLowerCase().includes(t))).map(row);
+        }
+        if (!typed)
+            return [{ kind: "set", tag: "SET", label: key + " _", entry: e,
+                detail: "= " + current + "   " + e.help + (e.type === "int" ? " (" + e.min + ".." + e.max + ")" : "") }];
+        return [row(typed)];
+    }
+
+    // Enter on a setting: a key alone completes (a bool toggles), a value
+    // is set — an error keeps the launcher open to show it.
+    function applySetting(result) {
+        if (!result.entry)
+            return false;
+        if (result.value === undefined) {
+            if (result.entry.type !== "bool") {
+                root.completeRequested(":" + result.entry.key + " ");
+                return false;
+            }
+            result.value = result.entry.get() ? "off" : "on";
+        }
+        const err = Cli.setOne(result.entry.key, result.value);
+        root.message = err;
+        return !err;
+    }
+
+    // --- `!` session --------------------------------------------------
+    //
+    // As in the drawer: lock at once, the rest only on a second Enter
+    // within a few seconds, so a stray keystroke can't power off.
+
+    readonly property var sessionActions: [
+        { name: "LOCK", detail: "lock the screen" },
+        { name: "LOGOUT", detail: "leave labwc", command: ["labwc", "--exit"] },
+        { name: "SUSPEND", detail: "suspend to RAM", command: ["systemctl", "suspend"] },
+        { name: "REBOOT", detail: "restart the machine", command: ["systemctl", "reboot"] },
+        { name: "POWER OFF", detail: "shut the machine down", command: ["systemctl", "poweroff"] }
+    ]
+
+    // The action waiting for its confirming Enter, or "".
+    property string armed: ""
+
+    Timer {
+        running: root.armed !== ""
+        interval: 4000
+        onTriggered: root.armed = ""
+    }
+
+    function sessionResults(text) {
+        const row = a => ({ kind: "session", tag: "SYS", action: a,
+            label: root.armed === a.name ? "CONFIRM " + a.name + "?" : a.name,
+            detail: root.armed === a.name ? "ENTER AGAIN TO CONFIRM" : a.detail });
+        // Armed, the list is just that action: the selection can't
+        // slide onto another one between the two Enters.
+        if (root.armed)
+            return root.sessionActions.filter(a => a.name === root.armed).map(row);
+        const q = text.toLowerCase();
+        return root.sessionActions.filter(a => !q || textScore(a.name, q) > 0).map(row);
+    }
+
+    // false while it waits for confirmation.
+    function runSession(action) {
+        if (action.command && root.armed !== action.name) {
+            root.armed = action.name;
+            return false;
+        }
+        root.armed = "";
+        if (action.command)
+            Quickshell.execDetached(action.command);
+        else
+            LockScreen.lock();
+        return true;
+    }
+
+    // [{ kind, tag, label, detail, ... }], best first: windows and
+    // applications by name, commands run before, the other windows and
+    // applications, then the typed text itself. kind is "win" (with
+    // `toplevel`), "app" (`entry`), "cmd" or "run" (`command`), or
+    // "calc" (`value`) after a `=`, "set" (`entry`, `value`) after a `:`,
+    // "session" (`action`) after a `!`.
     readonly property var results: {
         const q = root.query.trim().toLowerCase();
         const raw = root.query.trim();
+        if (raw.startsWith("="))
+            return calcResults(raw.substring(1).trim());
+        if (raw.startsWith("!"))
+            return sessionResults(raw.substring(1).trim());
+        if (raw.startsWith(":"))
+            return settingResults(root.query.replace(/^\s*:\s*/, ""));
         const used = id => Math.min(root.usage[id] || 0, 9);
+
+        const windows = root.windows
+            .map(t => ({ toplevel: t, score: q ? windowScore(t, q) : 20 }))
+            .filter(r => r.score > 0)
+            .map(r => ({ kind: "win", tag: "WIN", strong: r.score >= 10, label: r.toplevel.title || r.toplevel.appId,
+                detail: r.toplevel.appId, toplevel: r.toplevel }));
 
         const apps = root.apps
             .map(e => ({ entry: e, score: q ? appScore(e, q) : 10 }))
             .filter(r => r.score > 0)
             .sort((a, b) => (b.score + used(b.entry.id) / 10) - (a.score + used(a.entry.id) / 10)
                 || a.entry.name.localeCompare(b.entry.name))
-            .map(r => ({ kind: "app", strong: r.score >= 10, label: r.entry.name,
+            .map(r => ({ kind: "app", tag: "APP", strong: r.score >= 10, label: r.entry.name.toUpperCase(),
                 detail: r.entry.genericName || r.entry.comment, entry: r.entry }));
 
+        const strong = windows.filter(r => r.strong).concat(apps.filter(r => r.strong));
+        const weak = windows.filter(r => !r.strong).concat(apps.filter(r => !r.strong));
         if (!raw)
-            return apps;
+            return strong;
 
         const cmds = root.history
             .filter(c => c.toLowerCase().startsWith(q) && c !== raw)
-            .map(c => ({ kind: "cmd", label: c, detail: "", command: c }));
+            .map(c => ({ kind: "cmd", tag: "CMD", label: c, detail: "", command: c }));
 
-        return apps.filter(r => r.strong).concat(cmds, apps.filter(r => !r.strong),
-            [{ kind: "run", label: raw, detail: "", command: raw }]);
+        return strong.concat(cmds, weak, [{ kind: "run", tag: "RUN", label: raw, detail: "", command: raw }]);
     }
 
     // --- Launching ---------------------------------------------------
@@ -120,7 +304,20 @@ Singleton {
     function launch(result, inTerminal) {
         if (!result)
             return;
-        if (result.kind === "app")
+        if (result.kind === "session") {
+            if (!runSession(result.action))
+                return;
+        } else if (result.kind === "set") {
+            if (!applySetting(result))
+                return;
+        } else if (result.kind === "calc") {
+            // Nothing to copy yet: stay open.
+            if (result.value === undefined)
+                return;
+            Quickshell.execDetached(["wl-copy", result.value]);
+        } else if (result.kind === "win")
+            result.toplevel.activate();
+        else if (result.kind === "app")
             launchApp(result.entry, inTerminal);
         else
             runCommand(result.command, inTerminal);

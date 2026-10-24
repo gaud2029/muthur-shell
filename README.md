@@ -224,10 +224,13 @@ reserving space, so the window layout never shifts.
 ## The launcher
 
 `Super+Space` opens a `>_` prompt in the bar's start corner, by the
-focus-mode cursor. Type to filter, in order: the applications whose name
-matches, the commands you ran from it before, the applications that only
-match by description, executable or keyword — and last, always, what you
-typed, as a shell command. So when nothing installed is called that,
+focus-mode cursor. Type to filter, in order: the open windows (`WIN`,
+by app id or title) and the applications whose name matches, the
+commands you ran from it before, the windows and applications that only
+match by a word of their title, description, executable or keyword —
+and last, always, what you typed, as a shell command. Enter on a window
+brings it to the front; with nothing typed, the list is every open
+window, then every application. So when nothing installed is called that,
 Enter just runs it: `echo test > test.txt` writes `~/test.txt`
 (through `bash -c`, in your home directory, output discarded).
 
@@ -238,6 +241,22 @@ Enter just runs it: `echo test > test.txt` writes `~/test.txt`
 | `Ctrl+Enter` | run the typed text as a command, whatever is selected |
 | `Up`/`Down`, `Ctrl+P`/`Ctrl+N`, `Tab` | move |
 | `Escape`, or a click outside | close |
+
+A prefix switches the launcher to another mode — the `[?]` in the
+prompt's corner lists them:
+
+- **`=`** calculates as you type: `= 2^10 / 3`, `= sqrt(2) * pi`,
+  `= ln(10)`. Numbers, `+ - * / % ^`, parentheses, `sqrt abs round floor
+  ceil sin cos tan asin acos atan log ln exp min max`, `pi` and `e`.
+  Enter copies the result.
+- **`:`** changes a setting, the same ones as [`muthur set`](#the-muthur-command):
+  `:night` lists the matching keys with their value, Enter completes one
+  (`:display.nightlight `) or, for an on/off one, toggles it; then the
+  values are listed (`:look.preset tr` → `tron`...), and Enter sets the
+  selected one. A refused value shows in the status line.
+- **`!`** for the session: `LOCK`, `LOGOUT`, `SUSPEND`, `REBOOT`,
+  `POWER OFF` (`!sus`...). As in the drawer, everything but LOCK asks
+  `CONFIRM …?` first: a second Enter within 4 seconds does it.
 
 Applications with `Terminal=true` (yazi, btop...) open in alacritty.
 How often each application is launched raises it in the list; that and
