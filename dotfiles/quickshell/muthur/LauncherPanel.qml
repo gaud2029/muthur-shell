@@ -37,6 +37,19 @@ PanelWindow {
 
     onResultsChanged: selected = 0
 
+    // Hovering selects, but only once the pointer has moved: the list
+    // appearing (or changing) under a still pointer reports a hover too,
+    // which would steal the selection from the keyboard.
+    property point pointer: Qt.point(-1, -1)
+
+    function hovered(row, mouse) {
+        const p = row.mapToItem(null, mouse.x, mouse.y);
+        const moved = pointer.x >= 0 && (p.x !== pointer.x || p.y !== pointer.y);
+        pointer = p;
+        if (moved)
+            selected = row.index;
+    }
+
     function move(delta) {
         if (results.length === 0)
             return;
@@ -205,7 +218,7 @@ PanelWindow {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onEntered: root.selected = row.index
+                        onPositionChanged: mouse => root.hovered(row, mouse)
                         onClicked: Launcher.launch(row.modelData, false)
                     }
                 }
