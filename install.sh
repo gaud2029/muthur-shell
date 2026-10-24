@@ -101,7 +101,7 @@ PACKAGES=(
   labwc          # compositor (dotfiles/labwc)
   xorg-xwayland  # X11 apps under labwc
   quickshell     # the shell itself
-  fuzzel         # launcher ([>_], Super+Space)
+  fuzzel         # fallback launcher (Super+Space) when the shell isn't running
   alacritty      # terminal (themed; Super+Return and the labwc menu)
   starship       # prompt (dotfiles/starship, themed via ANSI colors)
   yazi           # file manager (dotfiles/yazi, themed via ANSI colors; Super+E)

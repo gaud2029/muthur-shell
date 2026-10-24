@@ -66,9 +66,9 @@
     <keybind key="W-Return">
       <action name="Execute" command="alacritty" />
     </keybind>
-    <!-- App launcher -->
+    <!-- App launcher: the shell's, or fuzzel when the shell isn't running -->
     <keybind key="W-Space">
-      <action name="Execute" command="fuzzel" />
+      <action name="Execute" command="sh -c 'quickshell ipc -c muthur call launcher toggle || fuzzel'" />
     </keybind>
     <!-- File manager (yazi, in the terminal) -->
     <keybind key="W-e">

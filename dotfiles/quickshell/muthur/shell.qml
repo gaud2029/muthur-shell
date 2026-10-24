@@ -23,6 +23,15 @@ ShellRoot {
         screen: Quickshell.screens.find(s => s.name === ThemeStore.mainScreen) || Quickshell.screens[0]
     }
 
+    // The launcher (Super+Space), on the main screen unless asked
+    // otherwise. Made on each opening: a hidden window that kept its
+    // input focus makes Qt's text-input fight the next one.
+    LazyLoader {
+        active: Launcher.visible
+
+        LauncherPanel {}
+    }
+
     // Volume/brightness/layout OSD, on the main screen too.
     OsdWindow {
         screen: Quickshell.screens.find(s => s.name === ThemeStore.mainScreen) || Quickshell.screens[0]
