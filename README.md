@@ -253,6 +253,9 @@ A prefix switches the launcher to another mode:
   (`:display.nightlight `) or, for an on/off one, toggles it; then the
   values are listed (`:look.preset tr` → `tron`...), and Enter sets the
   selected one. A refused value shows in the status line.
+- **`!`** for the session: `LOCK`, `LOGOUT`, `SUSPEND`, `REBOOT`,
+  `POWER OFF` (`!sus`...). As in the drawer, everything but LOCK asks
+  `CONFIRM …?` first: a second Enter within 4 seconds does it.
 
 Applications with `Terminal=true` (yazi, btop...) open in alacritty.
 How often each application is launched raises it in the list; that and

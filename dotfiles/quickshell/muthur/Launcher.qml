@@ -10,7 +10,8 @@ import Quickshell.Wayland
 // was typed as a shell command when nothing else is wanted — Enter on
 // `echo test > test.txt` runs it, with bash in $HOME. A prefix switches
 // mode: `=` calculates, `:` changes a setting (the `muthur` command's,
-// Cli.qml). Opened from labwc
+// Cli.qml), `!` locks, logs out, suspends, reboots or powers off.
+// Opened from labwc
 // with
 //   quickshell ipc -c muthur call launcher toggle
 // or `muthur ui open launcher`.
@@ -24,7 +25,10 @@ Singleton {
     // A setting that refused its value, shown in the status line until
     // the next keystroke.
     property string message: ""
-    onQueryChanged: message = ""
+    onQueryChanged: {
+        message = "";
+        armed = "";
+    }
 
     // Replace what's typed (completing a setting's key).
     signal completeRequested(string text)
@@ -202,16 +206,67 @@ Singleton {
         return !err;
     }
 
+    // --- `!` session --------------------------------------------------
+    //
+    // As in the drawer: lock at once, the rest only on a second Enter
+    // within a few seconds, so a stray keystroke can't power off.
+
+    readonly property var sessionActions: [
+        { name: "LOCK", detail: "lock the screen" },
+        { name: "LOGOUT", detail: "leave labwc", command: ["labwc", "--exit"] },
+        { name: "SUSPEND", detail: "suspend to RAM", command: ["systemctl", "suspend"] },
+        { name: "REBOOT", detail: "restart the machine", command: ["systemctl", "reboot"] },
+        { name: "POWER OFF", detail: "shut the machine down", command: ["systemctl", "poweroff"] }
+    ]
+
+    // The action waiting for its confirming Enter, or "".
+    property string armed: ""
+
+    Timer {
+        running: root.armed !== ""
+        interval: 4000
+        onTriggered: root.armed = ""
+    }
+
+    function sessionResults(text) {
+        const row = a => ({ kind: "session", tag: "SYS", action: a,
+            label: root.armed === a.name ? "CONFIRM " + a.name + "?" : a.name,
+            detail: root.armed === a.name ? "ENTER AGAIN TO CONFIRM" : a.detail });
+        // Armed, the list is just that action: the selection can't
+        // slide onto another one between the two Enters.
+        if (root.armed)
+            return root.sessionActions.filter(a => a.name === root.armed).map(row);
+        const q = text.toLowerCase();
+        return root.sessionActions.filter(a => !q || textScore(a.name, q) > 0).map(row);
+    }
+
+    // false while it waits for confirmation.
+    function runSession(action) {
+        if (action.command && root.armed !== action.name) {
+            root.armed = action.name;
+            return false;
+        }
+        root.armed = "";
+        if (action.command)
+            Quickshell.execDetached(action.command);
+        else
+            LockScreen.lock();
+        return true;
+    }
+
     // [{ kind, tag, label, detail, ... }], best first: windows and
     // applications by name, commands run before, the other windows and
     // applications, then the typed text itself. kind is "win" (with
     // `toplevel`), "app" (`entry`), "cmd" or "run" (`command`), or
-    // "calc" (`value`) after a `=`, "set" (`entry`, `value`) after a `:`.
+    // "calc" (`value`) after a `=`, "set" (`entry`, `value`) after a `:`,
+    // "session" (`action`) after a `!`.
     readonly property var results: {
         const q = root.query.trim().toLowerCase();
         const raw = root.query.trim();
         if (raw.startsWith("="))
             return calcResults(raw.substring(1).trim());
+        if (raw.startsWith("!"))
+            return sessionResults(raw.substring(1).trim());
         if (raw.startsWith(":"))
             return settingResults(root.query.replace(/^\s*:\s*/, ""));
         const used = id => Math.min(root.usage[id] || 0, 9);
@@ -249,7 +304,10 @@ Singleton {
     function launch(result, inTerminal) {
         if (!result)
             return;
-        if (result.kind === "set") {
+        if (result.kind === "session") {
+            if (!runSession(result.action))
+                return;
+        } else if (result.kind === "set") {
             if (!applySetting(result))
                 return;
         } else if (result.kind === "calc") {
