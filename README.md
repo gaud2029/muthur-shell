@@ -477,7 +477,21 @@ muthur ui close
 
 muthur snapshot save mine           # keep every setting...
 muthur snapshot restore mine        # ...and put them all back later
+
+muthur doctor                       # check the install, with the fix for each problem
 ```
+
+`muthur doctor` goes through what the shell relies on: the packages
+`install.sh` lists (one installed outside pacman is a warning: it works
+but won't be updated), the services behind the panels (NetworkManager,
+Bluetooth, UPower, power-profiles-daemon, PipeWire; another network
+manager running alongside), the config links into this checkout, the
+shell itself (running, answering over IPC, no QML errors since it last
+loaded), labwc (stock or patched, `menu.xml` matching the build), the
+generated theme files, and which optional extras are installed. Each
+problem comes with the command that fixes it; it exits 1 when something
+must be fixed, and `--json` gives the results for scripts. It reads its
+lists from `install.sh`, and works with the shell down.
 
 `--json` on `get` and `list` gives output for scripts. Exit codes: 0 ok,
 1 a bad command, setting or value, 2 the shell isn't running. Network and
