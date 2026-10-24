@@ -242,6 +242,13 @@ Enter just runs it: `echo test > test.txt` writes `~/test.txt`
 | `Up`/`Down`, `Ctrl+P`/`Ctrl+N`, `Tab` | move |
 | `Escape`, or a click outside | close |
 
+A prefix switches the launcher to another mode:
+
+- **`=`** calculates as you type: `= 2^10 / 3`, `= sqrt(2) * pi`,
+  `= ln(10)`. Numbers, `+ - * / % ^`, parentheses, `sqrt abs round floor
+  ceil sin cos tan asin acos atan log ln exp min max`, `pi` and `e`.
+  Enter copies the result.
+
 Applications with `Terminal=true` (yazi, btop...) open in alacritty.
 How often each application is launched raises it in the list; that and
 the last 30 commands are kept in `launcher.ini` next to the QML. Also

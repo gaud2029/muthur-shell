@@ -8,7 +8,8 @@ import Quickshell.Wayland
 // open windows, the installed applications, the commands run from it
 // before, and whatever
 // was typed as a shell command when nothing else is wanted — Enter on
-// `echo test > test.txt` runs it, with bash in $HOME. Opened from labwc
+// `echo test > test.txt` runs it, with bash in $HOME. A prefix switches
+// mode: `=` calculates. Opened from labwc
 // with
 //   quickshell ipc -c muthur call launcher toggle
 // or `muthur ui open launcher`.
@@ -96,13 +97,57 @@ Singleton {
         return best === 2 ? 20 : best;
     }
 
+    // --- `=` calculator ----------------------------------------------
+    //
+    // Numbers, + - * / % ^ and parentheses, and the functions and
+    // constants below; anything else is refused before it gets near the
+    // JavaScript engine.
+
+    readonly property var mathNames: ({
+        sqrt: Math.sqrt, abs: Math.abs, round: Math.round, floor: Math.floor, ceil: Math.ceil,
+        sin: Math.sin, cos: Math.cos, tan: Math.tan, asin: Math.asin, acos: Math.acos, atan: Math.atan,
+        log: Math.log10, ln: Math.log, exp: Math.exp, min: Math.min, max: Math.max,
+        pi: Math.PI, e: Math.E
+    })
+
+    // { value: "23" } or { error: "..." }.
+    function calculate(expr) {
+        if (!/^[0-9a-z\s+\-*\/%^().,]*$/i.test(expr))
+            return { error: "numbers, + - * / % ^ ( ) and sqrt, ln, log, sin, pi..." };
+        const unknown = (expr.match(/[a-z]+/gi) || []).find(n => !(n.toLowerCase() in root.mathNames));
+        if (unknown)
+            return { error: "unknown: " + unknown };
+        const js = expr.replace(/\^/g, "**").replace(/[a-z]+/gi, n => "M." + n.toLowerCase());
+        try {
+            const v = new Function("M", "return (" + js + ");")(root.mathNames);
+            if (typeof v !== "number" || !isFinite(v))
+                return { error: "no finite result" };
+            // 0.1 + 0.2 shows 0.3.
+            return { value: String(Number(v.toPrecision(12))) };
+        } catch (e) {
+            return { error: "incomplete expression" };
+        }
+    }
+
+    function calcResults(expr) {
+        if (!expr)
+            return [{ kind: "calc", tag: "CALC", label: "= _", detail: "type an expression: = 2^10 / 3" }];
+        const r = calculate(expr);
+        return r.error
+            ? [{ kind: "calc", tag: "CALC", label: "= ?", detail: r.error }]
+            : [{ kind: "calc", tag: "CALC", label: "= " + r.value, detail: expr + "   ENTER COPIES", value: r.value }];
+    }
+
     // [{ kind, tag, label, detail, ... }], best first: windows and
     // applications by name, commands run before, the other windows and
     // applications, then the typed text itself. kind is "win" (with
-    // `toplevel`), "app" (`entry`), "cmd" or "run" (`command`).
+    // `toplevel`), "app" (`entry`), "cmd" or "run" (`command`), or
+    // "calc" (`value`) after a `=`.
     readonly property var results: {
         const q = root.query.trim().toLowerCase();
         const raw = root.query.trim();
+        if (raw.startsWith("="))
+            return calcResults(raw.substring(1).trim());
         const used = id => Math.min(root.usage[id] || 0, 9);
 
         const windows = root.windows
@@ -138,7 +183,12 @@ Singleton {
     function launch(result, inTerminal) {
         if (!result)
             return;
-        if (result.kind === "win")
+        if (result.kind === "calc") {
+            // Nothing to copy yet: stay open.
+            if (result.value === undefined)
+                return;
+            Quickshell.execDetached(["wl-copy", result.value]);
+        } else if (result.kind === "win")
             result.toplevel.activate();
         else if (result.kind === "app")
             launchApp(result.entry, inTerminal);
