@@ -73,9 +73,11 @@ muthur-shell replaces your desktop configuration.
   files on every theme switch (GTK's gtk.css, Firefox's userChrome.css
   import and user.js pref, the color-scheme and GTK theme settings).
 
-  NetworkManager and Bluetooth are enabled if they aren't yet. The
-  optional extras (boot menu, boot screen, login screen, typing sounds,
-  themed wallpapers, patched labwc) are offered one by one at the end.
+  herdr and the Herdr app are installed into ~/.local from herdr.dev
+  if missing. NetworkManager and Bluetooth are enabled if they aren't
+  yet. The optional extras (boot menu, boot screen, login screen,
+  typing sounds, themed wallpapers, patched labwc) are offered one by
+  one at the end.
 
 EOF
 if [ "$ASSUME_YES" -ne 1 ]; then
@@ -94,9 +96,8 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$REPO_DIR/dotfiles"
 CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 
-# Everything the configs invoke or the panels talk to. herdr (the terminal
-# workspace manager config in dotfiles/herdr) isn't packaged and is
-# installed separately.
+# Everything the configs invoke or the panels talk to. herdr and the Herdr
+# app aren't packaged: install_herdr (below) fetches them.
 PACKAGES=(
   labwc          # compositor (dotfiles/labwc)
   xorg-xwayland  # X11 apps under labwc
@@ -169,9 +170,35 @@ enable_services() {
   fi
 }
 
+# herdr (the terminal workspace manager, dotfiles/herdr) and the Herdr
+# desktop app (herdr-app, themed by scripts/herdr-app-theme.py) aren't
+# packaged: their own installers put them in ~/.local (no root), checksums
+# verified. Only run when missing, since both update themselves after that
+# (`herdr update`, and the app from its own menu). The app's installer also
+# fetches herdr-core if there's none. A failure is reported, not fatal.
+install_herdr() {
+  local bin="$HOME/.local/bin"
+  if [ -x "$bin/herdr" ] || command -v herdr >/dev/null; then
+    echo "ok:      herdr already installed"
+  else
+    echo "Installing herdr (https://herdr.dev/install.sh)..."
+    curl -fsSL https://herdr.dev/install.sh | HERDR_INSTALL_DIR="$bin" sh ||
+      echo "warning: herdr didn't install; rerun: curl -fsSL https://herdr.dev/install.sh | sh" >&2
+  fi
+  if [ -x "$bin/herdr-app" ] || command -v herdr-app >/dev/null; then
+    echo "ok:      herdr-app already installed"
+  else
+    echo "Installing the Herdr app (https://releases.herdr.dev/app/install.sh)..."
+    curl -fsSL https://releases.herdr.dev/app/install.sh | sh ||
+      echo "warning: herdr-app didn't install; rerun: curl -fsSL https://releases.herdr.dev/app/install.sh | sh" >&2
+  fi
+  echo
+}
+
 if [ "$NO_PACKAGES" -ne 1 ]; then
   install_packages "${PACKAGES[@]}"
   enable_services
+  install_herdr
 fi
 
 # "source relative to dotfiles/" -> "target relative to \$CONFIG_HOME",
