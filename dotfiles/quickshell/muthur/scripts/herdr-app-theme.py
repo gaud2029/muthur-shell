@@ -6,7 +6,8 @@ Usage: herdr-app-theme.py THEME_JSON FONT
 Writes THEME_JSON (the palette, in herdr-app's themes/<name>.json format)
 to themes/muthur.json, and a "muthur" layout to layouts/muthur.json: Herdr's
 own shipped main layout, re-read every time so it keeps up with app updates,
-with that theme, FONT for terminals and panels, and square pane frames. Does
+with that theme, FONT for terminals and panels, square pane frames and labwc's
+window decorations. Does
 nothing if herdr-app isn't set up ($HERDR_APP_HOME, else ~/.config/herdr-app).
 A file is only rewritten when its content changes; herdr-app picks changes up
 live, open windows included. A pick in herdr-app's theme menu overrides a
@@ -92,6 +93,11 @@ def main():
     except (OSError, ValueError):
         return
     layout.update(theme="muthur", font=font, ui_font=font)
+    # main draws its own title bar ("titlebar": "none"), which also opts
+    # out of labwc's decorations; without it the window gets labwc's title
+    # bar, buttons and border like every other app (herdr then hides its own
+    # buttons).
+    layout.pop("titlebar", None)
     square(layout)
     write(os.path.join(home, "layouts", "muthur.json"), json.dumps(layout, indent=2) + "\n")
     pick_theme(["muthur"])
