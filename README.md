@@ -84,6 +84,13 @@ git clone https://github.com/gaud2029/muthur-shell && cd muthur-shell
 sudo reboot
 ```
 
+Run it as your own user, not as root nor with `sudo`: it sets up that
+user's `~/.config` and calls `sudo` itself where it needs to (it refuses
+to run as root). Downloaded on its own (`wget …/install.sh`) instead of
+from a checkout, it clones the repo into `~/muthur-shell` (or
+`$MUTHUR_DIR`) and runs that copy; keep the clone, the configs are
+symlinks into it.
+
 ### Optional: the MU/TH/UR boot chain
 
 The lock screen comes with the shell. The boot menu, boot screen, login

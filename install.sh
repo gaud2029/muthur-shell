@@ -14,6 +14,7 @@ set -euo pipefail
 NO_PACKAGES=0
 ASSUME_YES=0
 EXTRAS_ARG=""
+ORIG_ARGS=("$@")
 usage() {
   echo "usage: $0 [--no-packages] [--yes] [--extras all|none|wallpapers,labwc,keysound,sddm,plymouth,limine]" >&2
   exit 2
@@ -44,6 +45,48 @@ case " $OS_ID $OS_LIKE " in
   exit 1
   ;;
 esac
+
+# Everything lands in the invoking user's home (~/.config, ~/.local) and
+# the root parts go through sudo, so root itself would set up a desktop
+# for root, in /root.
+if [ "$(id -u)" -eq 0 ]; then
+  cat >&2 <<'EOF'
+Run install.sh as your own user, not as root (nor with sudo): it sets up
+that user's ~/.config and asks sudo for the parts that need root.
+
+On a fresh Arch with only root, create a user first:
+  pacman -S --needed sudo
+  useradd -m -G wheel NAME && passwd NAME
+  EDITOR=nano visudo     # uncomment: %wheel ALL=(ALL:ALL) ALL
+then log in as NAME and rerun install.sh.
+EOF
+  exit 1
+fi
+
+# Downloaded on its own (wget/curl) rather than run from a checkout: the
+# configs it links live in the repo, so clone it (to ~/muthur-shell, or
+# $MUTHUR_DIR) and run the clone's install.sh. The clone must stay: the
+# configs are symlinks into it.
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+if [ ! -d "$REPO_DIR/dotfiles" ]; then
+  CLONE_DIR="${MUTHUR_DIR:-$HOME/muthur-shell}"
+  if [ -d "$CLONE_DIR/.git" ]; then
+    echo "Using the existing checkout in $CLONE_DIR"
+  else
+    if ! command -v git >/dev/null; then
+      echo "Installing git (sudo pacman -S --needed git)..."
+      sudo pacman -S --needed git
+    fi
+    echo "Cloning muthur-shell into $CLONE_DIR..."
+    git clone https://github.com/gaud2029/muthur-shell "$CLONE_DIR"
+  fi
+  echo
+  # Piped into bash, stdin is the script: give the prompts the terminal.
+  if [ ! -t 0 ] && (: </dev/tty) 2>/dev/null; then
+    exec "$CLONE_DIR/install.sh" "${ORIG_ARGS[@]}" </dev/tty
+  fi
+  exec "$CLONE_DIR/install.sh" "${ORIG_ARGS[@]}"
+fi
 
 EXTRAS=(wallpapers labwc keysound sddm plymouth limine)
 if [ -n "$EXTRAS_ARG" ]; then
@@ -92,7 +135,6 @@ if [ "$ASSUME_YES" -ne 1 ]; then
   echo
 fi
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$REPO_DIR/dotfiles"
 CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 
