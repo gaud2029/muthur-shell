@@ -16,12 +16,17 @@ happens if it doesn't exist), writes:
   hot-reloads nor loads assets through a symlink that leads out of its home.
 
 A file is only rewritten when its content changes; herdr-app picks changes
-up live, open windows included.
+up live, open windows included. A pick in herdr-app's theme menu overrides a
+layout's theme for good (in light or dark), so while one of these layouts
+shows, the muthur theme is picked again after every write.
 """
 
 import json
 import os
+import shutil
+import subprocess
 import sys
+import time
 
 # dotfiles/quickshell/muthur/scripts/ -> dotfiles/herdr-app/
 SOURCE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "herdr-app")
@@ -83,11 +88,45 @@ def own_layouts(home, font):
                 with open(src, "rb") as f:
                     write(os.path.join(target, os.path.relpath(src, os.path.join(mods, name))), f.read())
     layouts = os.path.join(SOURCE, "layouts")
+    names = []
     for file in sorted(os.listdir(layouts)) if os.path.isdir(layouts) else []:
+        names.append(os.path.splitext(file)[0])
         with open(os.path.join(layouts, file)) as f:
             layout = json.load(f)
         layout.update(font=font, ui_font=font)
         write(os.path.join(home, "layouts", file), json.dumps(layout, indent=2) + "\n")
+    return names
+
+
+# herdr-app links itself into ~/.local/bin, which the session (and so the
+# shell running this) may not have on its PATH.
+HERDR = shutil.which("herdr-app", path=os.pathsep.join(
+    [os.environ.get("PATH", ""), os.path.expanduser("~/.local/bin")]))
+
+
+def herdr(*args):
+    try:
+        return subprocess.run([HERDR, *args], capture_output=True, text=True, timeout=5).stdout
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def pick_theme(names):
+    # The theme menu's pick is stored per layout, one for light and one for
+    # dark, and wins over the layout file. app.theme sets the half matching
+    # the theme's lightness, so it's asked after herdr has re-read the file:
+    # that takes it a moment, so once soon and once more to be sure (picking
+    # the same theme again changes nothing).
+    if not HERDR:
+        return
+    try:
+        shown = json.loads(herdr("status")).get("layout")
+    except ValueError:
+        return
+    if shown in names:
+        for wait in (1.5, 2.5):
+            time.sleep(wait)
+            herdr("do", "app.theme", json.dumps({"name": "muthur"}))
 
 
 def main():
@@ -100,7 +139,8 @@ def main():
     write(os.path.join(home, "themes", "muthur.json"), theme)
     plain_layout(home, font)
     # Mods first, so the layout never shows before what it draws with.
-    own_layouts(home, font)
+    names = own_layouts(home, font)
+    pick_theme(["muthur", *names])
 
 
 if __name__ == "__main__":
