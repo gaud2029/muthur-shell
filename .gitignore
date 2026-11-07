@@ -11,3 +11,6 @@ dotfiles/quickshell/muthur/launcher.ini
 dotfiles/quickshell/muthur/monitor.ini
 dotfiles/labwc/environment.d/
 dotfiles/labwc/menu.xml
+# Written into a mod folder by herdr-app when it loads one from here.
+dotfiles/herdr-app/mods/*/gpui-kit.d.ts
+dotfiles/herdr-app/mods/*/jsconfig.json

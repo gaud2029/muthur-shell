@@ -76,6 +76,9 @@ def own_layouts(home, font):
             os.remove(target)
         for root, _dirs, files in os.walk(os.path.join(mods, name)):
             for file in files:
+                # herdr-app's own type files, if it ever wrote some here.
+                if file.endswith(".d.ts") or file == "jsconfig.json":
+                    continue
                 src = os.path.join(root, file)
                 with open(src, "rb") as f:
                     write(os.path.join(target, os.path.relpath(src, os.path.join(mods, name))), f.read())
