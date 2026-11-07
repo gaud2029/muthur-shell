@@ -971,6 +971,17 @@ QtObject {
             JSON.stringify(theme, null, 2) + "\n", root.fontFamily]);
     }
 
+    // Audacious's Winamp interface: a classic skin, every sprite drawn in
+    // the shell's colors by scripts/audacious-skin.py, into the user skin
+    // directory as "muthur" (picked in Audacious's settings). Audacious
+    // reads a skin when it starts or when it's picked again.
+    function writeAudaciousSkin() {
+        const hex = root.hex;
+        Quickshell.execDetached([Quickshell.shellDir + "/scripts/audacious-skin.py",
+            JSON.stringify({ bg: hex(root.colorBg), fg: hex(root.colorFg),
+                             dim: hex(root.colorDim), focus: hex(root.colorFocus) })]);
+    }
+
     // GTK colors (GitHub issue #5). GTK loads ~/.config/gtk-{3,4}.0/gtk.css
     // on top of its theme, so these override libadwaita (GTK4, through its
     // CSS variables) and adw-gtk3 (GTK3, through the same names as
@@ -1131,6 +1142,7 @@ QtObject {
         root.writeNvimTheme();
         root.writeBtopTheme();
         root.writeHerdrAppTheme();
+        root.writeAudaciousSkin();
         root.writeGtkCss();
         root.writeFirefoxCss();
         root.writeColorScheme();
@@ -1146,6 +1158,7 @@ QtObject {
         root.writeNvimTheme();
         root.writeBtopTheme();
         root.writeHerdrAppTheme();
+        root.writeAudaciousSkin();
         root.writeGtkCss();
         root.writeFirefoxCss();
         root.writeColorScheme();
