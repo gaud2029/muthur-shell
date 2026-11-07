@@ -47,8 +47,11 @@ Python and ImageMagick for the helper scripts, and the
 NetworkManager/BlueZ/PipeWire/UPower services the panels
 talk to — and enables NetworkManager and Bluetooth if they aren't yet, as
 on a fresh Arch install (unless another network manager such as iwd is
-running: it then says how to switch). `--no-packages` skips all this;
-herdr isn't packaged and is installed separately. It then backs up anything already at the
+running: it then says how to switch). herdr and the Herdr desktop app
+(herdr-app) aren't packaged: when missing, their own installers
+(`herdr.dev/install.sh`, `releases.herdr.dev/app/install.sh`) put them in
+`~/.local`, after which they update themselves. `--no-packages` skips all
+this. It then backs up anything already at the
 destination instead of overwriting it, and symlinks every config this repo
 manages: the shell itself, plus fuzzel, labwc, alacritty, herdr, Neovim,
 yazi, btop, `~/.bashrc` and the starship prompt, and makes yazi the
