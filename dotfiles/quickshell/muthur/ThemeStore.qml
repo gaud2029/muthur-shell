@@ -588,6 +588,7 @@ QtObject {
         root.store.fontFamily = family === defaultFontFamily ? "" : family;
         root.writeFuzzelColors();
         root.writeAlacrittyTheme();
+        root.writeHerdrAppTheme();
     }
     readonly property real scale: root.gridUnit * root.sizeMultiplier / 5
     readonly property int fontSize: Math.max(1, Math.round(13 * scale))
@@ -942,6 +943,34 @@ QtObject {
         Quickshell.execDetached(["pkill", "-USR2", "-x", "btop"]);
     }
 
+    // The Herdr desktop app (herdr-app; the herdr TUI just follows
+    // alacritty's ANSI colors). Its themes/*.json gives the terminal
+    // palette, and "colors" sets the panel colors it would otherwise derive
+    // darker than the background: everything flat on the background like
+    // the shell's panels, dim lines, the focus color as accent. The
+    // generated "muthur" layout (scripts/herdr-app-theme.py) adds the font
+    // and square frames. herdr-app reloads both live.
+    function writeHerdrAppTheme() {
+        const hex = root.hex, mix = root.mix;
+        const bg = hex(root.colorBg), fg = hex(root.colorFg);
+        const dim = hex(root.colorDim), focus = hex(root.colorFocus);
+        const c = i => hex(root.color(i));
+        const theme = {
+            background: bg, foreground: fg, selection: dim, cursor: focus,
+            ansi: Array.from({ length: 16 }, (_, i) => c(i)),
+            colors: {
+                canvas: bg, chrome: bg, surface: bg, popover: bg, input: bg,
+                raised: c(0), hover: c(0), selected: mix(bg, dim, 0.35),
+                border: dim, foreground: fg, muted: mix(fg, dim, 0.5), dim: dim,
+                accent: focus, accent_foreground: bg, solid: fg, solid_foreground: bg,
+                // Agent states, like the bar's level colors.
+                working: c(3), blocked: c(1), done: c(2), idle: dim, unknown: dim
+            }
+        };
+        Quickshell.execDetached([Quickshell.shellDir + "/scripts/herdr-app-theme.py",
+            JSON.stringify(theme, null, 2) + "\n", root.fontFamily]);
+    }
+
     // GTK colors (GitHub issue #5). GTK loads ~/.config/gtk-{3,4}.0/gtk.css
     // on top of its theme, so these override libadwaita (GTK4, through its
     // CSS variables) and adw-gtk3 (GTK3, through the same names as
@@ -1101,6 +1130,7 @@ QtObject {
         root.writeAlacrittyTheme();
         root.writeNvimTheme();
         root.writeBtopTheme();
+        root.writeHerdrAppTheme();
         root.writeGtkCss();
         root.writeFirefoxCss();
         root.writeColorScheme();
@@ -1115,6 +1145,7 @@ QtObject {
         root.writeAlacrittyTheme();
         root.writeNvimTheme();
         root.writeBtopTheme();
+        root.writeHerdrAppTheme();
         root.writeGtkCss();
         root.writeFirefoxCss();
         root.writeColorScheme();
