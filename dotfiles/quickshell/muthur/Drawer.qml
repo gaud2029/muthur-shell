@@ -94,6 +94,10 @@ PanelWindow {
             command: ["systemctl", "suspend"]
         }
         ConfirmButton {
+            action: "REBOOT"
+            command: ["systemctl", "reboot"]
+        }
+        ConfirmButton {
             action: "POWER OFF"
             command: ["systemctl", "poweroff"]
         }
