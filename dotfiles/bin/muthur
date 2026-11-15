@@ -26,6 +26,9 @@
 
   muthur doctor [--json]             check the install: packages, services,
                                      links, the shell, labwc; how to fix each
+  muthur update [--check]            pull the repo and apply it: new links and
+                                     packages, extras whose sources changed
+                                     (--check: only list what's incoming)
 
 Exit codes: 0 ok, 1 bad command, key or value, 2 the shell isn't running.
 
@@ -52,7 +55,7 @@ CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "muthur
 SNAPSHOTS = STATE / "snapshots"
 
 COMMANDS = ["get", "set", "toggle", "list", "lock", "focus", "keyboard",
-            "notifications", "osd", "updates", "ui", "snapshot", "doctor", "help"]
+            "notifications", "osd", "updates", "ui", "snapshot", "doctor", "update", "help"]
 OSD = {"volume-up": "volumeUp", "volume-down": "volumeDown", "mute": "mute",
        "mic-mute": "micMute", "brightness-up": "brightnessUp", "brightness-down": "brightnessDown"}
 
@@ -525,12 +528,115 @@ def cmd_doctor(args):
     sys.exit(1 if failed else 0)
 
 
+# --- update -------------------------------------------------------------
+# `muthur update` pulls the checkout, then hands over to the freshly
+# pulled muthur (`muthur __update-apply OLD`) so the rules below are
+# always the new ones. The configs are symlinks into the checkout, so the
+# pull alone updates them; install.sh (idempotent) then adds new links,
+# packages and the regenerated menu.xml, and the extras that are copies
+# (installed outside the checkout) are redone when their sources changed.
+
+def git(repo, *args, check=True):
+    p = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
+    if check and p.returncode != 0:
+        fail(f"git {' '.join(args)}: " + (p.stderr.strip() or p.stdout.strip()))
+    return p.stdout.strip()
+
+
+def presets_block(text):
+    """ThemeStore.qml's built-in presets: what the wallpapers are drawn from."""
+    start, end = text.find("readonly property var builtinPresets"), text.find("// The wallpaper-derived palette")
+    return text[start:end] if start >= 0 and end >= 0 else text
+
+
+def extras_to_redo(repo, old, changed):
+    """(extras installed here whose sources changed, notes)."""
+    def touched(*prefixes):
+        return any(f.startswith(prefixes) for f in changed)
+
+    redo, notes = [], []
+    data = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share"))
+    if (data / "muthur-shell/wallpapers").is_dir():
+        themestore = "dotfiles/quickshell/muthur/ThemeStore.qml"
+        presets_changed = themestore in changed and presets_block(
+            git(repo, "show", f"{old}:{themestore}", check=False)) != presets_block((repo / themestore).read_text())
+        if touched("wallpapers/") or presets_changed:
+            redo.append("wallpapers")
+    if Path("/usr/local/bin/muthur-keysound").exists() and touched("dotfiles/keysound/"):
+        redo.append("keysound")
+    shared = tuple("dotfiles/quickshell/muthur/" + f for f in ("CrtScreen.qml", "VectorTerrain.qml", "TypedText.qml"))
+    if Path("/usr/share/sddm/themes/muthur").is_dir() and touched("dotfiles/sddm/", *shared):
+        redo.append("sddm")
+    if run(["plymouth-set-default-theme"]) == (0, "muthur") and touched("dotfiles/plymouth/"):
+        redo.append("plymouth")
+    # limine.conf is on the root-only ESP: can't tell whether it's themed.
+    if touched("dotfiles/limine/") and run(["pacman", "-Qq", "limine"])[0] == 0:
+        notes.append("the Limine boot menu theme changed: if you installed it, "
+                     f"{repo}/dotfiles/limine/install-limine.sh")
+    if run(["pacman", "-Qq", "labwc-snapgrid"])[0] == 0:
+        notes.append(f"the patched labwc is built from its own repo: to update it, {repo}/install.sh --no-packages --extras labwc")
+    return redo, notes
+
+
+def cmd_update(args):
+    if args not in ([], ["--check"]):
+        fail("usage: muthur update [--check]")
+    repo = repo_dir()
+    if not repo:
+        fail("couldn't find the muthur-shell checkout")
+    branch = git(repo, "rev-parse", "--abbrev-ref", "HEAD")
+    upstream = git(repo, "rev-parse", "--abbrev-ref", "@{upstream}", check=False)
+    if not upstream:
+        fail(f"{branch} doesn't track a remote branch (git -C {repo} branch -u origin/{branch})")
+    print(f"Fetching {upstream} into {repo}...")
+    git(repo, "fetch", "--quiet")
+    incoming = git(repo, "log", "--oneline", "--no-decorate", "HEAD..@{upstream}")
+    if not incoming:
+        print("Already up to date.")
+        return
+    print(incoming, flush=True)
+    if args:
+        return
+    old = git(repo, "rev-parse", "HEAD")
+    p = subprocess.run(["git", "-C", str(repo), "merge", "--ff-only", "--quiet", "@{upstream}"])
+    if p.returncode != 0:
+        fail(f"couldn't fast-forward {branch} (local commits or changes in the way): "
+             f"sort it out in {repo}, then rerun muthur update")
+    new_muthur = repo / "dotfiles/bin/muthur"
+    os.execv(sys.executable, [sys.executable, str(new_muthur), "__update-apply", old])
+
+
+def update_apply(args):
+    repo, old = repo_dir(), args[0]
+    changed = git(repo, "diff", "--name-only", old, "HEAD").splitlines()
+    print(f"\n{len(changed)} file(s) changed.")
+    redo, notes = extras_to_redo(repo, old, changed)
+    missing = run(["pacman", "-T", *install_array((repo / "install.sh").read_text(), "PACKAGES")])[1].split()
+    cmd = [str(repo / "install.sh"), "--yes", "--extras", ",".join(redo) or "none"]
+    if missing:
+        print("New packages to install: " + " ".join(missing))
+    else:
+        cmd.insert(1, "--no-packages")
+    if redo:
+        print("Extras to redo, their sources changed: " + ", ".join(redo))
+    print("Running " + " ".join(cmd).replace(str(Path.home()), "~") + "\n", flush=True)
+    code = subprocess.run(cmd).returncode
+    for note in notes:
+        print("note: " + note)
+    if code != 0:
+        fail(f"install.sh failed (exit {code})")
+    print("\nUpdated. The shell reloads its QML by itself; muthur doctor checks the rest.")
+
+
 def main(argv):
     if not argv or argv[0] in ("help", "-h", "--help"):
         print(__doc__.strip())
         return
     if argv[0] == "__complete":
         complete(argv[1:])
+        return
+    if argv[0] == "__update-apply" and len(argv) == 2:
+        update_apply(argv[1:])
         return
     cmd, args = argv[0], argv[1:]
     simple = {
@@ -550,7 +656,7 @@ def main(argv):
         if len(args) != 1 or args[0] not in OSD:
             fail("usage: muthur osd " + "|".join(OSD))
         call("osd", OSD[args[0]])
-    elif cmd in ("get", "set", "toggle", "list", "focus", "ui", "snapshot", "doctor"):
+    elif cmd in ("get", "set", "toggle", "list", "focus", "ui", "snapshot", "doctor", "update"):
         globals()["cmd_" + cmd](args)
     else:
         fail(f"{' '.join(argv)}: unknown command (muthur help)")
@@ -605,7 +711,7 @@ def candidates(words):
         return []
     if n == 1:
         return {"focus": ["on", "off", "toggle"], "keyboard": ["next"], "notifications": ["clear"],
-                "updates": ["list", "check", "upgrade"],
+                "updates": ["list", "check", "upgrade"], "update": ["--check"],
                 "osd": list(OSD), "ui": ["open", "close"],
                 "snapshot": ["save", "restore", "list", "delete"]}.get(cmd, [])
     if cmd == "ui" and words[1] == "open":
