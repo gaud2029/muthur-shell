@@ -5,7 +5,7 @@ import Quickshell.Wayland
 PanelWindow {
     id: root
 
-    property var popupPanels: [controlPanel, aiPanel, calendarPanel, batteryPanel, updatesPanel, monitorPanel]
+    property var popupPanels: [controlPanel, aiPanel, calendarPanel, batteryPanel, updatesPanel, monitorPanel, relayPanel]
 
     readonly property string position: theme.barPosition
     readonly property bool vertical: theme.vertical
@@ -189,6 +189,12 @@ PanelWindow {
                 }
             }
 
+            // Unread Matrix messages (relay); hidden without its daemon.
+            RelayButton {
+                selected: relayPanel.visible
+                onClicked: root.togglePanel(relayPanel)
+            }
+
             // Pending package updates; hidden when there are none.
             UpdatesButton {
                 selected: updatesPanel.visible
@@ -277,6 +283,11 @@ PanelWindow {
         screen: root.screen
     }
 
+    RelayPanel {
+        id: relayPanel
+        screen: root.screen
+    }
+
     Drawer {
         id: drawer
         screen: root.screen
@@ -295,7 +306,7 @@ PanelWindow {
                 return;
             }
             const [panel, tab] = target.split(":");
-            const popup = { sys: controlPanel, ai: aiPanel, calendar: calendarPanel, battery: batteryPanel, updates: updatesPanel, monitor: monitorPanel }[panel];
+            const popup = { sys: controlPanel, ai: aiPanel, calendar: calendarPanel, battery: batteryPanel, updates: updatesPanel, monitor: monitorPanel, relay: relayPanel }[panel];
             if (tab)
                 popup.currentTab = panel === "sys" ? Ui.sysTabs[tab] : tab;
             if (!popup.visible)

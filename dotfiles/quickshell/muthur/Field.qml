@@ -6,6 +6,8 @@ Rectangle {
 
     property alias input: input_
     property string placeholder: ""
+    // Escape while typing; a handler sets event.accepted to keep it.
+    signal escapePressed(var event)
 
     height: theme.buttonSize
     color: "transparent"
@@ -26,6 +28,10 @@ Rectangle {
         selectedTextColor: theme.colorFg
         font.family: theme.fontFamily
         font.pixelSize: theme.px(12)
+        Keys.onEscapePressed: event => {
+            event.accepted = false;
+            root.escapePressed(event);
+        }
 
         Text {
             anchors.fill: parent

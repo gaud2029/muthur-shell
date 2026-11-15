@@ -205,6 +205,14 @@ From the end of the bar:
   the percentage once charge drops under 80% and the bar blinks under 50%.
   Opens the power panel: charge state, battery size, cycle count, time to
   empty/full and power-profile switching.
+- **`[MSG]`** — Matrix messages, through relay, a small end-to-end
+  encrypted Matrix client run as a separate daemon; hidden while it isn't
+  running (it's looked for every few seconds). The unread count under the
+  label, in the focus color while there are some. Opens the rooms, most
+  recent first; a click opens the conversation, with a line to answer
+  (Enter sends, Escape goes back to the rooms). The shell knows nothing of
+  Matrix: relay syncs, decrypts and sends, and skips its desktop
+  notification for the conversation open in the panel.
 - **`[UPD]`** — pending package updates, the count under the label;
   hidden when there are none. In the focus color when a kernel, systemd,
   mesa, pipewire, Qt, labwc, quickshell, Limine, Plymouth or SDDM update
@@ -491,7 +499,7 @@ muthur lock | focus [on|off] | keyboard next | notifications clear
 muthur osd volume-up                # what the media keys call
 muthur updates                      # pending updates; updates check | upgrade
 
-muthur ui open sys:look             # open a popup (drawer, sys:<tab>, ai:<tab>, calendar, battery, updates, monitor, launcher)
+muthur ui open sys:look             # open a popup (drawer, sys:<tab>, ai:<tab>, calendar, battery, updates, monitor, relay, launcher)
 muthur ui close
 
 muthur snapshot save mine           # keep every setting...
