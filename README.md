@@ -59,6 +59,24 @@ default handler for opening folders. A `gtk-3.0`/`gtk-4.0` `gtk.css`
 the shell didn't write is backed up too, since the shell regenerates it. Quickshell hot-reloads on file save, so once it's running most
 changes to the QML don't need a restart.
 
+### Updating
+
+```sh
+muthur update           # pull the checkout and apply it
+muthur update --check   # only list the incoming commits
+```
+
+The configs are symlinks into the checkout, so pulling updates them;
+`muthur update` fast-forwards the current branch (it stops if local
+commits or changes are in the way), then reruns `install.sh` (safe to
+rerun: it links what's new and keeps the rest) with `--no-packages`
+unless the package list gained something. The extras that are copies
+outside the checkout are redone only when installed here and their
+sources changed: the wallpapers when a preset changed, the typing sounds,
+the login screen, the boot screen. It says when the Limine theme changed
+(it can't check the ESP without root), and the patched labwc, built from
+its own repo, stays a manual `install.sh --extras labwc`.
+
 ### On a new machine: Arch with archinstall
 
 `archinstall/muthur.json` is an [archinstall](https://wiki.archlinux.org/title/Archinstall)
@@ -506,6 +524,7 @@ muthur snapshot save mine           # keep every setting...
 muthur snapshot restore mine        # ...and put them all back later
 
 muthur doctor                       # check the install, with the fix for each problem
+muthur update [--check]             # pull the repo and apply it (see Updating)
 ```
 
 `muthur doctor` goes through what the shell relies on: the packages
