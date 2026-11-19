@@ -10,7 +10,8 @@ ShellRoot {
     // "... call nightlight toggle", "... call caffeine toggle", "... call
     // updates check", and Cli's "muthur" for the muthur command) so they
     // exist from the start — and NightLight starts wlsunset, Updates its
-    // hourly check. NotificationPopups and OsdWindow below
+    // hourly check, and the AI quotas their background refresh (herdr's
+    // roster reads their cache). NotificationPopups and OsdWindow below
     // start the notification server and the "osd" target.
     Component.onCompleted: {
         LockScreen.locked;
@@ -19,6 +20,8 @@ ShellRoot {
         NightLight.enabled;
         Updates.hasData;
         Cli.entries;
+        ClaudeUsage.hasData;
+        CodexUsage.hasData;
     }
 
     // Notification popups, on the main screen only.
