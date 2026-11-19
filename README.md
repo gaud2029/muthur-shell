@@ -223,9 +223,12 @@ From the end of the bar:
   the percentage once charge drops under 80% and the bar blinks under 50%.
   Opens the power panel: charge state, battery size, cycle count, time to
   empty/full and power-profile switching.
-- **`[MSG]`** — Matrix messages, through relay, a small end-to-end
+- **`[MSG]`** — Matrix messages, through
+  [relay](https://github.com/gaud2029/relay), a small end-to-end
   encrypted Matrix client run as a separate daemon; hidden while it isn't
-  running (it's looked for every few seconds). The unread count under the
+  running (it's looked for every few seconds). To set it up (needs Go):
+  clone relay, then `make install`, `relay login` (through the browser,
+  then the recovery key) and `systemctl --user enable --now relay`. The unread count under the
   label, in the focus color while there are some. Opens the rooms, most
   recent first; a click opens the conversation, with a line to answer
   (Enter sends, Escape goes back to the rooms). The shell knows nothing of
