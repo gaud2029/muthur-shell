@@ -339,8 +339,8 @@ QtObject {
         // Percent.
         property int terminalOpacity: 80
 
-        // Monospace family for the shell, fuzzel and alacritty ("" = the
-        // default, see fontFamily).
+        // Monospace family for the shell, fuzzel, alacritty, herdr-app and
+        // Obsidian ("" = the default, see fontFamily).
         property string fontFamily: ""
 
         // "claude", "codex" or "" — whose 5h session bar the [AI] button shows.
@@ -589,6 +589,7 @@ QtObject {
         root.writeFuzzelColors();
         root.writeAlacrittyTheme();
         root.writeHerdrAppTheme();
+        root.writeObsidianTheme();
     }
     readonly property real scale: root.gridUnit * root.sizeMultiplier / 5
     readonly property int fontSize: Math.max(1, Math.round(13 * scale))
@@ -1117,6 +1118,106 @@ QtObject {
         Quickshell.execDetached([Quickshell.shellDir + "/scripts/firefox-theme.py", css]);
     }
 
+    // Obsidian: a community theme ("Muthur") built from the CSS variables
+    // Obsidian's own theme is made of, in the shell's colors and font,
+    // square like the shell's panels, the selected file inverted like its
+    // buttons. scripts/obsidian-theme.py installs it in every vault
+    // Obsidian knows and picks it where no other theme is chosen; Obsidian
+    // reloads the active theme's file live. Light and dark modes both get
+    // the preset's palette, so it doesn't matter which one Obsidian is in.
+    function writeObsidianTheme() {
+        const hex = root.hex, mix = root.mix;
+        const bg = hex(root.colorBg), fg = hex(root.colorFg);
+        const dim = hex(root.colorDim), focus = hex(root.colorFocus);
+        const raised = hex(root.color(0));
+        const side = mix(bg, fg, 0.04);
+        const hover = mix(bg, fg, 0.07);
+        const muted = mix(fg, dim, 0.5);
+        const selected = mix(bg, focus, 0.30);
+        const c = i => hex(root.color(i));
+        const rgb = v => { const q = Qt.color(v); return [q.r, q.g, q.b].map(x => Math.round(x * 255)).join(", "); };
+        const accent = Qt.color(focus);
+        const font = "\"" + root.fontFamily + "\", monospace";
+        const named = [["red", c(1)], ["orange", c(9)], ["yellow", c(3)], ["green", c(2)],
+                       ["cyan", c(6)], ["blue", c(4)], ["purple", c(5)], ["pink", c(13)]];
+        const vars = [
+            // The grey ramp everything else in Obsidian derives from.
+            ["--color-base-00", bg], ["--color-base-05", bg], ["--color-base-10", side],
+            ["--color-base-20", raised], ["--color-base-25", mix(raised, dim, 0.3)],
+            ["--color-base-30", dim], ["--color-base-35", dim], ["--color-base-40", mix(dim, fg, 0.15)],
+            ["--color-base-50", mix(dim, fg, 0.3)], ["--color-base-60", muted],
+            ["--color-base-70", mix(dim, fg, 0.7)], ["--color-base-100", fg],
+            ["--accent-h", Math.round(Math.max(0, accent.hslHue) * 360)],
+            ["--accent-s", Math.round(accent.hslSaturation * 100) + "%"],
+            ["--accent-l", Math.round(accent.hslLightness * 100) + "%"],
+            ["--color-accent", focus], ["--color-accent-1", mix(focus, fg, 0.15)],
+            ["--color-accent-2", mix(focus, fg, 0.3)],
+            ...named.map(n => ["--color-" + n[0], n[1]]),
+            ...named.map(n => ["--color-" + n[0] + "-rgb", rgb(n[1])]),
+            // Flat on the background like the shell's panels, dim lines.
+            ["--background-primary", bg], ["--background-primary-alt", raised],
+            ["--background-secondary", side], ["--background-secondary-alt", raised],
+            ["--background-modifier-border", dim], ["--background-modifier-border-hover", muted],
+            ["--background-modifier-border-focus", focus],
+            ["--background-modifier-hover", hover], ["--background-modifier-active-hover", selected],
+            ["--background-modifier-form-field", raised],
+            ["--background-modifier-error", c(1)], ["--background-modifier-success", c(2)],
+            ["--text-normal", fg], ["--text-muted", muted], ["--text-faint", dim],
+            ["--text-accent", focus], ["--text-accent-hover", mix(focus, fg, 0.2)],
+            ["--text-on-accent", bg], ["--text-on-accent-inverted", bg],
+            ["--text-error", c(1)], ["--text-success", c(2)], ["--text-warning", c(3)],
+            ["--text-selection", selected], ["--text-highlight-bg", mix(bg, c(3), 0.35)],
+            ["--caret-color", focus],
+            ["--interactive-normal", raised], ["--interactive-hover", hover],
+            ["--interactive-accent", focus], ["--interactive-accent-hover", mix(focus, fg, 0.15)],
+            ["--titlebar-background", bg], ["--titlebar-background-focused", bg],
+            ["--titlebar-text-color", dim], ["--titlebar-text-color-focused", fg],
+            ["--tab-container-background", bg], ["--tab-text-color", dim],
+            ["--tab-text-color-focused", muted], ["--tab-text-color-focused-active", fg],
+            ["--tab-text-color-focused-active-current", fg], ["--tab-outline-color", dim],
+            ["--divider-color", dim], ["--ribbon-background", bg], ["--ribbon-background-collapsed", bg],
+            ["--status-bar-background", bg], ["--status-bar-border-color", dim],
+            ["--status-bar-text-color", muted],
+            ["--link-color", focus], ["--link-color-hover", mix(focus, fg, 0.2)],
+            ["--link-external-color", c(4)], ["--link-unresolved-color", muted],
+            ["--blockquote-border-color", dim], ["--hr-color", dim],
+            ["--checkbox-color", focus], ["--checkbox-border-color", muted],
+            ["--code-background", raised], ["--code-normal", fg],
+            ["--code-comment", dim], ["--code-function", c(3)], ["--code-important", c(9)],
+            ["--code-keyword", c(5)], ["--code-operator", c(1)], ["--code-property", c(6)],
+            ["--code-punctuation", muted], ["--code-string", c(2)], ["--code-tag", c(1)],
+            ["--code-value", c(4)],
+            ["--h1-color", fg], ["--h2-color", fg], ["--h3-color", fg],
+            ["--h4-color", fg], ["--h5-color", muted], ["--h6-color", muted],
+            ["--graph-node", muted], ["--graph-node-focused", focus], ["--graph-line", dim],
+            ["--scrollbar-thumb-bg", dim], ["--scrollbar-active-thumb-bg", muted],
+            // The shell's font everywhere, notes included.
+            ["--font-interface-theme", font], ["--font-text-theme", font],
+            ["--font-monospace-theme", font],
+            // Square, like the shell.
+            ["--radius-s", "0"], ["--radius-m", "0"], ["--radius-l", "0"], ["--radius-xl", "0"],
+            ["--button-radius", "0"], ["--input-radius", "0"], ["--checkbox-radius", "0"],
+            ["--tab-radius", "0"], ["--tab-radius-active", "0"], ["--callout-radius", "0"],
+            ["--code-radius", "0"], ["--modal-radius", "0"], ["--clickable-icon-radius", "0"]
+        ];
+        const css = "/* Generated by ThemeStore.qml (writeObsidianTheme) — do not edit by\n" +
+            " * hand, changes are overwritten on every preset switch. */\n\n" +
+            ".theme-dark, .theme-light {\n" +
+            vars.map(v => "  " + v[0] + ": " + v[1] + ";").join("\n") + "\n}\n\n" +
+            "/* The selected file and the active item invert, like the shell's buttons. */\n" +
+            ".nav-file-title.is-active, .nav-folder-title.is-active,\n" +
+            ".tree-item-self.is-active, .suggestion-item.is-selected {\n" +
+            "  background-color: " + fg + ";\n  color: " + bg + ";\n}\n" +
+            ".tree-item-self.is-active .tree-item-icon, .nav-file-title.is-active .nav-file-tag {\n" +
+            "  color: " + bg + ";\n}\n\n" +
+            "/* Headings in caps with the shell's spacing, H1 and H2 ruled like its panels. */\n" +
+            ".markdown-rendered h1, .markdown-rendered h2, .HyperMD-header-1, .HyperMD-header-2 {\n" +
+            "  text-transform: uppercase;\n  letter-spacing: 0.08em;\n}\n" +
+            ".markdown-rendered h1, .markdown-rendered h2 {\n" +
+            "  border-bottom: 1px solid " + dim + ";\n  padding-bottom: 0.2em;\n}\n";
+        Quickshell.execDetached([Quickshell.shellDir + "/scripts/obsidian-theme.py", css]);
+    }
+
     // Tells apps that follow the system style (libadwaita, Qt, Firefox,
     // Electron...) whether to go light or dark: xdg-desktop-portal serves
     // this key as org.freedesktop.appearance color-scheme and signals the
@@ -1145,6 +1246,7 @@ QtObject {
         root.writeAudaciousSkin();
         root.writeGtkCss();
         root.writeFirefoxCss();
+        root.writeObsidianTheme();
         root.writeColorScheme();
         // The solid background follows the preset when no image is set.
         if (!root.wallpaper)
@@ -1161,6 +1263,7 @@ QtObject {
         root.writeAudaciousSkin();
         root.writeGtkCss();
         root.writeFirefoxCss();
+        root.writeObsidianTheme();
         root.writeColorScheme();
         if (root.wallpaper)
             root.showWallpaper();
