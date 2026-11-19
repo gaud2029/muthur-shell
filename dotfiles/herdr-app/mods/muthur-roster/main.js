@@ -2,11 +2,12 @@
 // the top edge, like the lock screen's [ PRIORITY ONE ]: SECTORS (the
 // spaces), CREW (the agents, with what each is doing in words) and
 // SYSTEM. The selected row inverts like the shell's buttons. At the
-// bottom, the Nostromo's wireframe descent from the lock screen.
+// bottom, the Nostromo's wireframe descent from the lock screen, its
+// nearest lines carrying the agents' quotas.
 
 import { View, div, svg } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { spaces, agents, run, theme, openOverlay, setAgentOrder, layouts, shared } from "herdr";
+import { spaces, agents, run, theme, openOverlay, setAgentOrder, layouts, shared, readTextFile, home } from "herdr";
 
 const pad = (n) => String(n).padStart(2, "0");
 
@@ -49,6 +50,28 @@ const clock = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d
 const agentName = (a) => `${(a.program?.name ?? a.app ?? "AGENT").toUpperCase()} CH.${pad(a.tab_index)}`;
 const EVENTS = { working: "WORKING.", blocked: "AWAITING ORDERS.", done: "TASK COMPLETE." };
 
+// The AI quotas the shell caches (ClaudeUsage.qml / CodexUsage.qml), as
+// terrain lines: what's been used, coloured by what's left like the [AI]
+// panel's bars. Codex marks the windows it doesn't have.
+const QUOTAS = [
+  { file: "claude-usage.json", name: "CLAUDE" },
+  { file: "codex-usage.json", name: "CODEX" },
+];
+async function readQuotas() {
+  const lines = [];
+  for (const q of QUOTAS) {
+    let c;
+    try { c = JSON.parse(await readTextFile(`${home()}/.cache/muthur/${q.file}`)); } catch (_e) { continue; }
+    if (!c || !c.updatedAt) continue;
+    for (const [key, label] of [["session", "5H"], ["week", "WK"]]) {
+      const left = c[`${key}Remaining`];
+      if (c[`${key}Available`] === false || !Number.isFinite(left)) continue;
+      lines.push({ label: `${q.name} ${label}`, left: Math.max(0, Math.min(100, left)) });
+    }
+  }
+  return lines;
+}
+
 export default class Roster extends View {
   init(_props, cx) {
     // The console: lines MU/TH/UR types out one at a time, oldest first.
@@ -59,11 +82,24 @@ export default class Roster extends View {
     this.seen = null;
     this.say("MU/TH/UR 6000 ONLINE.");
     this.say("INTERFACE 2037 READY FOR INQUIRY.");
+    // The quotas: the shell refreshes its cache every 10 minutes.
+    this.quotas = [];
+    this.readQuotas(cx);
+    cx.timer.every(60000, (cx) => this.readQuotas(cx));
     // Types the queue out; idle ticks draw nothing.
     cx.timer.every(28, (cx) => {
       const line = this.log[this.log.length - 1];
       if (line && this.typed < line.text.length) { this.typed += 2; cx.notify(); }
       else if (this.queue.length) { this.log.push(this.queue.shift()); this.log = this.log.slice(-14); this.typed = 0; cx.notify(); }
+    });
+  }
+
+  readQuotas(cx) {
+    cx.spawn(async (cx) => {
+      const next = await readQuotas();
+      if (JSON.stringify(next) === JSON.stringify(this.quotas)) return;
+      this.quotas = next;
+      cx.notify();
     });
   }
 
@@ -180,19 +216,45 @@ export default class Roster extends View {
 
   // Rails to a vanishing point at the top edge and cross lines in
   // perspective (depth d at height H / d), each swaying between its place
-  // and the next one's: the ground drifting under a hovering ship.
+  // and the next one's: the ground drifting under a hovering ship. With
+  // quotas, the two nearest lines (the lower third, where they swing
+  // widest) give way to them: one line each, further apart the nearer it
+  // is, swaying a little in the same rhythm, with its label, what's used
+  // as a bar on the line (green, amber, red by what's left) and the percent.
   terrain(t) {
-    const W = 280, H = 170;
+    const W = 280, H = 170, LINES = 18, PERIOD = 5000;
+    const quotas = this.quotas;
+    const first = quotas.length ? 3 : 1;
     const lines = [];
-    for (let k = 1; k <= 18; k++) {
+    for (let k = first; k <= LINES; k++) {
       const from = H / (k + 1), to = H / k;
       lines.push(div().absolute().left(0).w(W).h(1).bg(t.dim).opacity(Math.min(1, from / (H * 0.3)) * 0.8)
-        .top(from).loop("top", { from, to, period: 5000, easing: "linear" }));
+        .top(from).loop("top", { from, to, period: PERIOD, easing: "linear" }));
     }
+    // The freed band, from below line 3's furthest reach to near the bottom.
+    const top = H / 3 + 14, bottom = H - 24;
+    const level = (left) => left > 50 ? t.ansi2 : left > 20 ? t.ansi3 : t.ansi1;
+    // Spacing grows by a fifth from one row to the next: perspective.
+    const steps = quotas.map((_, i) => Math.pow(6 / 5, i));
+    const total = steps.reduce((a, b) => a + b, 0) - (steps[0] ?? 0);
+    let y = top;
+    const rows = quotas.map((q, i) => {
+      if (i > 0) y += (bottom - top) * steps[i] / Math.max(total, 1);
+      const used = 100 - q.left;
+      const at = Math.round(y) - 11;
+      // The row hangs from its line: label and percent sit just above it.
+      return div().absolute().left(0).w(W).h(14).top(at).loop("top", { from: at, to: at + 2 + i, period: PERIOD })
+        .child(h_flex().absolute().left(14).right(14).top(0).h(10).items_center().text_size(9.5)
+          .child(div().flex_1().text_color(t.muted).child(q.label))
+          .child(div().flex_none().text_color(level(q.left)).child(`${Math.round(used)}% USED`)))
+        .child(div().absolute().left(0).top(11).w(W).h(1).bg(t.dim))
+        .child(div().absolute().left(0).top(10).h(3).w(Math.round(W * used / 100)).bg(level(q.left)));
+    });
     return div().relative().w(W).h(H).flex_none().overflow_hidden().mb(4)
       .child(div().absolute().left(0).top(0).w(W).h(H).opacity(0.55)
         .child(svg("mods/muthur-roster/terrain.svg").w(W).h(H).text_color(t.dim)))
       .children(lines)
+      .children(rows)
       .child(div().absolute().left(0).top(0).w(W).h(1).bg(t.foreground).opacity(0.6));
   }
 }

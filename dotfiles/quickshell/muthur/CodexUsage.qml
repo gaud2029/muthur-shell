@@ -4,12 +4,12 @@ import Quickshell
 import Quickshell.Io
 
 // Codex quota, read over the `codex app-server` JSON protocol. Same
-// refresh policy and on-disk cache as ClaudeUsage.
+// refresh policy (background included) and on-disk cache as ClaudeUsage.
 Singleton {
     id: root
 
     property bool active: false
-    readonly property bool background: ThemeStore.defaultAgent === "codex"
+    readonly property bool background: true
     property bool fetching: false
     property bool installed: false
     property real sessionRemaining: 0

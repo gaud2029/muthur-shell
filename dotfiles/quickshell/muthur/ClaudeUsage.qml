@@ -4,15 +4,16 @@ import Quickshell
 import Quickshell.Io
 
 // Claude Code quota, read from `claude -p /usage`. Refreshed every minute
-// while its tab is showing, and every 10 minutes in the background when
-// Claude is the default agent (the [AI] button shows its session bar).
+// while its tab is showing, and every 10 minutes in the background: the
+// [AI] button shows the default agent's session bar, and herdr's roster
+// draws both agents' quotas from the cache.
 // The last good read is cached on disk and kept when a fetch fails, so
 // the panel always has numbers to show, with their age.
 Singleton {
     id: root
 
     property bool active: false
-    readonly property bool background: ThemeStore.defaultAgent === "claude"
+    readonly property bool background: true
 
     property real sessionRemaining: 0
     property string sessionReset: ""
